@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/Faratora/async-race/issues"
   },
-  "homepage": "https://github.com/Faratora/async-race#readme"
+  "homepage": "https://github.com/Faratora/async-race#readme",
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
 }
