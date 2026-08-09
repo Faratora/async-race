@@ -6,9 +6,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const root = join(__dirname, '..');
 
-const mockServer = spawn('node', ['mock-server.mjs'], {
+const mockServer = spawn('npx', ['tsx', 'server/mock-server.ts'], {
   stdio: 'inherit',
   cwd: root,
+  shell: true,
 });
 const vite = spawn('vite', [], { stdio: 'inherit', shell: true });
 
