@@ -70,9 +70,6 @@ async function loadWinners(): Promise<void> {
 }
 
 function switchView(view: ViewName): void {
-  if (state.currentView === view) {
-    return;
-  }
   state.currentView = view;
   for (const tab of document.querySelectorAll("#nav-tabs .nav-link")) {
     const button = tab as HTMLElement;
