@@ -70,7 +70,7 @@ async function loadWinners(): Promise<void> {
 }
 
 function switchView(view: ViewName): void {
-  if (state.currentView === view && document.querySelector("#app")!.children.length > 0) {
+  if (state.currentView === view) {
     return;
   }
   state.currentView = view;
@@ -122,7 +122,6 @@ function renderAddCarForm(app: Element): void {
   addForm.className = "add-car-form";
   addForm.innerHTML = `
     <input type="text" id="car-name" placeholder="Car name" value="${escapeHtml(state.garage.createCarName)}" class="form-control" style="width: 200px;">
-    <input type="color" id="car-color" value="${state.garage.selectedColor}" class="form-control form-control-color">
     <button class="btn btn-primary" id="btn-create">Create</button>
     <button class="btn btn-generate" id="btn-generate">Generate 100 Cars</button>
   `;
@@ -490,9 +489,8 @@ async function canCreateCar(target: HTMLElement): Promise<boolean> {
   const nameInput = document.querySelector("#car-name") as HTMLInputElement | null;
   const name = nameInput?.value.trim() ?? "";
   if (!name) return true;
-  const colorInput = document.querySelector("#car-color") as HTMLInputElement | null;
-  state.garage.selectedColor = colorInput?.value || "#ff0000";
-  await createCar({ name, color: colorInput?.value || "#ff0000" });
+  const color = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
+  await createCar({ name, color });
   state.garage.createCarName = "";
   state.garage.page = 1;
   await loadGarageCars();
