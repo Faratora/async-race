@@ -371,7 +371,7 @@ function animateRace(frame: number = 0): void {
 
     try {
       const left = updateCarPosition(car, race);
-      const finishLine = car.parentElement!.offsetWidth - 40 - 5;
+      const finishLine = car.parentElement!.offsetWidth - 65;
       if (left >= finishLine) {
         console.log('[Race] Car', carId, 'finished with left:', left, 'finishLine:', finishLine);
         handleCarFinish(carId, race);
@@ -393,7 +393,7 @@ function animateRace(frame: number = 0): void {
 
 function updateCarPosition(car: HTMLElement, race: { startTime: number; velocity: number }): number {
   const road = car.parentElement!;
-  const trackWidth = road.offsetWidth - 40;
+  const trackWidth = road.offsetWidth - 65;
   const elapsed = performance.now() - race.startTime;
   const progress = Math.min(1, elapsed * race.velocity / trackWidth);
   const left = progress * trackWidth;
@@ -443,10 +443,10 @@ function animateDriveCar(): void {
     if (!carElement) continue;
     
     const road = carElement.parentElement!;
-    const trackWidth = road.offsetWidth - 40;
+    const trackWidth = road.offsetWidth - 65;
     const elapsed = now - drive.startTime;
     const progress = Math.min(1, elapsed * drive.velocity / trackWidth);
-    const left = progress * trackWidth;
+    const left = Math.min(progress * trackWidth, trackWidth);
     carElement.style.left = `${left}px`;
     
     if (progress >= 1) {

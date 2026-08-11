@@ -286,17 +286,17 @@ body {
   width: 4px;
   position: absolute;
   bottom: 3px;
-  right: 55px;
+  right: 75px;
   height: 30px;
 }
 
 .car-flag {
   background-color: #e94560;
   width: 28px;
-  height: 80px;
+  height: 70px;
   position: absolute;
   top: -18px;
-  right: 56px;
+  right: 75px;
   -webkit-mask: url('/img/flag.svg') 50% / contain no-repeat;
   mask: url('/img/flag.svg') 50% / contain no-repeat;
 }
