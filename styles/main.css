@@ -60,7 +60,7 @@ body {
 
 #app {
   padding: 24px 16px;
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
 }
 
@@ -285,18 +285,18 @@ body {
   );
   width: 4px;
   position: absolute;
-  top: 0;
   bottom: 3px;
-  right: 28px;
+  right: 55px;
+  height: 30px;
 }
 
 .car-flag {
   background-color: #e94560;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 80px;
   position: absolute;
   top: -18px;
-  right: 32px;
+  right: 56px;
   -webkit-mask: url('/img/flag.svg') 50% / contain no-repeat;
   mask: url('/img/flag.svg') 50% / contain no-repeat;
 }
