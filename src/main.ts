@@ -23,6 +23,8 @@ import {
   recordWinner,
 } from "./api/index.ts";
 
+let frameCounter = 0;
+
 const state = {
   currentView: "garage" as ViewName,
   garage: {
@@ -194,7 +196,7 @@ function createCarCard(car: Car): HTMLElement {
       <div class="car-actions">
         <button class="btn btn-start-engine btn btn-sm" data-action="start" data-id="${car.id}">Start</button>
         <button class="btn btn-stop-engine btn btn-sm" data-action="stop" data-id="${car.id}">Stop</button>
-        <button class="btn btn-outline-info btn btn-sm" data-action="select" data-id="${car.id}">Select</button>
+        <button class="btn btn-outline-info btn btn-sm" data-action="update" data-id="${car.id}">Update</button>
         <button class="btn btn-outline-danger btn btn-sm" data-action="remove" data-id="${car.id}">Remove</button>
       </div>
     </div>
@@ -318,14 +320,16 @@ async function startRaceHandler(): Promise<void> {
   if (carIds.length === 0) return;
 
   state.race.isRacing = true;
+  console.log('[Race] Starting race with cars:', carIds);
   await startRace(carIds);
 
   await Promise.all(carIds.map((id) => startEngine(id)));
 
   const velocities = await Promise.all(carIds.map((id) => getVelocity(id)));
+  console.log('[Race] Car velocities:', carIds.map((id, i) => `${id}: ${velocities[i].toFixed(2)}`).join(', '));
   const now = performance.now();
   state.race.carRaces = {};
-  for (const [id, index] of carIds.entries()) {
+  for (const [index, id] of carIds.entries()) {
     state.race.carRaces[id] = {
       startTime: now,
       velocity: velocities[index],
@@ -342,29 +346,46 @@ async function startRaceHandler(): Promise<void> {
   animateRace();
 }
 
-function animateRace(): void {
-  if (!state.race.isRacing) return;
+function animateRace(frame: number = 0): void {
+  console.log('[Race] animateRace called, frame:', frame, 'isRacing:', state.race.isRacing);
+  if (!state.race.isRacing) {
+    console.log('[Race] Stopped: isRacing is false');
+    return;
+  }
 
   let isAllFinished = true;
+  let activeCount = 0;
 
   for (const [carIdString, race] of Object.entries(state.race.carRaces)) {
     if (race.finished) continue;
     isAllFinished = false;
+    activeCount++;
     const carId = Number(carIdString);
     const car = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`) as HTMLElement | null;
-    if (!car) continue;
+    if (!car) {
+      console.log('[Race] Car element not found:', carId);
+      continue;
+    }
 
-    const left = updateCarPosition(car, race);
-    if (left >= car.parentElement!.offsetWidth - 40 - 5) {
-      handleCarFinish(carId, race);
+    try {
+      const left = updateCarPosition(car, race);
+      const finishLine = car.parentElement!.offsetWidth - 40 - 5;
+      if (left >= finishLine) {
+        console.log('[Race] Car', carId, 'finished with left:', left, 'finishLine:', finishLine);
+        handleCarFinish(carId, race);
+      }
+    } catch (error) {
+      console.error('[Race] Error animating car', carId, error);
     }
   }
 
   if (isAllFinished) {
+    console.log('[Race] All cars finished');
     state.race.isRacing = false;
     return;
   }
 
+  console.log('[Race] Active cars:', activeCount, '— scheduling next frame');
   state.race.animationId = requestAnimationFrame(animateRace);
 }
 
@@ -375,6 +396,9 @@ function updateCarPosition(car: HTMLElement, race: { startTime: number; velocity
   const progress = Math.min(1, elapsed * race.velocity / trackWidth);
   const left = progress * trackWidth;
   car.style.left = `${left}px`;
+  
+  console.log('[Race] Car', race.velocity.toFixed(2), 'elapsed:', elapsed.toFixed(0), 'trackWidth:', trackWidth, 'progress:', progress.toFixed(3), 'left:', left.toFixed(0));
+  
   return left;
 }
 
@@ -431,7 +455,7 @@ function setupEventDelegation(): void {
     const target = event.target as HTMLElement;
 
     const action = target.dataset.action;
-    if (action && ["edit", "select", "remove", "start", "stop"].includes(action)) {
+    if (action && ["edit", "update", "remove", "start", "stop"].includes(action)) {
       await handleCarAction(action, Number(target.dataset.id));
       return;
     }
@@ -453,7 +477,8 @@ async function handleCarAction(action: string, id: number): Promise<void> {
 
   switch (action) {
   case "edit":
-  case "select": {
+  case "select":
+  case "update": {
     const car = state.garage.cars.find((c) => c.id === id);
     if (!car) return;
     state.garage.editingCarId = id;
@@ -485,7 +510,7 @@ async function canCreateCar(target: HTMLElement): Promise<boolean> {
   if (!buttonCreate) return false;
   const nameInput = document.querySelector("#car-name") as HTMLInputElement | null;
   const name = nameInput?.value.trim() ?? "";
-  if (!name) return true;
+  if (!name) return false;
   const color = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
   await createCar({ name, color });
   state.garage.createCarName = "";
@@ -505,11 +530,11 @@ async function handleGenerateCars(): Promise<void> {
 async function canUpdateCar(target: HTMLElement): Promise<boolean> {
   const buttonUpdate = target.closest("#btn-update");
   if (!buttonUpdate) return false;
-  if (state.garage.editingCarId === undefined) return true;
+  if (state.garage.editingCarId === undefined) return false;
   const nameInput = document.querySelector("#update-name") as HTMLInputElement | null;
-  if (!nameInput) return true;
+  if (!nameInput) return false;
   const name = nameInput.value.trim();
-  if (!name) return true;
+  if (!name) return false;
   const colorInput = document.querySelector("#update-color") as HTMLInputElement | null;
   await updateCar(state.garage.editingCarId, { name, color: colorInput?.value || "#ff0000" });
   state.garage.editingCarId = undefined;

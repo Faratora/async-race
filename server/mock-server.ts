@@ -24,14 +24,7 @@ interface Winner {
 
 let cars: Car[] = [];
 let winners: Winner[] = [];
-
-function getNextCarId(): number {
-  if (cars.length === 0) return 1;
-  const usedIds: Set<number> = new Set(cars.map((c: Car): number => c.id));
-  let id: number = 1;
-  while (usedIds.has(id)) id++;
-  return id;
-}
+let nextCarId: number = 1;
 
 const firstParts: string[] = [
   "Tesla", "Ford", "BMW", "Audi", "Porsche",
@@ -78,8 +71,8 @@ app.post("/api/cars", (req: express.Request, res: express.Response): void => {
       res.status(400).json({ error: "Missing name or color" });
       return;
     }
-    const car: Car = { id: getNextCarId(), name: body.name, color: body.color };
-    cars.unshift(car);
+    const car: Car = { id: nextCarId++, name: body.name, color: body.color };
+    cars.push(car);
     res.status(201).json(car);
   } catch (err: unknown) {
     console.error("Error creating car:", err);
@@ -117,12 +110,12 @@ app.post("/api/cars/bulk", (req: express.Request, res: express.Response): void =
   const generated: Car[] = [];
   for (let i: number = 0; i < body.count; i++) {
     generated.push({
-      id: getNextCarId(),
+      id: nextCarId++,
       name: randomCarName(),
       color: randomColor(),
     });
   }
-  cars.unshift(...generated.reverse());
+  cars.push(...generated);
   res.status(201).json(generated);
 });
 

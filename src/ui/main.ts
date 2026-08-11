@@ -291,7 +291,7 @@ async function startRaceHandler(): Promise<void> {
   const velocities = await Promise.all(carIds.map((id) => getVelocity(id)));
   const now = performance.now();
   state.race.carRaces = {};
-  for (const [id, index] of carIds.entries()) {
+  for (const [index, id] of carIds.entries()) {
     state.race.carRaces[id] = {
       startTime: now,
       velocity: velocities[index],
