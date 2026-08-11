@@ -23,31 +23,9 @@ import {
   recordWinner,
 } from "../api/index.ts";
 
-const state = {
-  currentView: "garage" as ViewName,
-  garage: {
-    cars: [] as Car[],
-    page: 1,
-    total: 0,
-    selectedColor: "#ff0000",
-    editingCarId: undefined as number | undefined,
-    editName: "",
-    editColor: "#ff0000",
-    createCarName: "",
-  },
-  winners: {
-    winners: [] as Winner[],
-    page: 1,
-    total: 0,
-    sortBy: "wins" as SortConfig["sortBy"],
-    sortOrder: "desc" as SortConfig["sortOrder"],
-  },
-  race: {
-    isRacing: false,
-    carRaces: {} as Record<number, { startTime: number; velocity: number; finished: boolean; time: number | undefined }>,
-    animationId: 0,
-  },
-};
+import { state } from "../state/index.ts";
+
+// ============ DATA LOADING ============
 
 async function loadGarageCars(): Promise<void> {
   try {
@@ -69,6 +47,8 @@ async function loadWinners(): Promise<void> {
   }
 }
 
+// ============ VIEW SWITCHING ============
+
 function switchView(view: ViewName): void {
   if (state.currentView === view && document.querySelector("#app")!.children.length > 0) {
     return;
@@ -85,6 +65,8 @@ function switchView(view: ViewName): void {
   }
 }
 
+// ============ GARAGE RENDERING ============
+
 async function renderGarage(): Promise<void> {
   const app = document.querySelector("#app")!;
   try {
@@ -99,6 +81,15 @@ async function renderGarage(): Promise<void> {
 
   const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
 
+  renderGarageHeader(app, totalPages);
+  renderAddCarForm(app);
+  renderEditForm(app);
+  renderRaceControls(app);
+  renderCarCards(app);
+  renderGaragePagination(app, totalPages);
+}
+
+function renderGarageHeader(app: Element, totalPages: number): void {
   const header = document.createElement("div");
   header.className = "view-header";
   header.innerHTML = `
@@ -106,7 +97,9 @@ async function renderGarage(): Promise<void> {
     <span class="view-info">Page ${state.garage.page} / ${totalPages} (${state.garage.total} cars)</span>
   `;
   app.append(header);
+}
 
+function renderAddCarForm(app: Element): void {
   const addForm = document.createElement("div");
   addForm.className = "add-car-form";
   addForm.innerHTML = `
@@ -121,19 +114,22 @@ async function renderGarage(): Promise<void> {
     });
   }
   app.append(addForm);
+}
 
-  if (state.garage.editingCarId !== undefined) {
-    const editForm = document.createElement("div");
-    editForm.className = "edit-car-form";
-    editForm.innerHTML = `
-      <input type="text" id="update-name" value="${escapeHtml(state.garage.editName)}" class="form-control" style="width: 200px;">
-      <input type="color" id="update-color" value="${state.garage.editColor}" class="form-control form-control-color">
-      <button class="btn btn-primary" id="btn-update">Update</button>
-      <button class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
-    `;
-    app.append(editForm);
-  }
+function renderEditForm(app: Element): void {
+  if (state.garage.editingCarId === undefined) return;
+  const editForm = document.createElement("div");
+  editForm.className = "edit-car-form";
+  editForm.innerHTML = `
+    <input type="text" id="update-name" value="${escapeHtml(state.garage.editName)}" class="form-control" style="width: 200px;">
+    <input type="color" id="update-color" value="${state.garage.editColor}" class="form-control form-control-color">
+    <button class="btn btn-primary" id="btn-update">Update</button>
+    <button class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
+  `;
+  app.append(editForm);
+}
 
+function renderRaceControls(app: Element): void {
   const raceControls = document.createElement("div");
   raceControls.className = "race-controls";
   raceControls.innerHTML = `
@@ -146,66 +142,69 @@ async function renderGarage(): Promise<void> {
   const buttonResetRace = raceControls.querySelector("#btn-reset-race") as HTMLButtonElement;
   buttonStartRace.addEventListener("click", () => { void startRaceHandler(); });
   buttonResetRace.addEventListener("click", () => { void resetRaceHandler(); });
+}
 
+function renderCarCards(app: Element): void {
   if (state.garage.cars.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "view-info";
-    empty.textContent = "No cars yet. Create one above!";
-    empty.style.padding = "2rem";
-    empty.style.textAlign = "center";
-    app.append(empty);
-  } else {
-    for (const car of state.garage.cars) {
-      const card = document.createElement("div");
-      card.className = "car-card";
-      if (state.garage.editingCarId === car.id) {
-        card.classList.add("selected");
-      }
-      const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
-      card.innerHTML = `
-        <div class="car-card-top">
-          <div class="car-image" style="background-color: ${car.color}">${initial}</div>
-          <div class="car-info">
-            <div class="car-name" data-action="edit" data-id="${car.id}">${escapeHtml(car.name)}</div>
-          </div>
-          <div class="car-actions">
-            <button class="btn btn-start-engine btn btn-sm" data-action="start" data-id="${car.id}">Start</button>
-            <button class="btn btn-stop-engine btn btn-sm" data-action="stop" data-id="${car.id}">Stop</button>
-            <button class="btn btn-outline-info btn btn-sm" data-action="select" data-id="${car.id}">Select</button>
-            <button class="btn btn-outline-danger btn btn-sm" data-action="remove" data-id="${car.id}">Remove</button>
-          </div>
-        </div>
-        <div class="car-card-bottom">
-          <div class="car-road" data-id="${car.id}">
-            <div class="car-road-line"></div>
-            <div class="car-road-finish"></div>
-            <div class="car-flag"></div>
-            <div class="car" style="background-color: ${car.color}"></div>
-          </div>
-        </div>
-      `;
-      app.append(card);
+    renderEmptyGarageMessage(app);
+    return;
+  }
+
+  for (const car of state.garage.cars) {
+    const card = document.createElement("div");
+    card.className = "car-card";
+    if (state.garage.editingCarId !== undefined && state.garage.editingCarId === Number(car.id)) {
+      card.classList.add("selected");
     }
-  }
-
-  if (totalPages > 1) {
-    const pagination = document.createElement("div");
-    pagination.className = "pagination-controls";
-    pagination.innerHTML = `
-      <button class="btn btn-secondary" id="btn-prev" ${state.garage.page <= 1 ? "disabled" : ""}>Previous</button>
-      <span>Page ${state.garage.page} of ${totalPages}</span>
-      <button class="btn btn-secondary" id="btn-next" ${state.garage.page >= totalPages ? "disabled" : ""}>Next</button>
+    const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
+    card.innerHTML = `
+      <div class="car-card-top">
+        <div class="car-image" style="background-color: ${car.color}">${initial}</div>
+        <div class="car-info">
+          <div class="car-name" data-action="edit" data-id="${car.id}">${escapeHtml(car.name)}</div>
+        </div>
+        <div class="car-actions">
+          <button class="btn btn-start-engine btn btn-sm" data-action="start" data-id="${car.id}">Start</button>
+          <button class="btn btn-stop-engine btn btn-sm" data-action="stop" data-id="${car.id}">Stop</button>
+          <button class="btn btn-outline-info btn btn-sm" data-action="select" data-id="${car.id}">Select</button>
+          <button class="btn btn-outline-danger btn btn-sm" data-action="remove" data-id="${car.id}">Remove</button>
+        </div>
+      </div>
+      <div class="car-card-bottom">
+        <div class="car-road" data-id="${car.id}">
+          <div class="car-road-line"></div>
+          <div class="car-road-finish"></div>
+          <div class="car-flag"></div>
+          <div class="car" style="background-color: ${car.color}"></div>
+        </div>
+      </div>
     `;
-    app.append(pagination);
+    app.append(card);
   }
 }
 
-function escapeHtml(text: string): string {
-  const div = document.createElement("div");
-  div.textContent = text;
-  // eslint-disable-next-line unicorn/prefer-dom-node-html-methods
-  return div.innerHTML;
+function renderEmptyGarageMessage(app: Element): void {
+  const empty = document.createElement("div");
+  empty.className = "view-info";
+  empty.textContent = "No cars yet. Create one above!";
+  empty.style.padding = "2rem";
+  empty.style.textAlign = "center";
+  app.append(empty);
 }
+
+function renderGaragePagination(app: Element, totalPages: number): void {
+  if (totalPages <= 1) return;
+  const pagination = document.createElement("div");
+  pagination.className = "pagination-controls";
+  pagination.innerHTML = `
+    <button class="btn btn-secondary" id="btn-prev" ${state.garage.page <= 1 ? "disabled" : ""}>Previous</button>
+    <span>Page ${state.garage.page} of ${totalPages}</span>
+    <button class="btn btn-secondary" id="btn-next" ${state.garage.page >= totalPages ? "disabled" : ""}>Next</button>
+  `;
+  app.append(pagination);
+}
+
+// ============ WINNERS RENDERING ============
 
 async function renderWinners(): Promise<void> {
   const app = document.querySelector("#app")!;
@@ -215,6 +214,13 @@ async function renderWinners(): Promise<void> {
 
   const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
 
+  renderWinnersHeader(app, totalPages);
+  renderSortControls(app);
+  renderWinnersTable(app);
+  renderWinnersPagination(app, totalPages);
+}
+
+function renderWinnersHeader(app: Element, totalPages: number): void {
   const header = document.createElement("div");
   header.className = "view-header";
   header.innerHTML = `
@@ -222,7 +228,9 @@ async function renderWinners(): Promise<void> {
     <span class="view-info">Page ${state.winners.page} / ${totalPages} (${state.winners.total} winners)</span>
   `;
   app.append(header);
+}
 
+function renderSortControls(app: Element): void {
   const sortControls = document.createElement("div");
   sortControls.className = "sort-controls";
   sortControls.innerHTML = `
@@ -233,7 +241,9 @@ async function renderWinners(): Promise<void> {
     <button class="btn btn-sm ${state.winners.sortOrder === "desc" ? "btn-primary" : "btn-secondary"}" data-sort-order="desc">↓ Desc</button>
   `;
   app.append(sortControls);
+}
 
+function renderWinnersTable(app: Element): void {
   const table = document.createElement("div");
   const thead = document.createElement("div");
   thead.className = "table-header";
@@ -265,23 +275,39 @@ async function renderWinners(): Promise<void> {
     }
   }
   app.append(table);
-
-  if (totalPages > 1) {
-    const pagination = document.createElement("div");
-    pagination.className = "pagination-controls";
-    pagination.innerHTML = `
-      <button class="btn btn-secondary" id="btn-prev-winners" ${state.winners.page <= 1 ? "disabled" : ""}>Previous</button>
-      <span>Page ${state.winners.page} of ${totalPages}</span>
-      <button class="btn btn-secondary" id="btn-next-winners" ${state.winners.page >= totalPages ? "disabled" : ""}>Next</button>
-    `;
-    app.append(pagination);
-  }
 }
+
+function renderWinnersPagination(app: Element, totalPages: number): void {
+  if (totalPages <= 1) return;
+  const pagination = document.createElement("div");
+  pagination.className = "pagination-controls";
+  pagination.innerHTML = `
+    <button class="btn btn-secondary" id="btn-prev-winners" ${state.winners.page <= 1 ? "disabled" : ""}>Previous</button>
+    <span>Page ${state.winners.page} of ${totalPages}</span>
+    <button class="btn btn-secondary" id="btn-next-winners" ${state.winners.page >= totalPages ? "disabled" : ""}>Next</button>
+  `;
+  app.append(pagination);
+}
+
+// ============ DOM HELPERS ============
+
+function escapeHtml(text: string): string {
+  const div = document.createElement("div");
+  div.textContent = text;
+  // eslint-disable-next-line unicorn/prefer-dom-node-html-methods
+  return div.innerHTML;
+}
+
+// ============ RACE HANDLERS ============
 
 async function startRaceHandler(): Promise<void> {
   if (state.race.isRacing) return;
   const carIds = state.garage.cars.map((c) => c.id);
   if (carIds.length === 0) return;
+
+  // Remove winner message before starting new race
+  const winnerMsg = document.querySelector(".winner-message");
+  if (winnerMsg) winnerMsg.remove();
 
   state.race.isRacing = true;
   await startRace(carIds);
@@ -305,7 +331,7 @@ async function startRaceHandler(): Promise<void> {
     if (car) car.style.left = "0px";
   }
 
-  requestAnimationFrame(animateRace);
+  animateRace();
 }
 
 function animateRace(): void {
@@ -322,14 +348,14 @@ function animateRace(): void {
     if (!car) continue;
 
     const road = car.parentElement!;
-    const trackWidth = road.offsetWidth - 40;
+    const trackWidth = road.offsetWidth - 65;
     const elapsed = performance.now() - race.startTime;
     const progress = Math.min(1, elapsed * race.velocity / trackWidth);
     const left = progress * trackWidth;
 
     car.style.left = `${left}px`;
 
-    if (left >= trackWidth - 5) {
+    if (left >= trackWidth) {
       race.finished = true;
       race.time = elapsed / 1000;
       void driveCar(carId);
@@ -369,12 +395,62 @@ function showWinnerMessage(carName: string, time: number): void {
   app.insertBefore(message, app.firstChild);
 }
 
+// ============ DRIVE ANIMATION ============
+
+function animateDriveCar(): void {
+  const now = performance.now();
+  for (const [carIdString, drive] of Object.entries(state.race.drivingCars)) {
+    const carId = Number(carIdString);
+    const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`) as HTMLElement | null;
+    if (!carElement) continue;
+
+    const road = carElement.parentElement!;
+    const trackWidth = road.offsetWidth - 65;
+    const elapsed = now - drive.startTime;
+    const progress = Math.min(1, elapsed * drive.velocity / trackWidth);
+    const left = Math.min(progress * trackWidth, trackWidth);
+    carElement.style.left = `${left}px`;
+
+    if (progress >= 1) {
+      delete state.race.drivingCars[carId];
+      void driveCar(carId);
+    }
+  }
+
+  if (Object.keys(state.race.drivingCars).length > 0) {
+    state.race.driveAnimationId = requestAnimationFrame(animateDriveCar);
+  }
+}
+
+async function startDriveCar(carId: number): Promise<void> {
+  const velocity = await getVelocity(carId);
+  const now = performance.now();
+  state.race.drivingCars[carId] = { startTime: now, velocity };
+
+  const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`) as HTMLElement | null;
+  if (carElement) carElement.style.left = "0px";
+
+  if (Object.keys(state.race.drivingCars).length === 1) {
+    animateDriveCar();
+  }
+}
+
+function stopDriveCar(carId: number): void {
+  delete state.race.drivingCars[carId];
+  const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`) as HTMLElement | null;
+  if (carElement) carElement.style.left = "0px";
+}
+
 async function resetRaceHandler(): Promise<void> {
   if (state.race.animationId) {
     cancelAnimationFrame(state.race.animationId);
   }
+  if (state.race.driveAnimationId) {
+    cancelAnimationFrame(state.race.driveAnimationId);
+  }
   state.race.isRacing = false;
   state.race.carRaces = {};
+  state.race.drivingCars = {};
   const carIds = state.garage.cars.map((c) => c.id);
   if (carIds.length > 0) {
     await resetRace(carIds);
@@ -383,6 +459,8 @@ async function resetRaceHandler(): Promise<void> {
     (emoji as HTMLElement).style.left = "0px";
   }
 }
+
+// ============ EVENT DELEGATION ============
 
 function setupEventDelegation(): void {
   const app = document.querySelector("#app")!;
@@ -414,13 +492,14 @@ function setupEventDelegation(): void {
       }
       case "start": {
         await startEngine(id);
+        await startDriveCar(id);
         break;
       }
       case "stop": {
         await stopEngine(id);
+        stopDriveCar(id);
         break;
       }
-      // No default
       }
       return;
     }
@@ -469,6 +548,10 @@ function setupEventDelegation(): void {
       state.garage.editingCarId = undefined;
       state.garage.editName = "";
       state.garage.editColor = "#ff0000";
+      if (state.race.driveAnimationId) {
+        cancelAnimationFrame(state.race.driveAnimationId);
+      }
+      state.race.drivingCars = {};
       renderGarage();
       return;
     }
@@ -531,6 +614,8 @@ function setupEventDelegation(): void {
   });
 }
 
+// ============ INIT ============
+
 for (const tab of document.querySelectorAll("#nav-tabs .nav-link")) {
   tab.addEventListener("click", () => {
     const view = (tab as HTMLElement).dataset.view as ViewName;
@@ -538,6 +623,6 @@ for (const tab of document.querySelectorAll("#nav-tabs .nav-link")) {
   });
 }
 
-setupEventDelegation();
-switchView("garage");
+export { switchView, setupEventDelegation };
+
 
