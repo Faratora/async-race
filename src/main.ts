@@ -48,6 +48,8 @@ const state = {
     isRacing: false,
     carRaces: {} as Record<number, { startTime: number; velocity: number; finished: boolean; time: number | undefined }>,
     animationId: 0,
+    drivingCars: {} as Record<number, { startTime: number; velocity: number }>,
+    driveAnimationId: 0,
   },
 };
 
@@ -433,12 +435,60 @@ function showWinnerMessage(carName: string, time: number): void {
   app.insertBefore(message, app.firstChild);
 }
 
+function animateDriveCar(): void {
+  const now = performance.now();
+  for (const [carIdString, drive] of Object.entries(state.race.drivingCars)) {
+    const carId = Number(carIdString);
+    const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`) as HTMLElement | null;
+    if (!carElement) continue;
+    
+    const road = carElement.parentElement!;
+    const trackWidth = road.offsetWidth - 40;
+    const elapsed = now - drive.startTime;
+    const progress = Math.min(1, elapsed * drive.velocity / trackWidth);
+    const left = progress * trackWidth;
+    carElement.style.left = `${left}px`;
+    
+    if (progress >= 1) {
+      delete state.race.drivingCars[carId];
+      void driveCar(carId);
+    }
+  }
+  
+  if (Object.keys(state.race.drivingCars).length > 0) {
+    state.race.driveAnimationId = requestAnimationFrame(animateDriveCar);
+  }
+}
+
+async function startDriveCar(carId: number): Promise<void> {
+  const velocity = await getVelocity(carId);
+  const now = performance.now();
+  state.race.drivingCars[carId] = { startTime: now, velocity };
+  
+  const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`) as HTMLElement | null;
+  if (carElement) carElement.style.left = "0px";
+  
+  if (Object.keys(state.race.drivingCars).length === 1) {
+    animateDriveCar();
+  }
+}
+
+function stopDriveCar(carId: number): void {
+  delete state.race.drivingCars[carId];
+  const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`) as HTMLElement | null;
+  if (carElement) carElement.style.left = "0px";
+}
+
 async function resetRaceHandler(): Promise<void> {
   if (state.race.animationId) {
     cancelAnimationFrame(state.race.animationId);
   }
+  if (state.race.driveAnimationId) {
+    cancelAnimationFrame(state.race.driveAnimationId);
+  }
   state.race.isRacing = false;
   state.race.carRaces = {};
+  state.race.drivingCars = {};
   const carIds = state.garage.cars.map((c) => c.id);
   if (carIds.length > 0) {
     await resetRace(carIds);
@@ -494,10 +544,12 @@ async function handleCarAction(action: string, id: number): Promise<void> {
   }
   case "start": {
     await startEngine(id);
+    await startDriveCar(id);
     break;
   }
   case "stop": {
     await stopEngine(id);
+    stopDriveCar(id);
     break;
   }
   // No default
@@ -548,6 +600,10 @@ function handleCancelEdit(): void {
   state.garage.editingCarId = undefined;
   state.garage.editName = "";
   state.garage.editColor = "#ff0000";
+  if (state.race.driveAnimationId) {
+    cancelAnimationFrame(state.race.driveAnimationId);
+  }
+  state.race.drivingCars = {};
   renderGarage();
 }
 
