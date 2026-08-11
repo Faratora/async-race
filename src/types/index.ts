@@ -56,3 +56,4 @@ export interface RaceResult {
 export const CARS_PER_PAGE = 7;
 export const WINNERS_PER_PAGE = 10;
 export const API_BASE = "/api";
+export const TRACK_PADDING = 65;

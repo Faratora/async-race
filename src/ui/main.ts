@@ -3,6 +3,7 @@ import {
   Winner,
   CARS_PER_PAGE,
   WINNERS_PER_PAGE,
+  TRACK_PADDING,
   ViewName,
   SortConfig,
 } from "../types/index.ts";
@@ -24,6 +25,8 @@ import {
 } from "../api/index.ts";
 
 import { state } from "../state/index.ts";
+
+
 
 // ============ DATA LOADING ============
 
@@ -348,7 +351,7 @@ function animateRace(): void {
     if (!car) continue;
 
     const road = car.parentElement!;
-    const trackWidth = road.offsetWidth - 65;
+    const trackWidth = road.offsetWidth - TRACK_PADDING;
     const elapsed = performance.now() - race.startTime;
     const progress = Math.min(1, elapsed * race.velocity / trackWidth);
     const left = progress * trackWidth;
@@ -405,7 +408,7 @@ function animateDriveCar(): void {
     if (!carElement) continue;
 
     const road = carElement.parentElement!;
-    const trackWidth = road.offsetWidth - 65;
+    const trackWidth = road.offsetWidth - TRACK_PADDING;
     const elapsed = now - drive.startTime;
     const progress = Math.min(1, elapsed * drive.velocity / trackWidth);
     const left = Math.min(progress * trackWidth, trackWidth);
