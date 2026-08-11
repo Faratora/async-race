@@ -183,7 +183,7 @@ function renderEmptyGarageMessage(app: Element): void {
 function createCarCard(car: Car): HTMLElement {
   const card = document.createElement("div") as HTMLElement;
   card.className = "car-card";
-  if (state.garage.editingCarId === car.id) {
+  if (state.garage.editingCarId !== undefined && state.garage.editingCarId === Number(car.id)) {
     card.classList.add("selected");
   }
   const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
@@ -196,7 +196,7 @@ function createCarCard(car: Car): HTMLElement {
       <div class="car-actions">
         <button class="btn btn-start-engine btn btn-sm" data-action="start" data-id="${car.id}">Start</button>
         <button class="btn btn-stop-engine btn btn-sm" data-action="stop" data-id="${car.id}">Stop</button>
-        <button class="btn btn-outline-info btn btn-sm" data-action="update" data-id="${car.id}">Update</button>
+        <button class="btn btn-outline-info btn btn-sm" data-action="select" data-id="${car.id}">Select</button>
         <button class="btn btn-outline-danger btn btn-sm" data-action="remove" data-id="${car.id}">Remove</button>
       </div>
     </div>
@@ -455,7 +455,7 @@ function setupEventDelegation(): void {
     const target = event.target as HTMLElement;
 
     const action = target.dataset.action;
-    if (action && ["edit", "update", "remove", "start", "stop"].includes(action)) {
+    if (action && ["edit", "select", "remove", "start", "stop"].includes(action)) {
       await handleCarAction(action, Number(target.dataset.id));
       return;
     }
@@ -477,8 +477,7 @@ async function handleCarAction(action: string, id: number): Promise<void> {
 
   switch (action) {
   case "edit":
-  case "select":
-  case "update": {
+  case "select": {
     const car = state.garage.cars.find((c) => c.id === id);
     if (!car) return;
     state.garage.editingCarId = id;

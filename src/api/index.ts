@@ -50,6 +50,7 @@ export async function deleteCar(id: number): Promise<void> {
   const response: Response = await fetch(`${API_BASE}/cars/${id}`, {
     method: "DELETE",
   });
+console.log("[api] deleteCar response status=", response.status);
   await handleResponse<void>(response);
 }
 
