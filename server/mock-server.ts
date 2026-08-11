@@ -141,7 +141,7 @@ app.get("/api/cars/:id/velocity", (req: express.Request, res: express.Response):
     res.status(404).json({ error: "Car not found" });
     return;
   }
-  const velocity: number = 2 + Math.random() * 8;
+  const velocity: number = 0.5 + Math.random() * 1.5;
   res.json({ velocity });
 });
 

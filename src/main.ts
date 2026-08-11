@@ -321,6 +321,10 @@ async function startRaceHandler(): Promise<void> {
   const carIds = state.garage.cars.map((c) => c.id);
   if (carIds.length === 0) return;
 
+  // Remove winner message before starting new race
+  const winnerMsg = document.querySelector(".winner-message");
+  if (winnerMsg) winnerMsg.remove();
+
   state.race.isRacing = true;
   console.log('[Race] Starting race with cars:', carIds);
   await startRace(carIds);
