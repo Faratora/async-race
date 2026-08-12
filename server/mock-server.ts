@@ -15,6 +15,7 @@ interface Car {
 }
 
 interface Winner {
+  id: number;
   carId: number;
   carName: string;
   carColor: string;
@@ -25,6 +26,7 @@ interface Winner {
 let cars: Car[] = [];
 let winners: Winner[] = [];
 let nextCarId: number = 1;
+let nextWinnerId: number = 1;
 
 const firstParts: string[] = [
   "Tesla", "Ford", "BMW", "Audi", "Porsche",
@@ -222,7 +224,7 @@ app.post("/api/winners", (req: express.Request, res: express.Response): void => 
     res.json(existing);
     return;
   }
-  const winner: Winner = { carId: body.carId, carName: body.carName, carColor: body.carColor, wins: 1, bestTime: body.time };
+  const winner: Winner = { id: nextWinnerId++, carId: body.carId, carName: body.carName, carColor: body.carColor, wins: 1, bestTime: body.time };
   winners.push(winner);
   res.status(201).json(winner);
 });
