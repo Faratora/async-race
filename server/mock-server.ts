@@ -80,7 +80,8 @@ app.get("/api/cars", (req: express.Request, res: express.Response): void => {
   const start: number = (page - 1) * limit;
   const end: number = start + limit;
   const paginated: Car[] = cars.slice(start, end);
-  res.json({ cars: paginated, total: cars.length });
+  res.set("X-Total-Count", String(cars.length));
+  res.json({ cars: paginated });
 });
 
 app.post("/api/cars", (req: express.Request, res: express.Response): void => {
@@ -227,7 +228,8 @@ app.get("/api/winners", (req: express.Request, res: express.Response): void => {
   const start: number = (page - 1) * limit;
   const end: number = start + limit;
   const paginated: Winner[] = sorted.slice(start, end);
-  res.json({ winners: paginated, total: sorted.length });
+  res.set("X-Total-Count", String(sorted.length));
+  res.json({ winners: paginated });
 });
 
 app.post("/api/winners", (req: express.Request, res: express.Response): void => {

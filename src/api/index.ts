@@ -62,7 +62,10 @@ export async function fetchCars(
   const response: Response = await fetch(
     `${API_BASE}/cars?page=${page}&limit=${limit}`,
   );
-  return handleResponse<{ cars: Car[]; total: number }>(response);
+  const data: { cars: Car[] } = await handleResponse<{ cars: Car[] }>(response);
+  const totalHeader: string | null = response.headers.get("X-Total-Count");
+  const total: number = totalHeader === null ? data.cars.length : Number(totalHeader);
+  return { cars: data.cars, total };
 }
 
 export async function createCar(data: {
@@ -94,7 +97,7 @@ export async function deleteCar(id: number): Promise<void> {
     method: "DELETE",
   });
   console.log("[api] deleteCar response status=", response.status);
-  await handleResponse<void>(response);
+  await handleVoidResponse(response);
 }
 
 export async function generateCars(count: number): Promise<Car[]> {
@@ -157,7 +160,10 @@ export async function fetchWinners(
   const response: Response = await fetch(
     `${API_BASE}/winners?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
   );
-  return handleResponse<{ winners: Winner[]; total: number }>(response);
+  const data: { winners: Winner[] } = await handleResponse<{ winners: Winner[] }>(response);
+  const totalHeader: string | null = response.headers.get("X-Total-Count");
+  const total: number = totalHeader === null ? data.winners.length : Number(totalHeader);
+  return { winners: data.winners, total };
 }
 
 export async function recordWinner(data: {

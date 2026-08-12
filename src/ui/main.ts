@@ -6,6 +6,7 @@ import {
   SortConfig,
   CarRace,
   Car,
+  Winner,
 } from "../types/index.ts";
 
 import {
@@ -25,6 +26,7 @@ import {
 } from "../api/index.ts";
 
 import { state } from "../state/index.ts";
+import { element } from "./builder.ts";
 
 const INPUT_NAME_WIDTH = 200;
 const DEFAULT_COLOR = "#ff0000";
@@ -97,12 +99,10 @@ async function renderGarage(): Promise<void> {
 }
 
 function renderGarageHeader(app: HTMLElement, totalPages: number): void {
-  const header = document.createElement("div");
-  header.className = "view-header";
-  header.innerHTML = `
-    <span class="view-title">Garage (${state.garage.total})</span>
-    <span class="view-info">Page ${state.garage.page} / ${totalPages} (${state.garage.total} cars)</span>
-  `;
+  const header = element("div", { class: "view-header" },
+    element("span", { class: "view-title" }, `Garage (${state.garage.total})`),
+    element("span", { class: "view-info" }, `Page ${state.garage.page} / ${totalPages} (${state.garage.total} cars)`),
+  );
   app.append(header);
 }
 
@@ -163,37 +163,36 @@ function renderRaceControls(app: HTMLElement): void {
 }
 
 function createCarCard(car: Car): HTMLElement {
-  const card = document.createElement("div");
-  card.className = "car-card";
-  if (state.garage.editingCarId !== undefined && state.garage.editingCarId === Number(car.id)) {
-    card.classList.add("selected");
-  }
   const carId = Number(car.id);
   const isDriving = Object.hasOwn(state.race.drivingCars, carId) ||
     (state.race.isRacing && Object.hasOwn(state.race.carRaces, carId) && !state.race.carRaces[carId].finished);
   const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
-  card.innerHTML = `
-    <div class="car-card-top">
-      <div class="car-image" style="background-color: ${car.color}">${initial}</div>
-      <div class="car-info">
-        <div class="car-name" data-action="edit" data-id="${car.id}">${escapeHtml(car.name)}</div>
-      </div>
-      <div class="car-actions">
-        <button class="btn btn-start-engine btn btn-sm" data-action="start" data-id="${car.id}" ${isDriving ? "disabled" : ""}>Start</button>
-        <button class="btn btn-stop-engine btn btn-sm" data-action="stop" data-id="${car.id}" ${isDriving ? "" : "disabled"}>Stop</button>
-        <button class="btn btn-outline-info btn btn-sm" data-action="edit" data-id="${car.id}">Edit</button>
-        <button class="btn btn-outline-danger btn btn-sm" data-action="remove" data-id="${car.id}">Remove</button>
-      </div>
-    </div>
-    <div class="car-card-bottom">
-      <div class="car-road" data-id="${car.id}">
-        <div class="car-road-line"></div>
-        <div class="car-road-finish"></div>
-        <div class="car-flag"></div>
-        <div class="car" style="background-color: ${car.color}"></div>
-      </div>
-    </div>
-  `;
+
+  const card = element("div", { class: "car-card" });
+  if (state.garage.editingCarId !== undefined && state.garage.editingCarId === carId) {
+    card.classList.add("selected");
+  }
+
+  const carImage = element("div", { class: "car-image", style: `background-color: ${car.color}` }, initial);
+  const carName = element("div", { class: "car-name", dataAction: "edit", dataId: String(car.id) }, escapeHtml(car.name));
+  const carInfo = element("div", { class: "car-info" }, carName);
+
+  const startButton = element("button", { class: "btn btn-start-engine btn btn-sm", dataAction: "start", dataId: String(car.id), disabled: isDriving ? true : undefined }, "Start");
+  const stopButton = element("button", { class: "btn btn-stop-engine btn btn-sm", dataAction: "stop", dataId: String(car.id), disabled: isDriving ? undefined : true }, "Stop");
+  const editButton = element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "edit", dataId: String(car.id) }, "Edit");
+  const removeButton = element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove");
+  const actions = element("div", { class: "car-actions" }, startButton, stopButton, editButton, removeButton);
+
+  const top = element("div", { class: "car-card-top" }, carImage, carInfo, actions);
+
+  const roadLine = element("div", { class: "car-road-line" });
+  const roadFinish = element("div", { class: "car-road-finish" });
+  const roadFlag = element("div", { class: "car-flag" });
+  const carElement = element("div", { class: "car", style: `background-color: ${car.color}` });
+  const road = element("div", { class: "car-road", dataId: String(car.id) }, roadLine, roadFinish, roadFlag, carElement);
+  const bottom = element("div", { class: "car-card-bottom" }, road);
+
+  card.append(top, bottom);
   return card;
 }
 
@@ -234,13 +233,11 @@ function renderEmptyGarageMessage(app: HTMLElement): void {
 
 function renderGaragePagination(app: HTMLElement, totalPages: number): void {
   if (totalPages <= 1) return;
-  const pagination = document.createElement("div");
-  pagination.className = "pagination-controls";
-  pagination.innerHTML = `
-    <button class="btn btn-secondary" id="btn-prev" ${state.garage.page <= 1 ? "disabled" : ""}>Previous</button>
-    <span>Page ${state.garage.page} of ${totalPages}</span>
-    <button class="btn btn-secondary" id="btn-next" ${state.garage.page >= totalPages ? "disabled" : ""}>Next</button>
-  `;
+  const pagination = element("div", { class: "pagination-controls" },
+    element("button", { class: "btn btn-secondary", id: "btn-prev", disabled: state.garage.page <= 1 ? true : undefined }, "Previous"),
+    element("span", undefined, `Page ${state.garage.page} of ${totalPages}`),
+    element("button", { class: "btn btn-secondary", id: "btn-next", disabled: state.garage.page >= totalPages ? true : undefined }, "Next"),
+  );
   app.append(pagination);
 }
 
@@ -272,47 +269,46 @@ function renderWinnersHeader(app: HTMLElement, totalPages: number): void {
 }
 
 function renderSortControls(app: HTMLElement): void {
-  const sortControls = document.createElement("div");
-  sortControls.className = "sort-controls";
-  sortControls.innerHTML = `
-    <span>Sort by:</span>
-    <button class="btn btn-sm ${state.winners.sortBy === "wins" ? "btn-primary" : "btn-secondary"}" data-sort="wins">Wins</button>
-    <button class="btn btn-sm ${state.winners.sortBy === "bestTime" ? "btn-primary" : "btn-secondary"}" data-sort="bestTime">Best Time</button>
-    <button class="btn btn-sm ${state.winners.sortOrder === "asc" ? "btn-primary" : "btn-secondary"}" data-sort-order="asc">Asc</button>
-    <button class="btn btn-sm ${state.winners.sortOrder === "desc" ? "btn-primary" : "btn-secondary"}" data-sort-order="desc">Desc</button>
-  `;
+  const sortControls = element("div", { class: "sort-controls" },
+    element("span", undefined, "Sort by:"),
+    element("button", { class: `btn btn-sm ${state.winners.sortBy === "wins" ? "btn-primary" : "btn-secondary"}`, dataSort: "wins" }, "Wins"),
+    element("button", { class: `btn btn-sm ${state.winners.sortBy === "bestTime" ? "btn-primary" : "btn-secondary"}`, dataSort: "bestTime" }, "Best Time"),
+    element("button", { class: `btn btn-sm ${state.winners.sortOrder === "asc" ? "btn-primary" : "btn-secondary"}`, dataSortOrder: "asc" }, "Asc"),
+    element("button", { class: `btn btn-sm ${state.winners.sortOrder === "desc" ? "btn-primary" : "btn-secondary"}`, dataSortOrder: "desc" }, "Desc"),
+  );
   app.append(sortControls);
 }
 
+function createWinnerRow(winner: Winner, index: number): HTMLElement {
+  const row = element("div", { class: "table-row" },
+    element("span", undefined, String(index + 1)),
+    element("span", undefined,
+      element("div", { class: "winner-car-icon", style: `background-color: ${winner.carColor};` })
+    ),
+    element("span", undefined, escapeHtml(winner.carName)),
+    element("span", undefined, String(winner.wins)),
+    element("span", undefined, `${winner.bestTime.toFixed(2)}`),
+  );
+  return row;
+}
+
 function renderWinnersTable(app: HTMLElement): void {
-  const table = document.createElement("div");
-  const thead = document.createElement("div");
-  thead.className = "table-header";
-  thead.innerHTML = `<span>#</span><span></span><span>Car</span><span>Wins</span><span>Best Time</span>`;
+  const table = element("div");
+  const thead = element("div", { class: "table-header" },
+    element("span", undefined, "Num"),
+    element("span", undefined, "Car"),
+    element("span", undefined, "Name"),
+    element("span", undefined, "Wins"),
+    element("span", undefined, "Best time (sec)"),
+  );
   table.append(thead);
 
   if (state.winners.winners.length === 0) {
-    const emptyRow = document.createElement("div");
-    emptyRow.className = "table-row";
-    emptyRow.style.gridColumn = "1 / -1";
-    emptyRow.style.textAlign = "center";
-    emptyRow.textContent = "No winners yet. Start a race!";
+    const emptyRow = element("div", { class: "table-row", style: "grid-column: 1 / -1; text-align: center;" }, "No winners yet. Start a race!");
     table.append(emptyRow);
   } else {
-    for (const winner of state.winners.winners) {
-      const row = document.createElement("div");
-      row.className = "table-row";
-      const initial = escapeHtml(winner.carName)[0]?.toUpperCase() || "?";
-      row.innerHTML = `
-        <span>${winner.id}</span>
-        <span>
-          <div class="car-image" style="background-color: ${winner.carColor}; width: 30px; height: 20px; font-size: 10px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${initial}</div>
-        </span>
-        <span>${escapeHtml(winner.carName)}</span>
-        <span>${winner.wins}</span>
-        <span>${winner.bestTime.toFixed(2)}s</span>
-      `;
-      table.append(row);
+    for (let i = 0; i < state.winners.winners.length; i++) {
+      table.append(createWinnerRow(state.winners.winners[i], i));
     }
   }
   app.append(table);
@@ -320,13 +316,11 @@ function renderWinnersTable(app: HTMLElement): void {
 
 function renderWinnersPagination(app: HTMLElement, totalPages: number): void {
   if (totalPages <= 1) return;
-  const pagination = document.createElement("div");
-  pagination.className = "pagination-controls";
-  pagination.innerHTML = `
-    <button class="btn btn-secondary" id="btn-prev-winners" ${state.winners.page <= 1 ? "disabled" : ""}>Previous</button>
-    <span>Page ${state.winners.page} of ${totalPages}</span>
-    <button class="btn btn-secondary" id="btn-next-winners" ${state.winners.page >= totalPages ? "disabled" : ""}>Next</button>
-  `;
+  const pagination = element("div", { class: "pagination-controls" },
+    element("button", { class: "btn btn-secondary", id: "btn-prev-winners", disabled: state.winners.page <= 1 ? true : undefined }, "Previous"),
+    element("span", undefined, `Page ${state.winners.page} of ${totalPages}`),
+    element("button", { class: "btn btn-secondary", id: "btn-next-winners", disabled: state.winners.page >= totalPages ? true : undefined }, "Next"),
+  );
   app.append(pagination);
 }
 
@@ -381,7 +375,7 @@ function resetCarPositions(carIds: number[]): void {
   for (const id of carIds) {
     const car = document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"] .car`);
     if (car instanceof HTMLElement) {
-      car.style.left = "0px";
+      car.style.transform = "translateX(0px)";
     }
   }
 }
@@ -399,11 +393,41 @@ function animateRace(): void {
 
   if (isAllFinished) {
     state.race.isRacing = false;
+    state.race.animationId = 0;
     updateCarButtonStates();
     return;
   }
 
   state.race.animationId = requestAnimationFrame(animateRace);
+}
+
+function handleResize(): void {
+  for (const [carIdString, race] of Object.entries(state.race.carRaces)) {
+    if (race.finished) continue;
+    const carId = Number(carIdString);
+    const car = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`);
+    if (!(car instanceof HTMLElement)) continue;
+    const road = car.parentElement;
+    if (!(road instanceof HTMLElement)) continue;
+    const trackWidth = road.offsetWidth - TRACK_PADDING;
+    const elapsed = performance.now() - race.startTime;
+    const progress = Math.min(1, elapsed * race.velocity / trackWidth);
+    const left = Math.min(progress * trackWidth, trackWidth);
+    car.style.transform = `translateX(${left}px)`;
+  }
+
+  for (const [carIdString, drive] of Object.entries(state.race.drivingCars)) {
+    const carId = Number(carIdString);
+    const car = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`);
+    if (!(car instanceof HTMLElement)) continue;
+    const road = car.parentElement;
+    if (!(road instanceof HTMLElement)) continue;
+    const trackWidth = road.offsetWidth - TRACK_PADDING;
+    const elapsed = performance.now() - drive.startTime;
+    const progress = Math.min(1, elapsed * drive.velocity / trackWidth);
+    const left = Math.min(progress * trackWidth, trackWidth);
+    car.style.transform = `translateX(${left}px)`;
+  }
 }
 
 function animateCarRace(carIdString: string, race: CarRace): void {
@@ -418,7 +442,7 @@ function animateCarRace(carIdString: string, race: CarRace): void {
   const progress = Math.min(1, elapsed * race.velocity / trackWidth);
   const left = progress * trackWidth;
 
-  car.style.left = `${left}px`;
+  car.style.transform = `translateX(${left}px)`;
 
   if (left >= trackWidth) {
     handleCarFinish(carId, race, elapsed);
@@ -470,7 +494,7 @@ function animateDriveCar(): void {
     const elapsed = now - drive.startTime;
     const progress = Math.min(1, elapsed * drive.velocity / trackWidth);
     const left = Math.min(progress * trackWidth, trackWidth);
-    carElement.style.left = `${left}px`;
+    carElement.style.transform = `translateX(${left}px)`;
 
     if (progress >= 1) {
       delete state.race.drivingCars[carId];
@@ -493,7 +517,7 @@ async function startDriveCar(carId: number): Promise<void> {
 
   const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`);
   if (carElement instanceof HTMLElement) {
-    carElement.style.left = "0px";
+    carElement.style.transform = "translateX(0px)";
   }
 
   updateCarButtonStates();
@@ -505,9 +529,14 @@ async function startDriveCar(carId: number): Promise<void> {
 
 function stopDriveCar(carId: number): void {
   delete state.race.drivingCars[carId];
+  
+  if (Object.hasOwn(state.race.carRaces, carId)) {
+    state.race.carRaces[carId].finished = true;
+  }
+  
   const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`);
   if (carElement instanceof HTMLElement) {
-    carElement.style.left = "0px";
+    carElement.style.transform = "translateX(0px)";
   }
   updateCarButtonStates();
 }
@@ -515,9 +544,11 @@ function stopDriveCar(carId: number): void {
 async function resetRaceHandler(): Promise<void> {
   if (state.race.animationId) {
     cancelAnimationFrame(state.race.animationId);
+    state.race.animationId = 0;
   }
   if (state.race.driveAnimationId) {
     cancelAnimationFrame(state.race.driveAnimationId);
+    state.race.driveAnimationId = 0;
   }
   state.race.isRacing = false;
   state.race.carRaces = {};
@@ -529,7 +560,7 @@ async function resetRaceHandler(): Promise<void> {
   }
   for (const emoji of document.querySelectorAll(".car")) {
     if (emoji instanceof HTMLElement) {
-      emoji.style.left = "0px";
+      emoji.style.transform = "translateX(0px)";
     }
   }
   updateCarButtonStates();
@@ -731,6 +762,13 @@ for (const tab of document.querySelectorAll("#nav-tabs .nav-link")) {
       switchView(view);
     }
   });
+}
+
+export function init(): void {
+  const resizeObserver = new ResizeObserver(() => {
+    handleResize();
+  });
+  resizeObserver.observe(document.body);
 }
 
 export { switchView, setupEventDelegation };

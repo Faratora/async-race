@@ -1,6 +1,7 @@
-import { switchView, setupEventDelegation } from "./ui/main.ts";
+import { switchView, setupEventDelegation, init } from "./ui/main.ts";
 
 switchView("garage");
 setupEventDelegation();
+init();
 
 
