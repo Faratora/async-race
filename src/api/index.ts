@@ -12,6 +12,29 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return JSON.parse(text) as T;
 }
 
+async function fetchWithRetry<T>(
+  url: string,
+  options: RequestInit = {},
+  retries = 3,
+  delay = 500,
+): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response: Response = await fetch(url, options);
+      const shouldRetry = (response.status === 429 || response.status === 500) && attempt < retries - 1;
+      if (shouldRetry) {
+        await new Promise((resolve) => setTimeout(resolve, delay * 2 ** attempt));
+        continue;
+      }
+      return handleResponse<T>(response);
+    } catch (error) {
+      if (attempt === retries - 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delay * 2 ** attempt));
+    }
+  }
+  throw new Error("Retry limit exceeded");
+}
+
 export async function fetchCars(
   page: number,
   limit: number,
@@ -50,7 +73,7 @@ export async function deleteCar(id: number): Promise<void> {
   const response: Response = await fetch(`${API_BASE}/cars/${id}`, {
     method: "DELETE",
   });
-console.log("[api] deleteCar response status=", response.status);
+  console.log("[api] deleteCar response status=", response.status);
   await handleResponse<void>(response);
 }
 
@@ -64,10 +87,9 @@ export async function generateCars(count: number): Promise<Car[]> {
 }
 
 export async function startEngine(carId: number): Promise<void> {
-  const response: Response = await fetch(`${API_BASE}/cars/${carId}/start`, {
+  await fetchWithRetry<void>(`${API_BASE}/cars/${carId}/start`, {
     method: "POST",
   });
-  await handleResponse<void>(response);
 }
 
 export async function stopEngine(carId: number): Promise<void> {
@@ -85,28 +107,25 @@ export async function getVelocity(carId: number): Promise<number> {
 }
 
 export async function driveCar(carId: number): Promise<void> {
-  const response: Response = await fetch(`${API_BASE}/cars/${carId}/drive`, {
+  await fetchWithRetry<void>(`${API_BASE}/cars/${carId}/drive`, {
     method: "POST",
   });
-  await handleResponse<void>(response);
 }
 
 export async function startRace(carIds: number[]): Promise<void> {
-  const response: Response = await fetch(`${API_BASE}/race/start`, {
+  await fetchWithRetry<void>(`${API_BASE}/race/start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ carIds }),
   });
-  await handleResponse<void>(response);
 }
 
 export async function resetRace(carIds: number[]): Promise<void> {
-  const response: Response = await fetch(`${API_BASE}/race/reset`, {
+  await fetchWithRetry<void>(`${API_BASE}/race/reset`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ carIds }),
   });
-  await handleResponse<void>(response);
 }
 
 export async function fetchWinners(

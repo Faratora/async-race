@@ -361,7 +361,7 @@ function animateRace(): void {
     if (left >= trackWidth) {
       race.finished = true;
       race.time = elapsed / 1000;
-      void driveCar(carId);
+      void driveCar(carId).catch((error) => console.error("Failed to drive car:", error));
 
       const finishedTimes = Object.values(state.race.carRaces)
         .filter((r) => r.time !== undefined)
@@ -416,7 +416,7 @@ function animateDriveCar(): void {
 
     if (progress >= 1) {
       delete state.race.drivingCars[carId];
-      void driveCar(carId);
+      void driveCar(carId).catch((error) => console.error("Failed to drive car:", error));
     }
   }
 
