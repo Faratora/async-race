@@ -23,22 +23,50 @@ export interface SortConfig {
 }
 
 export interface GarageState {
+  cars: Car[];
   page: number;
+  total: number;
   selectedColor: string;
   editingCarId: number | undefined;
   editName: string;
   editColor: string;
+  createCarName: string;
 }
 
 export interface WinnersState {
+  winners: Winner[];
   page: number;
-  sort: SortConfig;
+  total: number;
+  sortBy: SortConfig["sortBy"];
+  sortOrder: SortConfig["sortOrder"];
+}
+
+export interface RaceState {
+  isRacing: boolean;
+  carRaces: Record<number, CarRace>;
+  animationId: number;
+  drivingCars: Record<number, DrivingCar>;
+  driveAnimationId: number;
+  winnerAnnounced: boolean;
+}
+
+export interface CarRace {
+  startTime: number;
+  velocity: number;
+  finished: boolean;
+  time: number | undefined;
+}
+
+export interface DrivingCar {
+  startTime: number;
+  velocity: number;
 }
 
 export interface AppState {
   currentView: ViewName;
   garage: GarageState;
   winners: WinnersState;
+  race: RaceState;
 }
 
 export interface CarFormData {

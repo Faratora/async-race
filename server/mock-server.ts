@@ -42,10 +42,27 @@ const secondParts: string[] = [
   "F-Type", "Continental", "Ghibli", "Giulia", "XC90",
 ];
 
+const COLOR_MAX = 256;
+const SPAM_LIMIT_START = 50;
+const SPAM_LIMIT_DRIVE = 30;
+const ERROR_PROBABILITY = 0.05;
+const DEFAULT_CARS_LIMIT = 7;
+const DEFAULT_WINNERS_LIMIT = 10;
+const VELOCITY_MIN = 0.5;
+const VELOCITY_MAX = 2.0;
+const SERVER_PORT = 3001;
+const SERVER_HOST = "127.0.0.1";
+const HTTP_OK = 200;
+const HTTP_CREATED = 201;
+const HTTP_BAD_REQUEST = 400;
+const HTTP_NOT_FOUND = 404;
+const HTTP_TOO_MANY_REQUESTS = 429;
+const HTTP_INTERNAL_SERVER_ERROR = 500;
+
 function randomColor(): string {
-  const r: number = Math.floor(Math.random() * 256);
-  const g: number = Math.floor(Math.random() * 256);
-  const b: number = Math.floor(Math.random() * 256);
+  const r: number = Math.floor(Math.random() * COLOR_MAX);
+  const g: number = Math.floor(Math.random() * COLOR_MAX);
+  const b: number = Math.floor(Math.random() * COLOR_MAX);
   return "#" + [r, g, b].map((c: number): string => c.toString(16).padStart(2, "0")).join("");
 }
 
@@ -59,7 +76,7 @@ let spamCounter: number = 0;
 
 app.get("/api/cars", (req: express.Request, res: express.Response): void => {
   const page: number = req.query.page ? parseInt(String(req.query.page), 10) || 1 : 1;
-  const limit: number = req.query.limit ? parseInt(String(req.query.limit), 10) || 7 : 7;
+  const limit: number = req.query.limit ? parseInt(String(req.query.limit), 10) || DEFAULT_CARS_LIMIT : DEFAULT_CARS_LIMIT;
   const start: number = (page - 1) * limit;
   const end: number = start + limit;
   const paginated: Car[] = cars.slice(start, end);
@@ -70,15 +87,15 @@ app.post("/api/cars", (req: express.Request, res: express.Response): void => {
   try {
     const body: { name?: string; color?: string } = req.body || {};
     if (!body.name || !body.color) {
-      res.status(400).json({ error: "Missing name or color" });
+      res.status(HTTP_BAD_REQUEST).json({ error: "Missing name or color" });
       return;
     }
     const car: Car = { id: nextCarId++, name: body.name, color: body.color };
     cars.push(car);
-    res.status(201).json(car);
+    res.status(HTTP_CREATED).json(car);
   } catch (err: unknown) {
     console.error("Error creating car:", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(HTTP_INTERNAL_SERVER_ERROR).json({ error: "Internal server error" });
   }
 });
 
@@ -87,7 +104,7 @@ app.put("/api/cars/:id", (req: express.Request, res: express.Response): void => 
   const body: { name: string; color: string } = req.body;
   const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
   if (car === undefined) {
-    res.status(404).json({ error: "Car not found" });
+    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
     return;
   }
   car.name = body.name;
@@ -99,7 +116,7 @@ app.delete("/api/cars/:id", (req: express.Request, res: express.Response): void 
   const id: number = parseInt(String(req.params.id), 10);
   const carIndex: number = cars.findIndex((c: Car): boolean => c.id === id);
   if (carIndex === -1) {
-    res.status(404).json({ error: "Car not found" });
+    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
     return;
   }
   const [removed] = cars.splice(carIndex, 1);
@@ -118,19 +135,19 @@ app.post("/api/cars/bulk", (req: express.Request, res: express.Response): void =
     });
   }
   cars.push(...generated);
-  res.status(201).json(generated);
+  res.status(HTTP_CREATED).json(generated);
 });
 
 app.post("/api/cars/:id/start", (req: express.Request, res: express.Response): void => {
   spamCounter++;
-  if (spamCounter % 50 === 0) {
-    res.status(429).json({ error: "Too many requests" });
+  if (spamCounter % SPAM_LIMIT_START === 0) {
+    res.status(HTTP_TOO_MANY_REQUESTS).json({ error: "Too many requests" });
     return;
   }
   const id: number = parseInt(String(req.params.id), 10);
   const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
   if (car === undefined) {
-    res.status(404).json({ error: "Car not found" });
+    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
     return;
   }
   res.json({ status: "started" });
@@ -140,27 +157,27 @@ app.get("/api/cars/:id/velocity", (req: express.Request, res: express.Response):
   const id: number = parseInt(String(req.params.id), 10);
   const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
   if (car === undefined) {
-    res.status(404).json({ error: "Car not found" });
+    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
     return;
   }
-  const velocity: number = 0.5 + Math.random() * 1.5;
+  const velocity: number = VELOCITY_MIN + Math.random() * (VELOCITY_MAX - VELOCITY_MIN);
   res.json({ velocity });
 });
 
 app.post("/api/cars/:id/drive", (req: express.Request, res: express.Response): void => {
   spamCounter++;
-  if (spamCounter % 30 === 0) {
-    res.status(429).json({ error: "Too many requests" });
+  if (spamCounter % SPAM_LIMIT_DRIVE === 0) {
+    res.status(HTTP_TOO_MANY_REQUESTS).json({ error: "Too many requests" });
     return;
   }
-  if (Math.random() < 0.05) {
-    res.status(500).json({ error: "Internal server error" });
+  if (Math.random() < ERROR_PROBABILITY) {
+    res.status(HTTP_INTERNAL_SERVER_ERROR).json({ error: "Internal server error" });
     return;
   }
   const id: number = parseInt(String(req.params.id), 10);
   const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
   if (car === undefined) {
-    res.status(404).json({ error: "Car not found" });
+    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
     return;
   }
   res.json({ status: "driving" });
@@ -170,7 +187,7 @@ app.post("/api/cars/:id/stop", (req: express.Request, res: express.Response): vo
   const id: number = parseInt(String(req.params.id), 10);
   const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
   if (car === undefined) {
-    res.status(404).json({ error: "Car not found" });
+    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
     return;
   }
   res.json({ status: "stopped" });
@@ -179,7 +196,7 @@ app.post("/api/cars/:id/stop", (req: express.Request, res: express.Response): vo
 app.post("/api/race/start", (req: express.Request, res: express.Response): void => {
   const body: { carIds?: number[] } = req.body;
   if (!body.carIds || body.carIds.length === 0) {
-    res.status(400).json({ error: "No carIds provided" });
+    res.status(HTTP_BAD_REQUEST).json({ error: "No carIds provided" });
     return;
   }
   res.json({ status: "race_started", carCount: body.carIds.length });
@@ -188,7 +205,7 @@ app.post("/api/race/start", (req: express.Request, res: express.Response): void 
 app.post("/api/race/reset", (req: express.Request, res: express.Response): void => {
   const body: { carIds?: number[] } = req.body;
   if (!body.carIds) {
-    res.status(400).json({ error: "No carIds provided" });
+    res.status(HTTP_BAD_REQUEST).json({ error: "No carIds provided" });
     return;
   }
   res.json({ status: "race_reset", carCount: body.carIds.length });
@@ -196,7 +213,7 @@ app.post("/api/race/reset", (req: express.Request, res: express.Response): void 
 
 app.get("/api/winners", (req: express.Request, res: express.Response): void => {
   const page: number = req.query.page ? parseInt(String(req.query.page), 10) || 1 : 1;
-  const limit: number = req.query.limit ? parseInt(String(req.query.limit), 10) || 10 : 10;
+  const limit: number = req.query.limit ? parseInt(String(req.query.limit), 10) || DEFAULT_WINNERS_LIMIT : DEFAULT_WINNERS_LIMIT;
   const sortBy: string = req.query.sortBy ? String(req.query.sortBy) : "wins";
   const sortOrder: string = req.query.sortOrder ? String(req.query.sortOrder) : "desc";
   const sorted: Winner[] = [...winners].sort((a: Winner, b: Winner): number => {
@@ -226,10 +243,9 @@ app.post("/api/winners", (req: express.Request, res: express.Response): void => 
   }
   const winner: Winner = { id: nextWinnerId++, carId: body.carId, carName: body.carName, carColor: body.carColor, wins: 1, bestTime: body.time };
   winners.push(winner);
-  res.status(201).json(winner);
+  res.status(HTTP_CREATED).json(winner);
 });
 
-const PORT: number = 3001;
-app.listen(PORT, "127.0.0.1", (): void => {
-  console.log("Mock server running on port " + PORT);
+app.listen(SERVER_PORT, SERVER_HOST, (): void => {
+  console.log("Mock server running on port " + SERVER_PORT);
 });

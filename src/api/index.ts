@@ -8,8 +8,18 @@ async function handleResponse<T>(response: Response): Promise<T> {
     );
   }
   const text: string = await response.text();
-  if (!text) return undefined as unknown as T;
-  return JSON.parse(text) as T;
+  if (!text) {
+    throw new Error("Empty response body");
+  }
+  return JSON.parse(text);
+}
+
+async function handleVoidResponse(response: Response): Promise<void> {
+  if (response.ok) return;
+  const errorText: string = await response.clone().text();
+  throw new Error(
+    `HTTP ${response.status} ${response.statusText}: ${errorText}`,
+  );
 }
 
 async function fetchWithRetry<T>(
@@ -26,7 +36,17 @@ async function fetchWithRetry<T>(
         await new Promise((resolve) => setTimeout(resolve, delay * 2 ** attempt));
         continue;
       }
-      return handleResponse<T>(response);
+      if (!response.ok) {
+        const errorText: string = await response.clone().text();
+        throw new Error(
+          `HTTP ${response.status} ${response.statusText}: ${errorText}`,
+        );
+      }
+      const text: string = await response.text();
+      if (!text) {
+        throw new Error("Empty response body");
+      }
+      return JSON.parse(text);
     } catch (error) {
       if (attempt === retries - 1) throw error;
       await new Promise((resolve) => setTimeout(resolve, delay * 2 ** attempt));
@@ -96,7 +116,7 @@ export async function stopEngine(carId: number): Promise<void> {
   const response: Response = await fetch(`${API_BASE}/cars/${carId}/stop`, {
     method: "POST",
   });
-  await handleResponse<void>(response);
+  await handleVoidResponse(response);
 }
 
 export async function getVelocity(carId: number): Promise<number> {

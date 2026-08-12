@@ -1,41 +1,29 @@
-import { Car, Winner, ViewName, SortConfig } from "../types/index.ts";
+import { AppState } from "../types/index.ts";
 
-export interface CarRace {
-  startTime: number;
-  velocity: number;
-  finished: boolean;
-  time: number | undefined;
-}
-
-export interface DrivingCar {
-  startTime: number;
-  velocity: number;
-}
-
-export const state = {
-  currentView: "garage" as ViewName,
+export const state: AppState = {
+  currentView: "garage",
   garage: {
-    cars: [] as Car[],
+    cars: [],
     page: 1,
     total: 0,
     selectedColor: "#ff0000",
-    editingCarId: undefined as number | undefined,
+    editingCarId: undefined,
     editName: "",
     editColor: "#ff0000",
     createCarName: "",
   },
   winners: {
-    winners: [] as Winner[],
+    winners: [],
     page: 1,
     total: 0,
-    sortBy: "wins" as SortConfig["sortBy"],
-    sortOrder: "desc" as SortConfig["sortOrder"],
+    sortBy: "wins",
+    sortOrder: "desc",
   },
   race: {
     isRacing: false,
-    carRaces: {} as Record<number, CarRace>,
+    carRaces: {},
     animationId: 0,
-    drivingCars: {} as Record<number, DrivingCar>,
+    drivingCars: {},
     driveAnimationId: 0,
     winnerAnnounced: false,
   },
