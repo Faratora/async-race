@@ -107,6 +107,7 @@ function renderAddCarForm(app: Element): void {
   addForm.className = "add-car-form";
   addForm.innerHTML = `
     <input type="text" id="car-name" placeholder="Car name" value="${escapeHtml(state.garage.createCarName)}" class="form-control" style="width: 200px;">
+    <input type="color" id="car-color" value="${state.garage.selectedColor}" class="form-control form-control-color">
     <button class="btn btn-primary" id="btn-create">Create</button>
     <button class="btn btn-generate" id="btn-generate">Generate 100 Cars</button>
   `;
@@ -114,6 +115,12 @@ function renderAddCarForm(app: Element): void {
   if (nameInput) {
     nameInput.addEventListener("input", () => {
       state.garage.createCarName = nameInput.value;
+    });
+  }
+  const colorInput = addForm.querySelector("#car-color") as HTMLInputElement | null;
+  if (colorInput) {
+    colorInput.addEventListener("input", () => {
+      state.garage.selectedColor = colorInput.value;
     });
   }
   app.append(addForm);
@@ -159,6 +166,9 @@ function renderCarCards(app: Element): void {
     if (state.garage.editingCarId !== undefined && state.garage.editingCarId === Number(car.id)) {
       card.classList.add("selected");
     }
+    const carId = Number(car.id);
+    const isDriving = carId in state.race.drivingCars ||
+      (state.race.isRacing && carId in state.race.carRaces && !state.race.carRaces[carId].finished);
     const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
     card.innerHTML = `
       <div class="car-card-top">
@@ -167,9 +177,9 @@ function renderCarCards(app: Element): void {
           <div class="car-name" data-action="edit" data-id="${car.id}">${escapeHtml(car.name)}</div>
         </div>
         <div class="car-actions">
-          <button class="btn btn-start-engine btn btn-sm" data-action="start" data-id="${car.id}">Start</button>
-          <button class="btn btn-stop-engine btn btn-sm" data-action="stop" data-id="${car.id}">Stop</button>
-          <button class="btn btn-outline-info btn btn-sm" data-action="select" data-id="${car.id}">Select</button>
+          <button class="btn btn-start-engine btn btn-sm" data-action="start" data-id="${car.id}" ${isDriving ? "disabled" : ""}>Start</button>
+          <button class="btn btn-stop-engine btn btn-sm" data-action="stop" data-id="${car.id}" ${!isDriving ? "disabled" : ""}>Stop</button>
+          <button class="btn btn-outline-info btn btn-sm" data-action="edit" data-id="${car.id}">Edit</button>
           <button class="btn btn-outline-danger btn btn-sm" data-action="remove" data-id="${car.id}">Remove</button>
         </div>
       </div>
@@ -183,6 +193,21 @@ function renderCarCards(app: Element): void {
       </div>
     `;
     app.append(card);
+  }
+  updateCarButtonStates();
+}
+
+function updateCarButtonStates(): void {
+  for (const car of state.garage.cars) {
+    const carId = Number(car.id);
+    const startBtn = document.querySelector(`.btn-start-engine[data-id="${CSS.escape(String(carId))}"]`) as HTMLButtonElement | null;
+    const stopBtn = document.querySelector(`.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`) as HTMLButtonElement | null;
+    if (!startBtn || !stopBtn) continue;
+
+    const isDriving = carId in state.race.drivingCars ||
+      (state.race.isRacing && carId in state.race.carRaces && !state.race.carRaces[carId].finished);
+    startBtn.disabled = isDriving;
+    stopBtn.disabled = !isDriving;
   }
 }
 
@@ -334,6 +359,7 @@ async function startRaceHandler(): Promise<void> {
     if (car) car.style.left = "0px";
   }
 
+  updateCarButtonStates();
   animateRace();
 }
 
@@ -362,6 +388,7 @@ function animateRace(): void {
       race.finished = true;
       race.time = elapsed / 1000;
       void driveCar(carId).catch((error) => console.error("Failed to drive car:", error));
+      updateCarButtonStates();
 
       const finishedTimes = Object.values(state.race.carRaces)
         .filter((r) => r.time !== undefined)
@@ -384,6 +411,7 @@ function animateRace(): void {
 
   if (isAllFinished) {
     state.race.isRacing = false;
+    updateCarButtonStates();
     return;
   }
 
@@ -416,7 +444,10 @@ function animateDriveCar(): void {
 
     if (progress >= 1) {
       delete state.race.drivingCars[carId];
-      void driveCar(carId).catch((error) => console.error("Failed to drive car:", error));
+      void driveCar(carId).catch((error) => {
+        console.error("Failed to drive car:", error);
+        updateCarButtonStates();
+      });
     }
   }
 
@@ -433,6 +464,8 @@ async function startDriveCar(carId: number): Promise<void> {
   const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`) as HTMLElement | null;
   if (carElement) carElement.style.left = "0px";
 
+  updateCarButtonStates();
+
   if (Object.keys(state.race.drivingCars).length === 1) {
     animateDriveCar();
   }
@@ -442,6 +475,7 @@ function stopDriveCar(carId: number): void {
   delete state.race.drivingCars[carId];
   const carElement = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`) as HTMLElement | null;
   if (carElement) carElement.style.left = "0px";
+  updateCarButtonStates();
 }
 
 async function resetRaceHandler(): Promise<void> {
@@ -461,6 +495,7 @@ async function resetRaceHandler(): Promise<void> {
   for (const emoji of document.querySelectorAll(".car")) {
     (emoji as HTMLElement).style.left = "0px";
   }
+  updateCarButtonStates();
 }
 
 // ============ EVENT DELEGATION ============
@@ -472,24 +507,24 @@ function setupEventDelegation(): void {
     const target = event.target as HTMLElement;
 
     const action = target.dataset.action;
-    if (["edit", "select", "remove", "start", "stop"].includes(action || "")) {
+    if (["edit", "remove", "start", "stop"].includes(action || "")) {
       const id = Number(target.dataset.id);
       if (Number.isNaN(id)) return;
 
       switch (action) {
-      case "edit":
-      case "select": {
+      case "remove": {
+        await deleteCar(id);
+        state.winners.winners = state.winners.winners.filter((w) => w.carId !== id);
+        await loadGarageCars();
+        renderGarage();
+        break;
+      }
+      case "edit": {
         const car = state.garage.cars.find((c) => c.id === id);
         if (!car) return;
         state.garage.editingCarId = id;
         state.garage.editName = car.name;
         state.garage.editColor = car.color;
-        renderGarage();
-        break;
-      }
-      case "remove": {
-        await deleteCar(id);
-        await loadGarageCars();
         renderGarage();
         break;
       }
@@ -511,7 +546,7 @@ function setupEventDelegation(): void {
     if (buttonCreate) {
       const name = state.garage.createCarName.trim();
       if (!name) return;
-      const color = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
+      const color = state.garage.selectedColor;
       await createCar({ name, color });
       state.garage.createCarName = "";
       state.garage.page = 1;

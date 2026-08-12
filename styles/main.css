@@ -350,3 +350,55 @@ body {
   font-weight: 600;
   text-align: center;
 }
+
+@media (max-width: 500px) {
+  .navbar {
+    padding: 8px 12px;
+  }
+
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  #app {
+    padding: 16px 12px;
+  }
+
+  .view-title {
+    font-size: 18px;
+  }
+
+  .car-card-top {
+    flex-wrap: wrap;
+  }
+
+  .car-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .btn-sm {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .car-card-bottom {
+    height: 60px;
+  }
+
+  .car {
+    width: 50px;
+    height: 26px;
+  }
+
+  .car-image {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .car-name {
+    font-size: 13px;
+  }
+}
