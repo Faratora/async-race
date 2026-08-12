@@ -338,6 +338,7 @@ async function startRaceHandler(): Promise<void> {
   if (winnerMsg) winnerMsg.remove();
 
   state.race.isRacing = true;
+  state.race.winnerAnnounced = false;
   await startRace(carIds);
 
   await Promise.all(carIds.map((id) => startEngine(id)));
@@ -390,11 +391,8 @@ function animateRace(): void {
       void driveCar(carId).catch((error) => console.error("Failed to drive car:", error));
       updateCarButtonStates();
 
-      const finishedTimes = Object.values(state.race.carRaces)
-        .filter((r) => r.time !== undefined)
-        .map((r) => r.time as number);
-
-      if (finishedTimes.length === 1 || race.time === Math.min(...finishedTimes)) {
+      if (!state.race.winnerAnnounced) {
+        state.race.winnerAnnounced = true;
         const car = state.garage.cars.find((c) => c.id === carId);
         if (car) {
           void recordWinner({
@@ -488,6 +486,7 @@ async function resetRaceHandler(): Promise<void> {
   state.race.isRacing = false;
   state.race.carRaces = {};
   state.race.drivingCars = {};
+  state.race.winnerAnnounced = false;
   const carIds = state.garage.cars.map((c) => c.id);
   if (carIds.length > 0) {
     await resetRace(carIds);

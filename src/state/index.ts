@@ -37,5 +37,6 @@ export const state = {
     animationId: 0,
     drivingCars: {} as Record<number, DrivingCar>,
     driveAnimationId: 0,
+    winnerAnnounced: false,
   },
 };
