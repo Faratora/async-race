@@ -165,7 +165,9 @@ function renderRaceControls(app: HTMLElement): void {
 function createCarCard(car: Car): HTMLElement {
   const carId = Number(car.id);
   const isDriving = Object.hasOwn(state.race.drivingCars, carId) ||
-    (state.race.isRacing && Object.hasOwn(state.race.carRaces, carId) && !state.race.carRaces[carId].finished);
+    (state.race.isRacing && Object.hasOwn(state.race.carRaces, carId) && !state.race.carRaces[carId].finished && !state.race.carRaces[carId].broken);
+  const isFinished = Object.hasOwn(state.race.carRaces, carId) &&
+    (state.race.carRaces[carId].finished || state.race.carRaces[carId].broken);
   const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
 
   const card = element("div", { class: "car-card" });
@@ -177,20 +179,21 @@ function createCarCard(car: Car): HTMLElement {
   const carName = element("div", { class: "car-name", dataAction: "select", dataId: String(car.id) }, escapeHtml(car.name));
   const carInfo = element("div", { class: "car-info" }, carName);
 
-  const startButton = element("button", { class: "btn btn-start-engine btn btn-sm", dataAction: "start", dataId: String(car.id), disabled: isDriving ? true : undefined }, "Start");
-  const stopButton = element("button", { class: "btn btn-stop-engine btn btn-sm", dataAction: "stop", dataId: String(car.id), disabled: isDriving ? undefined : true }, "Stop");
+  const startButton = element("button", { class: "btn btn-start-engine btn btn-sm", dataAction: "start", dataId: String(car.id), disabled: isDriving ? true : undefined }, "A");
+  const stopButton = element("button", { class: "btn btn-stop-engine btn btn-sm", dataAction: "stop", dataId: String(car.id), disabled: isFinished ? undefined : true }, "B");
   const editButton = element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "select", dataId: String(car.id) }, "Select");
   const removeButton = element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove");
-  const actions = element("div", { class: "car-actions" }, startButton, stopButton, editButton, removeButton);
+  const actions = element("div", { class: "car-actions" }, editButton, removeButton);
 
-  const top = element("div", { class: "car-card-top" }, carImage, carInfo, actions);
+  const top = element("div", { class: "car-card-top" }, actions, carImage, carInfo);
 
   const roadLine = element("div", { class: "car-road-line" });
   const roadFinish = element("div", { class: "car-road-finish" });
   const roadFlag = element("div", { class: "car-flag" });
   const carElement = element("div", { class: "car", style: `background-color: ${car.color}` });
   const road = element("div", { class: "car-road", dataId: String(car.id) }, roadLine, roadFinish, roadFlag, carElement);
-  const bottom = element("div", { class: "car-card-bottom" }, road);
+  const startStopButtons = element("div", { class: "car-start-stop" }, startButton, stopButton);
+  const bottom = element("div", { class: "car-card-bottom" }, road, startStopButtons);
 
   card.append(top, bottom);
   return card;
@@ -216,9 +219,11 @@ function updateCarButtonStates(): void {
     if (!(startButton instanceof HTMLButtonElement) || !(stopButton instanceof HTMLButtonElement)) continue;
 
     const isDriving = Object.hasOwn(state.race.drivingCars, carId) ||
-      (state.race.isRacing && Object.hasOwn(state.race.carRaces, carId) && !state.race.carRaces[carId].finished);
+      (state.race.isRacing && Object.hasOwn(state.race.carRaces, carId) && !state.race.carRaces[carId].finished && !state.race.carRaces[carId].broken);
+    const isFinished = Object.hasOwn(state.race.carRaces, carId) &&
+      (state.race.carRaces[carId].finished || state.race.carRaces[carId].broken);
     startButton.disabled = isDriving;
-    stopButton.disabled = !isDriving;
+    stopButton.disabled = !isFinished;
   }
 }
 
@@ -234,9 +239,9 @@ function renderEmptyGarageMessage(app: HTMLElement): void {
 function renderGaragePagination(app: HTMLElement, totalPages: number): void {
   if (totalPages <= 1) return;
   const pagination = element("div", { class: "pagination-controls" },
-    element("button", { class: "btn btn-secondary", id: "btn-prev", disabled: state.garage.page <= 1 ? true : undefined }, "Previous"),
+    element("button", { class: "btn btn-secondary", id: "btn-prev", disabled: state.garage.page <= 1 || state.race.isRacing ? true : undefined }, "Previous"),
     element("span", undefined, `Page ${state.garage.page} of ${totalPages}`),
-    element("button", { class: "btn btn-secondary", id: "btn-next", disabled: state.garage.page >= totalPages ? true : undefined }, "Next"),
+    element("button", { class: "btn btn-secondary", id: "btn-next", disabled: state.garage.page >= totalPages || state.race.isRacing ? true : undefined }, "Next"),
   );
   app.append(pagination);
 }
@@ -437,7 +442,7 @@ function animateCarRace(carIdString: string, race: CarRace): void {
 
   // Car is broken — stop it
   if (race.broken) {
-    car.style.opacity = "0.3";
+    car.classList.add("broken");
     return;
   }
 
@@ -450,10 +455,10 @@ function animateCarRace(carIdString: string, race: CarRace): void {
 
   car.style.transform = `translateX(${left}px)`;
 
-  // Random chance to break down (~0.3% per frame)
-  if (Math.random() < 0.003 && progress < 0.95) {
+  // Random chance to break down (~1% per frame)
+  if (Math.random() < 0.01) {
     race.broken = true;
-    car.style.opacity = "0.3";
+    car.classList.add("broken");
     console.log(`🔧 Car ${carId} broke down at ${Math.round(progress * 100)}%`);
     return;
   }
@@ -464,6 +469,7 @@ function animateCarRace(carIdString: string, race: CarRace): void {
 }
 
 function handleCarFinish(carId: number, race: CarRace, elapsed: number): void {
+  if (race.broken) return;
   race.finished = true;
   race.time = elapsed / 1000 * 10;
   void driveCar(carId).catch((error) => console.error("Failed to drive car:", error));
@@ -666,12 +672,14 @@ function handleCancelEditButton(): void {
 }
 
 function handlePreviousButton(): void {
+  if (state.race.isRacing) return;
   if (state.garage.page <= 1) return;
   state.garage.page--;
   void loadGarageCars().then(() => renderGarage());
 }
 
 function handleNextButton(): void {
+  if (state.race.isRacing) return;
   const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE);
   if (state.garage.page >= totalPages) return;
   state.garage.page++;
