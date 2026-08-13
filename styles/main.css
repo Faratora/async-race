@@ -322,7 +322,7 @@ body {
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 50px 50px 1fr 80px 100px;
+  grid-template-columns: 80px 80px 1fr 80px 100px;
   gap: 8px;
   align-items: center;
   padding: 8px 12px;
@@ -363,81 +363,7 @@ body {
   mask: url('/img/car.svg') 50% / contain no-repeat;
 }
 
-.table-header {
-  font-weight: 600;
-  color: #fff;
-  background-color: #4a90d9;
-  border-radius: 8px 8px 0 0;
-  font-size: 15px;
-}
 
-.table-row {
-  background-color: #000;
-  color: #e0e0e0;
-  font-size: 15px;
-}
-
-.table-row:last-child {
-  border-bottom: none;
-  border-radius: 0 0 8px 8px;
-}
-
-.table-header {
-  font-weight: 600;
-  color: #fff;
-  background-color: #4a90d9;
-  border-radius: 8px 8px 0 0;
-  font-size: 15px;
-}
-
-.table-row {
-  background-color: #000;
-  color: #e0e0e0;
-  font-size: 15px;
-}
-
-.table-row:last-child {
-  border-bottom: none;
-  border-radius: 0 0 8px 8px;
-}
-
-.table-header {
-  font-weight: 600;
-  color: #fff;
-  background-color: #4a90d9;
-  border-radius: 8px 8px 0 0;
-  font-size: 15px;
-}
-
-.table-row {
-  background-color: #000;
-  color: #e0e0e0;
-  font-size: 15px;
-}
-
-.table-row:last-child {
-  border-bottom: none;
-  border-radius: 0 0 8px 8px;
-}
-
-.table-header {
-  font-weight: 600;
-  color: #fff;
-  background-color: #4a90d9;
-  border-radius: 8px 8px 0 0;
-  font-size: 15px;
-}
-
-.table-row {
-  background-color: #000;
-  color: #e0e0e0;
-  font-size: 15px;
-}
-
-.table-row:last-child {
-  border-bottom: none;
-  border-radius: 0 0 8px 8px;
-}
 
 .winner-message {
   background-color: #28a745;

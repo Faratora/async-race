@@ -174,12 +174,12 @@ function createCarCard(car: Car): HTMLElement {
   }
 
   const carImage = element("div", { class: "car-image", style: `background-color: ${car.color}` }, initial);
-  const carName = element("div", { class: "car-name", dataAction: "edit", dataId: String(car.id) }, escapeHtml(car.name));
+  const carName = element("div", { class: "car-name", dataAction: "select", dataId: String(car.id) }, escapeHtml(car.name));
   const carInfo = element("div", { class: "car-info" }, carName);
 
   const startButton = element("button", { class: "btn btn-start-engine btn btn-sm", dataAction: "start", dataId: String(car.id), disabled: isDriving ? true : undefined }, "Start");
   const stopButton = element("button", { class: "btn btn-stop-engine btn btn-sm", dataAction: "stop", dataId: String(car.id), disabled: isDriving ? undefined : true }, "Stop");
-  const editButton = element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "edit", dataId: String(car.id) }, "Edit");
+  const editButton = element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "select", dataId: String(car.id) }, "Select");
   const removeButton = element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove");
   const actions = element("div", { class: "car-actions" }, startButton, stopButton, editButton, removeButton);
 
@@ -295,7 +295,7 @@ function createWinnerRow(winner: Winner, index: number): HTMLElement {
 function renderWinnersTable(app: HTMLElement): void {
   const table = element("div");
   const thead = element("div", { class: "table-header" },
-    element("span", undefined, "Num"),
+    element("span", undefined, "Number"),
     element("span", undefined, "Car"),
     element("span", undefined, "Name"),
     element("span", undefined, "Wins"),
@@ -315,7 +315,6 @@ function renderWinnersTable(app: HTMLElement): void {
 }
 
 function renderWinnersPagination(app: HTMLElement, totalPages: number): void {
-  if (totalPages <= 1) return;
   const pagination = element("div", { class: "pagination-controls" },
     element("button", { class: "btn btn-secondary", id: "btn-prev-winners", disabled: state.winners.page <= 1 ? true : undefined }, "Previous"),
     element("span", undefined, `Page ${state.winners.page} of ${totalPages}`),
@@ -580,7 +579,7 @@ function handleCarAction(action: string | undefined, id: number): void {
     });
     break;
   }
-  case "edit": {
+  case "select": {
     const car = state.garage.cars.find((c) => c.id === id);
     if (!car) return;
     state.garage.editingCarId = id;
@@ -703,7 +702,7 @@ function handleAppClick(event: MouseEvent): void {
   if (!(target instanceof HTMLElement)) return;
 
   const action = target.dataset.action;
-  if (action && ["edit", "remove", "start", "stop"].includes(action)) {
+  if (action && ["select", "remove", "start", "stop"].includes(action)) {
     const id = Number(target.dataset.id);
     if (!Number.isNaN(id)) {
       handleCarAction(action, id);
