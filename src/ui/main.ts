@@ -355,6 +355,7 @@ async function startRaceHandler(): Promise<void> {
       startTime: now,
       velocity: velocities[index],
       finished: false,
+      broken: false,
       time: undefined,
     };
   }
@@ -434,6 +435,12 @@ function animateCarRace(carIdString: string, race: CarRace): void {
   const car = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`);
   if (!(car instanceof HTMLElement)) return;
 
+  // Car is broken — stop it
+  if (race.broken) {
+    car.style.opacity = "0.3";
+    return;
+  }
+
   const road = car.parentElement;
   if (!(road instanceof HTMLElement)) return;
   const trackWidth = road.offsetWidth - TRACK_PADDING;
@@ -443,6 +450,14 @@ function animateCarRace(carIdString: string, race: CarRace): void {
 
   car.style.transform = `translateX(${left}px)`;
 
+  // Random chance to break down (~0.3% per frame)
+  if (Math.random() < 0.003 && progress < 0.95) {
+    race.broken = true;
+    car.style.opacity = "0.3";
+    console.log(`🔧 Car ${carId} broke down at ${Math.round(progress * 100)}%`);
+    return;
+  }
+
   if (left >= trackWidth) {
     handleCarFinish(carId, race, elapsed);
   }
@@ -450,7 +465,7 @@ function animateCarRace(carIdString: string, race: CarRace): void {
 
 function handleCarFinish(carId: number, race: CarRace, elapsed: number): void {
   race.finished = true;
-  race.time = elapsed / 1000;
+  race.time = elapsed / 1000 * 10;
   void driveCar(carId).catch((error) => console.error("Failed to drive car:", error));
   updateCarButtonStates();
 

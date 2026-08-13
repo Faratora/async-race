@@ -11,10 +11,14 @@ const mockServer = spawn('npx', ['tsx', 'server/mock-server.ts'], {
   cwd: root,
   shell: true,
 });
-const vite = spawn('vite', [], { stdio: 'inherit', shell: true });
+
+// Wait a moment for the mock server to be ready
+setTimeout(() => {
+  const vite = spawn('vite', [], { stdio: 'inherit', shell: true });
+  vite.on('close', (code) => process.exit(code));
+}, 1500);
 
 mockServer.on('close', (code) => process.exit(code));
-vite.on('close', (code) => process.exit(code));
 
 process.on('SIGINT', () => {
   mockServer.kill();

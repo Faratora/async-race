@@ -54,6 +54,7 @@ export interface CarRace {
   startTime: number;
   velocity: number;
   finished: boolean;
+  broken: boolean;
   time: number | undefined;
 }
 
