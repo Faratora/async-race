@@ -166,6 +166,7 @@ function createCarCard(car: Car): HTMLElement {
   const carId = Number(car.id);
   const isDriving = Object.hasOwn(state.race.drivingCars, carId) ||
     (state.race.isRacing && Object.hasOwn(state.race.carRaces, carId) && !state.race.carRaces[carId].finished && !state.race.carRaces[carId].broken);
+  const isBroken = Object.hasOwn(state.race.carRaces, carId) && state.race.carRaces[carId].broken;
   const isFinished = Object.hasOwn(state.race.carRaces, carId) &&
     (state.race.carRaces[carId].finished || state.race.carRaces[carId].broken);
   const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
@@ -179,7 +180,7 @@ function createCarCard(car: Car): HTMLElement {
   const carName = element("div", { class: "car-name", dataAction: "select", dataId: String(car.id) }, escapeHtml(car.name));
   const carInfo = element("div", { class: "car-info" }, carName);
 
-  const startButton = element("button", { class: "btn btn-start-engine btn btn-sm", dataAction: "start", dataId: String(car.id), disabled: isDriving ? true : undefined }, "A");
+  const startButton = element("button", { class: "btn btn-start-engine btn btn-sm", dataAction: "start", dataId: String(car.id), disabled: isDriving || isBroken ? true : undefined }, "A");
   const stopButton = element("button", { class: "btn btn-stop-engine btn btn-sm", dataAction: "stop", dataId: String(car.id), disabled: isDriving || isFinished ? undefined : true }, "B");
   const editButton = element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "select", dataId: String(car.id) }, "Select");
   const removeButton = element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove");
@@ -220,9 +221,10 @@ function updateCarButtonStates(): void {
 
     const isDriving = Object.hasOwn(state.race.drivingCars, carId) ||
       (state.race.isRacing && Object.hasOwn(state.race.carRaces, carId) && !state.race.carRaces[carId].finished && !state.race.carRaces[carId].broken);
+    const isBroken = Object.hasOwn(state.race.carRaces, carId) && state.race.carRaces[carId].broken;
     const isFinished = Object.hasOwn(state.race.carRaces, carId) &&
       (state.race.carRaces[carId].finished || state.race.carRaces[carId].broken);
-    startButton.disabled = isDriving;
+    startButton.disabled = isDriving || isBroken;
     stopButton.disabled = !isDriving && !isFinished;
   }
 }
@@ -471,7 +473,14 @@ function animateCarRace(carIdString: string, race: CarRace): void {
 function handleCarFinish(carId: number, race: CarRace, elapsed: number): void {
   if (race.broken) return;
   race.finished = true;
-  race.time = elapsed / 1000 * 10;
+    const road = document.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"]`);
+  if (road instanceof HTMLElement) {
+    const trackWidth = road.offsetWidth - TRACK_PADDING;
+    race.time = trackWidth / race.velocity; 
+  } else {
+    race.time = elapsed / 1000;
+  }
+  
   void driveCar(carId).catch((error) => console.error("Failed to drive car:", error));
   updateCarButtonStates();
 
@@ -518,7 +527,9 @@ function animateDriveCar(): void {
 
     if (progress >= 1) {
       delete state.race.drivingCars[carId];
-      void driveCar(carId).catch((error) => {
+      void driveCar(carId).then(() => {
+        updateCarButtonStates();
+      }).catch((error) => {
         console.error("Failed to drive car:", error);
         updateCarButtonStates();
       });

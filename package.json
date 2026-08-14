@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "server": "tsx server/mock-server.ts",
+    "start": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint src/"
   },
@@ -27,10 +28,11 @@
     "@types/node": "^26.1.2",
     "@typescript-eslint/eslint-plugin": "^8.66.0",
     "@typescript-eslint/parser": "^8.66.0",
+    "concurrently": "^10.0.4",
     "eslint": "^10.8.0",
     "eslint-plugin-unicorn": "^73.0.0",
     "globals": "^17.9.0",
-    "tsx": "^4.23.11",
+    "tsx": "^4.23.12",
     "typescript": "^7.0.2",
     "vite": "^8.2.1"
   },
