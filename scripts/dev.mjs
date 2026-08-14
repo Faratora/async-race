@@ -12,15 +12,22 @@ const mockServer = spawn('npx', ['tsx', 'server/mock-server.ts'], {
   shell: true,
 });
 
+let vite = null;
+
 // Wait a moment for the mock server to be ready
 setTimeout(() => {
-  const vite = spawn('vite', [], { stdio: 'inherit', shell: true });
-  vite.on('close', (code) => process.exit(code));
+  vite = spawn('vite', [], { 
+    stdio: 'inherit', 
+    shell: true 
+  });
+  
+  vite.on('close', (code) => {
+    mockServer.kill();
+    process.exit(code);
+  });
 }, 1500);
 
-mockServer.on('close', (code) => process.exit(code));
-
-process.on('SIGINT', () => {
-  mockServer.kill();
-  vite.kill();
+mockServer.on('close', (code) => {
+  if (vite) vite.kill();
+  process.exit(code);
 });

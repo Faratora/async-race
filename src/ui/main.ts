@@ -455,8 +455,8 @@ function animateCarRace(carIdString: string, race: CarRace): void {
 
   car.style.transform = `translateX(${left}px)`;
 
-  // Random chance to break down (~1% per frame)
-  if (Math.random() < 0.01) {
+  // Random chance to break down (~0.1% per frame)
+  if (Math.random() < 0.001) {
     race.broken = true;
     car.classList.add("broken");
     console.log(`🔧 Car ${carId} broke down at ${Math.round(progress * 100)}%`);
