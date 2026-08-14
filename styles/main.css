@@ -340,7 +340,7 @@ body {
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 80px 80px 1fr 80px 100px;
+  grid-template-columns: 80px 80px 1fr 80px 130px;
   gap: 8px;
   align-items: center;
   padding: 8px 12px;
@@ -359,6 +359,16 @@ body {
   background-color: #000;
   color: #e0e0e0;
   font-size: 15px;
+}
+
+.table-header-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.table-header-sortable:hover {
+  text-decoration: underline;
+  opacity: 0.85;
 }
 
 .table-row:last-child {

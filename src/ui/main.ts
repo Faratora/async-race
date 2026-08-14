@@ -260,7 +260,6 @@ async function renderWinners(): Promise<void> {
   const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
 
   renderWinnersHeader(app, totalPages);
-  renderSortControls(app);
   renderWinnersTable(app);
   renderWinnersPagination(app, totalPages);
 }
@@ -273,17 +272,6 @@ function renderWinnersHeader(app: HTMLElement, totalPages: number): void {
     <span class="view-info">Page ${state.winners.page} / ${totalPages} (${state.winners.total} winners)</span>
   `;
   app.append(header);
-}
-
-function renderSortControls(app: HTMLElement): void {
-  const sortControls = element("div", { class: "sort-controls" },
-    element("span", undefined, "Sort by:"),
-    element("button", { class: `btn btn-sm ${state.winners.sortBy === "wins" ? "btn-primary" : "btn-secondary"}`, dataSort: "wins" }, "Wins"),
-    element("button", { class: `btn btn-sm ${state.winners.sortBy === "bestTime" ? "btn-primary" : "btn-secondary"}`, dataSort: "bestTime" }, "Best Time"),
-    element("button", { class: `btn btn-sm ${state.winners.sortOrder === "asc" ? "btn-primary" : "btn-secondary"}`, dataSortOrder: "asc" }, "Asc"),
-    element("button", { class: `btn btn-sm ${state.winners.sortOrder === "desc" ? "btn-primary" : "btn-secondary"}`, dataSortOrder: "desc" }, "Desc"),
-  );
-  app.append(sortControls);
 }
 
 function createWinnerRow(winner: Winner, index: number): HTMLElement {
@@ -304,9 +292,9 @@ function renderWinnersTable(app: HTMLElement): void {
   const thead = element("div", { class: "table-header" },
     element("span", undefined, "Number"),
     element("span", undefined, "Car"),
-    element("span", undefined, "Name"),
-    element("span", undefined, "Wins"),
-    element("span", undefined, "Best time (sec)"),
+    element("span", { class: "table-header-sortable", dataSort: "name" }, "Name " + (state.winners.sortBy === "name" ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : "")),
+    element("span", { class: "table-header-sortable", dataSort: "wins" }, "Wins " + (state.winners.sortBy === "wins" ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : "")),
+    element("span", { class: "table-header-sortable", dataSort: "bestTime" }, "Best time (sec) " + (state.winners.sortBy === "bestTime" ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : "")),
   );
   table.append(thead);
 
@@ -793,7 +781,14 @@ function handleAppClick(event: MouseEvent): void {
 
   const sortBy = target.dataset.sort;
   if (isSortBy(sortBy)) {
-    handleSortBy(sortBy);
+    if (state.winners.sortBy === sortBy) {
+      state.winners.sortOrder = state.winners.sortOrder === "asc" ? "desc" : "asc";
+    } else {
+      state.winners.sortBy = sortBy;
+      state.winners.sortOrder = "desc";
+    }
+    state.winners.page = 1;
+    renderWinners();
     return;
   }
 
@@ -820,7 +815,7 @@ function isViewName(value: string | null | undefined): value is ViewName {
 }
 
 function isSortBy(value: string | null | undefined): value is SortConfig["sortBy"] {
-  return value === "wins" || value === "bestTime";
+  return value === "wins" || value === "bestTime" || value === "name";
 }
 
 function isSortOrder(value: string | null | undefined): value is SortConfig["sortOrder"] {

@@ -18,7 +18,7 @@ export type EngineState = "idle" | "starting" | "driving" | "stopping";
 export type ViewName = "garage" | "winners";
 
 export interface SortConfig {
-  sortBy: "wins" | "bestTime";
+  sortBy: "wins" | "bestTime" | "name";
   sortOrder: "asc" | "desc";
 }
 

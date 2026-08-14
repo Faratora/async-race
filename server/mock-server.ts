@@ -218,8 +218,17 @@ app.get("/api/winners", (req: express.Request, res: express.Response): void => {
   const sortBy: string = req.query.sortBy ? String(req.query.sortBy) : "wins";
   const sortOrder: string = req.query.sortOrder ? String(req.query.sortOrder) : "desc";
   const sorted: Winner[] = [...winners].sort((a: Winner, b: Winner): number => {
-    const valA: number = sortBy === "wins" ? a.wins : a.bestTime;
-    const valB: number = sortBy === "wins" ? b.wins : b.bestTime;
+    let valA: string | number, valB: string | number;
+    if (sortBy === "name") {
+      valA = a.carName.toLowerCase();
+      valB = b.carName.toLowerCase();
+      if (sortOrder === "asc") {
+        return String(valA).localeCompare(String(valB));
+      }
+      return String(valB).localeCompare(String(valA));
+    }
+    valA = sortBy === "wins" ? a.wins : a.bestTime;
+    valB = sortBy === "wins" ? b.wins : b.bestTime;
     if (sortOrder === "asc") {
       return valA - valB;
     }
