@@ -180,7 +180,7 @@ function createCarCard(car: Car): HTMLElement {
   const carInfo = element("div", { class: "car-info" }, carName);
 
   const startButton = element("button", { class: "btn btn-start-engine btn btn-sm", dataAction: "start", dataId: String(car.id), disabled: isDriving ? true : undefined }, "A");
-  const stopButton = element("button", { class: "btn btn-stop-engine btn btn-sm", dataAction: "stop", dataId: String(car.id), disabled: isFinished ? undefined : true }, "B");
+  const stopButton = element("button", { class: "btn btn-stop-engine btn btn-sm", dataAction: "stop", dataId: String(car.id), disabled: isDriving || isFinished ? undefined : true }, "B");
   const editButton = element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "select", dataId: String(car.id) }, "Select");
   const removeButton = element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove");
   const actions = element("div", { class: "car-actions" }, editButton, removeButton);
@@ -223,7 +223,7 @@ function updateCarButtonStates(): void {
     const isFinished = Object.hasOwn(state.race.carRaces, carId) &&
       (state.race.carRaces[carId].finished || state.race.carRaces[carId].broken);
     startButton.disabled = isDriving;
-    stopButton.disabled = !isFinished;
+    stopButton.disabled = !isDriving && !isFinished;
   }
 }
 
@@ -312,8 +312,8 @@ function renderWinnersTable(app: HTMLElement): void {
     const emptyRow = element("div", { class: "table-row", style: "grid-column: 1 / -1; text-align: center;" }, "No winners yet. Start a race!");
     table.append(emptyRow);
   } else {
-    for (let i = 0; i < state.winners.winners.length; i++) {
-      table.append(createWinnerRow(state.winners.winners[i], i));
+    for (let index = 0; index < state.winners.winners.length; index++) {
+      table.append(createWinnerRow(state.winners.winners[index], index));
     }
   }
   app.append(table);
