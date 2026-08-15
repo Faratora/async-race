@@ -1,13 +1,16 @@
 import express from "express";
 import cors from "cors";
 
-const app: express.Application = express();
+const app: express.Express = express();
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.ALLOWED_ORIGINS?.split(',') || []
+    : "http://localhost:5173",
   credentials: true,
 }));
 app.use(express.json());
 
+// ============ ИНТЕРФЕЙСЫ ============
 interface Car {
   id: number;
   name: string;
@@ -23,240 +26,470 @@ interface Winner {
   bestTime: number;
 }
 
-let cars: Car[] = [];
-let winners: Winner[] = [];
-let nextCarId: number = 1;
-let nextWinnerId: number = 1;
+// ============ КОНСТАНТЫ ============
+const CONSTANTS = {
+  COLOR_MAX: 256,
+  SPAM_LIMIT_START: 50,
+  SPAM_LIMIT_DRIVE: 30,
+  ERROR_PROBABILITY: 0.05,
+  DEFAULT_CARS_LIMIT: 7,
+  DEFAULT_WINNERS_LIMIT: 10,
+  VELOCITY_MIN: 0.4,
+  VELOCITY_MAX: 1.1,
+  SERVER_PORT: 3001,
+  SERVER_HOST: "127.0.0.1",
+  // HTTP статусы
+  HTTP_OK: 200,
+  HTTP_CREATED: 201,
+  HTTP_BAD_REQUEST: 400,
+  HTTP_NOT_FOUND: 404,
+  HTTP_TOO_MANY_REQUESTS: 429,
+  HTTP_INTERNAL_SERVER_ERROR: 500,
+} as const;
 
-const firstParts: string[] = [
-  "Tesla", "Ford", "BMW", "Audi", "Porsche",
-  "Lamborghini", "Ferrari", "McLaren", "Chevrolet", "Dodge",
-  "Nissan", "Toyota", "Honda", "Mercedes", "Volkswagen",
-  "Jaguar", "Bentley", "Maserati", "Alfa Romeo", "Volvo",
-];
+const CAR_NAMES = {
+  firstParts: ["Tesla", "Ford", "BMW", "Audi", "Porsche", "Lamborghini", 
+  "Ferrari", "McLaren", "Chevrolet", "Dodge", "Nissan", "Toyota", 
+  "Honda", "Mercedes", "Volkswagen", "Jaguar", "Bentley", "Maserati", 
+  "Alfa Romeo", "Volvo"],
+  secondParts: ["Model S", "Mustang", "M3", "RS6", "911", "Huracan", 
+  "F8", "720S", "Camaro", "Challenger", "GT-R", "Supra", "Civic", 
+  "AMG", "Golf", "F-Type", "Continental", "Ghibli", "Giulia", "XC90"]
+} as const;
 
-const secondParts: string[] = [
-  "Model S", "Mustang", "M3", "RS6", "911",
-  "Huracan", "F8", "720S", "Camaro", "Challenger",
-  "GT-R", "Supra", "Civic", "AMG", "Golf",
-  "F-Type", "Continental", "Ghibli", "Giulia", "XC90",
-];
+// ============ ХРАНИЛИЩЕ ДАННЫХ ============
+// Используем Map для O(1) доступа
+class DataStore {
+  private cars = new Map<number, Car>();
+  private winners = new Map<number, Winner>();
+  private carIdCounter = 1;
+  private winnerIdCounter = 1;
+  private spamCounter = 0;
+  private brokenCarId: number | null = null;
 
-const COLOR_MAX = 256;
-const SPAM_LIMIT_START = 50;
-const SPAM_LIMIT_DRIVE = 30;
-const ERROR_PROBABILITY = 0.05;
-const DEFAULT_CARS_LIMIT = 7;
-const DEFAULT_WINNERS_LIMIT = 10;
-const VELOCITY_MIN = 0.4;
-const VELOCITY_MAX = 1.1;
-const SERVER_PORT = 3001;
-const SERVER_HOST = "127.0.0.1";
-const HTTP_OK = 200;
-const HTTP_CREATED = 201;
-const HTTP_BAD_REQUEST = 400;
-const HTTP_NOT_FOUND = 404;
-const HTTP_TOO_MANY_REQUESTS = 429;
-const HTTP_INTERNAL_SERVER_ERROR = 500;
+  // ===== CAR METHODS =====
+  getCars(): Car[] {
+    return Array.from(this.cars.values());
+  }
 
-function randomColor(): string {
-  const r: number = Math.floor(Math.random() * COLOR_MAX);
-  const g: number = Math.floor(Math.random() * COLOR_MAX);
-  const b: number = Math.floor(Math.random() * COLOR_MAX);
-  return "#" + [r, g, b].map((c: number): string => c.toString(16).padStart(2, "0")).join("");
+  getCar(id: number): Car | undefined {
+    return this.cars.get(id);
+  }
+
+  addCar(name: string, color: string): Car {
+    const car: Car = { 
+      id: this.carIdCounter++, 
+      name: name.trim(), 
+      color: color.trim() 
+    };
+    this.cars.set(car.id, car);
+    return car;
+  }
+
+  addCars(count: number): Car[] {
+    const generated: Car[] = [];
+    for (let i = 0; i < count; i++) {
+      generated.push(this.addCar(
+        this.randomCarName(),
+        this.randomColor()
+      ));
+    }
+    return generated;
+  }
+
+  updateCar(id: number, name: string, color: string): Car | undefined {
+    const car = this.cars.get(id);
+    if (car) {
+      car.name = name.trim();
+      car.color = color.trim();
+      return car;
+    }
+    return undefined;
+  }
+
+  deleteCar(id: number): Car | undefined {
+  const car = this.cars.get(id);
+  if (car) {
+    this.cars.delete(id);
+    // Безопасное удаление
+    const winnerIdsToDelete: number[] = [];
+    for (const [winnerId, winner] of this.winners) {
+      if (winner.carId === id) {
+        winnerIdsToDelete.push(winnerId);
+      }
+    }
+    winnerIdsToDelete.forEach(wId => this.winners.delete(wId));
+    return car;
+  }
+  return undefined;
 }
 
-function randomCarName(): string {
-  const first: string = firstParts[Math.floor(Math.random() * firstParts.length)];
-  const second: string = secondParts[Math.floor(Math.random() * secondParts.length)];
-  return first + " " + second;
+  // ===== WINNER METHODS =====
+  getWinners(): Winner[] {
+    return Array.from(this.winners.values());
+  }
+
+  getWinnerByCarId(carId: number): Winner | undefined {
+    for (const winner of this.winners.values()) {
+      if (winner.carId === carId) {
+        return winner;
+      }
+    }
+    return undefined;
+  }
+
+  addOrUpdateWinner(carId: number, carName: string, carColor: string, time: number): Winner {
+    let winner = this.getWinnerByCarId(carId);
+    if (winner) {
+      winner.wins += 1;
+      if (time < winner.bestTime) {
+        winner.bestTime = time;
+      }
+      return winner;
+    }
+    const newWinner: Winner = {
+      id: this.winnerIdCounter++,
+      carId,
+      carName: carName.trim(),
+      carColor: carColor.trim(),
+      wins: 1,
+      bestTime: time,
+    };
+    this.winners.set(newWinner.id, newWinner);
+    return newWinner;
+  }
+
+  // ===== UTILITY METHODS =====
+  private randomColor(): string {
+    const r = Math.floor(Math.random() * CONSTANTS.COLOR_MAX);
+    const g = Math.floor(Math.random() * CONSTANTS.COLOR_MAX);
+    const b = Math.floor(Math.random() * CONSTANTS.COLOR_MAX);
+    return `#${[r, g, b].map(c => c.toString(16).padStart(2, "0")).join("")}`;
+  }
+
+  private randomCarName(): string {
+    const first = CAR_NAMES.firstParts[Math.floor(Math.random() * CAR_NAMES.firstParts.length)];
+    const second = CAR_NAMES.secondParts[Math.floor(Math.random() * CAR_NAMES.secondParts.length)];
+    return `${first} ${second}`;
+  }
+
+  // ===== SPAM CONTROL =====
+  incrementSpam(): number {
+    return ++this.spamCounter;
+  }
+
+  resetSpam(): void {
+    this.spamCounter = 0;
+  }
+
+  // ===== BROKEN CAR =====
+  setBrokenCarId(carId: number): void {
+    this.brokenCarId = carId;
+  }
+
+  getBrokenCarId(): number | null {
+    return this.brokenCarId;
+  }
+
+  clearBrokenCar(): void {
+    this.brokenCarId = null;
+  }
+
+  // ===== VALIDATION =====
+  isValidCarData(body: any): body is { name: string; color: string } {
+    return body && 
+      typeof body.name === 'string' && 
+      typeof body.color === 'string' &&
+      body.name.trim().length > 0 &&
+      body.color.trim().length > 0;
+  }
+
+  isValidWinnerData(body: any): body is { carId: number; carName: string; carColor: string; time: number } {
+    return body &&
+      typeof body.carId === 'number' &&
+      typeof body.carName === 'string' &&
+      typeof body.carColor === 'string' &&
+      typeof body.time === 'number' &&
+      body.time > 0;
+  }
 }
 
-let spamCounter: number = 0;
+const store = new DataStore();
 
+// ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ============
+function parsePagination(query: any): { page: number; limit: number } {
+  const page = query.page ? Math.max(1, parseInt(String(query.page), 10) || 1) : 1;
+  const limit = query.limit ? Math.max(1, parseInt(String(query.limit), 10) || CONSTANTS.DEFAULT_CARS_LIMIT) : CONSTANTS.DEFAULT_CARS_LIMIT;
+  return { page, limit };
+}
+
+function handleError(res: express.Response, status: number, message: string): void {
+  console.error(`[ERROR] ${status}: ${message}`);
+  res.status(status).json({ error: message });
+}
+
+function checkSpam(res: express.Response, limit: number): boolean {
+  const count = store.incrementSpam();
+  if (count % limit === 0) {
+    handleError(res, CONSTANTS.HTTP_TOO_MANY_REQUESTS, "Too many requests");
+    return true;
+  }
+  return false;
+}
+
+// ============ МАРШРУТЫ ============
+// ----- CARS -----
 app.get("/api/cars", (req: express.Request, res: express.Response): void => {
-  const page: number = req.query.page ? parseInt(String(req.query.page), 10) || 1 : 1;
-  const limit: number = req.query.limit ? parseInt(String(req.query.limit), 10) || DEFAULT_CARS_LIMIT : DEFAULT_CARS_LIMIT;
-  const start: number = (page - 1) * limit;
-  const end: number = start + limit;
-  const paginated: Car[] = cars.slice(start, end);
-  res.set("X-Total-Count", String(cars.length));
-  res.json({ cars: paginated });
+  try {
+    const { page, limit } = parsePagination(req.query);
+    const allCars = store.getCars();
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    const paginated = allCars.slice(start, end);
+    res.set("X-Total-Count", String(allCars.length));
+    res.json({ cars: paginated });
+  } catch (error) {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to fetch cars");
+  }
 });
 
 app.post("/api/cars", (req: express.Request, res: express.Response): void => {
   try {
-    const body: { name?: string; color?: string } = req.body || {};
-    if (!body.name || !body.color) {
-      res.status(HTTP_BAD_REQUEST).json({ error: "Missing name or color" });
+    const body = req.body;
+    if (!store.isValidCarData(body)) {
+      handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Missing or invalid name/color");
       return;
     }
-    const car: Car = { id: nextCarId++, name: body.name, color: body.color };
-    cars.push(car);
-    res.status(HTTP_CREATED).json(car);
-  } catch (err: unknown) {
-    console.error("Error creating car:", err);
-    res.status(HTTP_INTERNAL_SERVER_ERROR).json({ error: "Internal server error" });
+    const car = store.addCar(body.name, body.color);
+    res.status(CONSTANTS.HTTP_CREATED).json(car);
+  } catch (error) {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to create car");
   }
 });
 
 app.put("/api/cars/:id", (req: express.Request, res: express.Response): void => {
-  const id: number = parseInt(String(req.params.id), 10);
-  const body: { name: string; color: string } = req.body;
-  const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
-  if (car === undefined) {
-    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
-    return;
+  try {
+    const id = parseInt(String(req.params.id), 10);
+    if (isNaN(id)) {
+      handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid car ID");
+      return;
+    }
+    const body = req.body;
+    if (!store.isValidCarData(body)) {
+      handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Missing or invalid name/color");
+      return;
+    }
+    const car = store.updateCar(id, body.name, body.color);
+    if (!car) {
+      handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
+      return;
+    }
+    res.json(car);
+  } catch (error) {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to update car");
   }
-  car.name = body.name;
-  car.color = body.color;
-  res.json(car);
 });
 
 app.delete("/api/cars/:id", (req: express.Request, res: express.Response): void => {
-  const id: number = parseInt(String(req.params.id), 10);
-  const carIndex: number = cars.findIndex((c: Car): boolean => c.id === id);
-  if (carIndex === -1) {
-    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
-    return;
+  try {
+    const id = parseInt(String(req.params.id), 10);
+    if (isNaN(id)) {
+      handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid car ID");
+      return;
+    }
+    const car = store.deleteCar(id);
+    if (!car) {
+      handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
+      return;
+    }
+    res.json({ success: true, car });
+  } catch (error) {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to delete car");
   }
-  const [removed] = cars.splice(carIndex, 1);
-  winners = winners.filter((w: Winner): boolean => w.carId !== id);
-  res.json({ success: true, car: removed });
 });
 
 app.post("/api/cars/bulk", (req: express.Request, res: express.Response): void => {
-  const body: { count: number } = req.body;
-  const generated: Car[] = [];
-  for (let i: number = 0; i < body.count; i++) {
-    generated.push({
-      id: nextCarId++,
-      name: randomCarName(),
-      color: randomColor(),
-    });
+  try {
+    const count = typeof req.body?.count === 'number' ? req.body.count : 10;
+    const safeCount = Math.min(Math.max(1, count), 100);
+    const generated = store.addCars(safeCount);
+    res.status(CONSTANTS.HTTP_CREATED).json(generated);
+  } catch (error) {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to generate cars");
   }
-  cars.push(...generated);
-  res.status(HTTP_CREATED).json(generated);
 });
 
+// ----- CAR CONTROL -----
 app.post("/api/cars/:id/start", (req: express.Request, res: express.Response): void => {
-  spamCounter++;
-  if (spamCounter % SPAM_LIMIT_START === 0) {
-    res.status(HTTP_TOO_MANY_REQUESTS).json({ error: "Too many requests" });
-    return;
-  }
-  const id: number = parseInt(String(req.params.id), 10);
-  const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
-  if (car === undefined) {
-    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
+  if (checkSpam(res, CONSTANTS.SPAM_LIMIT_START)) return;
+  const id = parseInt(String(req.params.id), 10);
+  if (isNaN(id) || !store.getCar(id)) {
+    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
     return;
   }
   res.json({ status: "started" });
 });
 
 app.get("/api/cars/:id/velocity", (req: express.Request, res: express.Response): void => {
-  const id: number = parseInt(String(req.params.id), 10);
-  const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
-  if (car === undefined) {
-    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
+  const id = parseInt(String(req.params.id), 10);
+  if (isNaN(id) || !store.getCar(id)) {
+    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
     return;
   }
-  const velocity: number = VELOCITY_MIN + Math.random() * (VELOCITY_MAX - VELOCITY_MIN);
-  res.json({ velocity });
+  // Если машина сломана — возвращаем 500
+  if (store.getBrokenCarId() === id) {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Car broke down");
+    return;
+  }
+  const velocity = CONSTANTS.VELOCITY_MIN + Math.random() * (CONSTANTS.VELOCITY_MAX - CONSTANTS.VELOCITY_MIN);
+  res.json({ velocity: parseFloat(velocity.toFixed(2)) });
 });
 
 app.post("/api/cars/:id/drive", (req: express.Request, res: express.Response): void => {
-  spamCounter++;
-  if (spamCounter % SPAM_LIMIT_DRIVE === 0) {
-    res.status(HTTP_TOO_MANY_REQUESTS).json({ error: "Too many requests" });
+  if (checkSpam(res, CONSTANTS.SPAM_LIMIT_DRIVE)) return;
+  if (Math.random() < CONSTANTS.ERROR_PROBABILITY) {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Simulated server error");
     return;
   }
-  if (Math.random() < ERROR_PROBABILITY) {
-    res.status(HTTP_INTERNAL_SERVER_ERROR).json({ error: "Internal server error" });
-    return;
-  }
-  const id: number = parseInt(String(req.params.id), 10);
-  const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
-  if (car === undefined) {
-    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
+  const id = parseInt(String(req.params.id), 10);
+  if (isNaN(id) || !store.getCar(id)) {
+    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
     return;
   }
   res.json({ status: "driving" });
 });
 
 app.post("/api/cars/:id/stop", (req: express.Request, res: express.Response): void => {
-  const id: number = parseInt(String(req.params.id), 10);
-  const car: Car | undefined = cars.find((c: Car): boolean => c.id === id);
-  if (car === undefined) {
-    res.status(HTTP_NOT_FOUND).json({ error: "Car not found" });
+  const id = parseInt(String(req.params.id), 10);
+  if (isNaN(id) || !store.getCar(id)) {
+    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
     return;
   }
   res.json({ status: "stopped" });
 });
 
+// ----- RACE -----
 app.post("/api/race/start", (req: express.Request, res: express.Response): void => {
-  const body: { carIds?: number[] } = req.body;
-  if (!body.carIds || body.carIds.length === 0) {
-    res.status(HTTP_BAD_REQUEST).json({ error: "No carIds provided" });
+  const carIds = req.body?.carIds;
+  if (!Array.isArray(carIds) || carIds.length === 0) {
+    handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "No carIds provided");
     return;
   }
-  res.json({ status: "race_started", carCount: body.carIds.length });
+  
+  // Сбрасываем предыдущую поломку
+  store.clearBrokenCar();
+  
+  // Случайно выбираем одну машину для поломки (20% шанс)
+  if (Math.random() < 0.2 && carIds.length > 0) {
+    const randomIndex = Math.floor(Math.random() * carIds.length);
+    const brokenCarId = carIds[randomIndex];
+    store.setBrokenCarId(brokenCarId);
+    console.log(`🔧 Car ${brokenCarId} selected to break down during race`);
+  }
+  
+  res.json({ status: "race_started", carCount: carIds.length });
 });
 
 app.post("/api/race/reset", (req: express.Request, res: express.Response): void => {
-  const body: { carIds?: number[] } = req.body;
-  if (!body.carIds) {
-    res.status(HTTP_BAD_REQUEST).json({ error: "No carIds provided" });
+  const carIds = req.body?.carIds;
+  if (!Array.isArray(carIds)) {
+    handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid carIds");
     return;
   }
-  res.json({ status: "race_reset", carCount: body.carIds.length });
-});
 
+    // Сбрасываем поломку при сбросе гонки
+  store.clearBrokenCar();
+  console.log(`Race reset, broken car cleared`);
+  
+  res.json({ status: "race_reset", carCount: carIds.length });
+});
+// ----- WINNERS -----
 app.get("/api/winners", (req: express.Request, res: express.Response): void => {
-  const page: number = req.query.page ? parseInt(String(req.query.page), 10) || 1 : 1;
-  const limit: number = req.query.limit ? parseInt(String(req.query.limit), 10) || DEFAULT_WINNERS_LIMIT : DEFAULT_WINNERS_LIMIT;
-  const sortBy: string = req.query.sortBy ? String(req.query.sortBy) : "wins";
-  const sortOrder: string = req.query.sortOrder ? String(req.query.sortOrder) : "desc";
-  const sorted: Winner[] = [...winners].sort((a: Winner, b: Winner): number => {
-    let valA: string | number, valB: string | number;
-    if (sortBy === "name") {
-      valA = a.carName.toLowerCase();
-      valB = b.carName.toLowerCase();
-      if (sortOrder === "asc") {
-        return String(valA).localeCompare(String(valB));
+  try {
+    const { page, limit } = parsePagination(req.query);
+    const sortBy = String(req.query.sortBy || "wins");
+    const sortOrder = String(req.query.sortOrder || "desc");
+    let winners = store.getWinners();
+    
+    // Сортировка
+    winners.sort((a: Winner, b: Winner) => {
+      let valA: string | number, valB: string | number;
+      if (sortBy === "name") {
+        valA = a.carName.toLowerCase();
+        valB = b.carName.toLowerCase();
+        return sortOrder === "asc" 
+          ? String(valA).localeCompare(String(valB))
+          : String(valB).localeCompare(String(valA));
       }
-      return String(valB).localeCompare(String(valA));
-    }
-    valA = sortBy === "wins" ? a.wins : a.bestTime;
-    valB = sortBy === "wins" ? b.wins : b.bestTime;
-    if (sortOrder === "asc") {
-      return valA - valB;
-    }
-    return valB - valA;
-  });
-  const start: number = (page - 1) * limit;
-  const end: number = start + limit;
-  const paginated: Winner[] = sorted.slice(start, end);
-  res.set("X-Total-Count", String(sorted.length));
-  res.json({ winners: paginated });
+      valA = sortBy === "wins" ? a.wins : a.bestTime;
+      valB = sortBy === "wins" ? b.wins : b.bestTime;
+      return sortOrder === "asc" ? valA - valB : valB - valA;
+    });
+    
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    const paginated = winners.slice(start, end);
+    res.set("X-Total-Count", String(winners.length));
+    res.json({ winners: paginated });
+  } catch (error) {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to fetch winners");
+  }
 });
 
 app.post("/api/winners", (req: express.Request, res: express.Response): void => {
-  const body: { carId: number; carName: string; carColor: string; time: number } = req.body;
-  const existing: Winner | undefined = winners.find((w: Winner): boolean => w.carId === body.carId);
-  if (existing !== undefined) {
-    existing.wins += 1;
-    if (body.time < existing.bestTime) {
-      existing.bestTime = body.time;
+  try {
+    const body = req.body;
+    if (!store.isValidWinnerData(body)) {
+      handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid winner data");
+      return;
     }
-    res.json(existing);
-    return;
+    const winner = store.addOrUpdateWinner(
+      body.carId,
+      body.carName,
+      body.carColor,
+      body.time
+    );
+    res.json(winner);
+  } catch (error) {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to save winner");
   }
-  const winner: Winner = { id: nextWinnerId++, carId: body.carId, carName: body.carName, carColor: body.carColor, wins: 1, bestTime: body.time };
-  winners.push(winner);
-  res.status(HTTP_CREATED).json(winner);
 });
 
-app.listen(SERVER_PORT, SERVER_HOST, (): void => {
-  console.log("Mock server running on port " + SERVER_PORT);
+// ----- HEALTH CHECK -----
+app.get("/api/health", (req: express.Request, res: express.Response): void => {
+  res.json({
+    status: "ok",
+    cars: store.getCars().length,
+    winners: store.getWinners().length,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ============ ЗАПУСК СЕРВЕРА ============
+app.listen(CONSTANTS.SERVER_PORT, CONSTANTS.SERVER_HOST, () => {
+  console.log(`Server running at http://${CONSTANTS.SERVER_HOST}:${CONSTANTS.SERVER_PORT}`);
+  console.log(`Health check: http://${CONSTANTS.SERVER_HOST}:${CONSTANTS.SERVER_PORT}/api/health`);
+});
+
+// Сохраняем ссылку на сервер для graceful shutdown
+const server = app.listen(CONSTANTS.SERVER_PORT, CONSTANTS.SERVER_HOST, () => {
+  console.log(`Server running at http://${CONSTANTS.SERVER_HOST}:${CONSTANTS.SERVER_PORT}`);
+  console.log(`Health check: http://${CONSTANTS.SERVER_HOST}:${CONSTANTS.SERVER_PORT}/api/health`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, closing server...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, closing server...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });

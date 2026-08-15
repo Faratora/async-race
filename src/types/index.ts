@@ -56,6 +56,14 @@ export interface CarRace {
   finished: boolean;
   broken: boolean;
   time: number | undefined;
+  breakdownHistory?: {
+    count: number;
+    timestamps: number[];
+    positions: number[];
+    types: string[];
+  };
+  repairStartTime?: number;
+  isRepairing?: boolean;
 }
 
 export interface DrivingCar {
@@ -86,3 +94,4 @@ export const CARS_PER_PAGE = 7;
 export const WINNERS_PER_PAGE = 10;
 export const API_BASE = "/api";
 export const TRACK_PADDING = 65;
+export const FINISH_OFFSET = 75;
