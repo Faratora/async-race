@@ -16,7 +16,7 @@ import {
 
 import { state } from "../state/index.ts";
 
-import { switchView, renderGarage, renderWinners, loadGarageCars } from "./ui-manager.ts";
+import { renderGarage, renderWinners, loadGarageCars } from "./ui-manager.ts";
 import { startDriveCar, stopDriveCar, resetCarToStart, isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./race-engine.ts";
 
 // ============ ОБРАБОТЧИКИ СОБЫТИЙ ============

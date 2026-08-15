@@ -2,19 +2,13 @@ import {
   CARS_PER_PAGE,
   WINNERS_PER_PAGE,
   ViewName,
-  SortConfig,
   Car,
   Winner,
 } from "../types/index.ts";
 
 import {
   fetchCars,
-  createCar,
-  updateCar,
-  deleteCar,
-  generateCars,
-  fetchWinners,
-  recordWinner,
+  fetchWinners,  
 } from "../api/index.ts";
 
 import { state } from "../state/index.ts";

@@ -1,21 +1,15 @@
 import {
-  CARS_PER_PAGE,
-  WINNERS_PER_PAGE,
   TRACK_PADDING,
   FINISH_OFFSET,
   BREAKDOWN_CONFIG,
   getBreakdownChance,
   getBreakdownType,
-  triggerBreakdown,
-  showBreakdownNotification,
-  isCarBroken as isCarBrokenConfig,
 } from "../config/index.ts";
 
 import type { CarRace } from "../types/index.ts";
 
 import {
   startEngine,
-  stopEngine,
   getVelocity,
   driveCar,
   startRace,
@@ -108,10 +102,10 @@ export const showBreakdownMessage = (carId: number, type: string): void => {
   if (!(app instanceof HTMLElement)) return;
 
   const messages: Record<string, string> = {
-    engine_overheating: "🔥 Engine overheating!",
-    transmission_failure: "⚙️ Transmission failure!",
-    start_stall: "😤 Stalled at start!",
-    random_breakdown: "🔧 Random breakdown!",
+    engine_overheating: "Engine overheating!",
+    transmission_failure: "Transmission failure!",
+    start_stall: "Stalled at start!",
+    random_breakdown: "Random breakdown!",
   };
 
   const message = element(
@@ -120,7 +114,7 @@ export const showBreakdownMessage = (carId: number, type: string): void => {
       class: "breakdown-message",
       style: "position: fixed; top: 20px; right: 20px; background: #ff4444; color: white; padding: 10px; border-radius: 5px; z-index: 1000;",
     },
-    `${messages[type] ?? "💥 Breakdown!"} (Car ${carId})`
+    `${messages[type] ?? "Breakdown!"} (Car ${carId})`
   );
 
   app.append(message);
@@ -151,7 +145,7 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
       if (race.repairStartTime === undefined) {
         race.repairStartTime = performance.now();
         race.isRepairing = true;
-        console.log(`🔧 Starting repair for car ${carId}...`);
+        console.log(`Starting repair for car ${carId}...`);
         updateCarButtonStates();
         return;
       }
@@ -162,7 +156,7 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
         race.isRepairing = false;
         race.repairStartTime = undefined;
         car.classList.remove("broken");
-        console.log(`✅ Car ${carId} repaired!`);
+        console.log(`Car ${carId} repaired!`);
 
         const currentTransform = car.style.transform;
         const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
@@ -178,7 +172,7 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
       return;
     }
 
-    console.log(`💀 Car ${carId} is out of the race!`);
+    console.log(`Car ${carId} is out of the race!`);
     updateCarButtonStates();
     return;
   }
@@ -220,17 +214,17 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
     switch (breakdownType) {
       case "engine_overheating":
         car.style.transform = `translateX(${left}px) scale(1.1)`;
-        console.log(`🔥 Car ${carId} engine overheated at ${Math.round(progress * 100)}%!`);
+        console.log(`Car ${carId} engine overheated at ${Math.round(progress * 100)}%!`);
         break;
       case "transmission_failure":
         car.style.transform = `translateX(${left}px) rotate(5deg)`;
-        console.log(`⚙️ Car ${carId} transmission failed at ${Math.round(progress * 100)}%!`);
+        console.log(`Car ${carId} transmission failed at ${Math.round(progress * 100)}%!`);
         break;
       case "start_stall":
-        console.log(`😤 Car ${carId} stalled at start!`);
+        console.log(`Car ${carId} stalled at start!`);
         break;
       default:
-        console.log(`🔧 Car ${carId} broke down at ${Math.round(progress * 100)}%!`);
+        console.log(`Car ${carId} broke down at ${Math.round(progress * 100)}%!`);
     }
 
     showBreakdownMessage(carId, breakdownType);
