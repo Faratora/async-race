@@ -23,6 +23,15 @@ export {
   getBreakdownMessage,
   triggerBreakdown,
   resetBreakdown,
-  showBreakdownNotification,
-  isCarBroken,
 } from "./breakdown.ts";
+
+export type {
+  BreakdownType,
+  BreakdownHistory,
+  BreakdownEvent,
+} from "./breakdown.ts";
+
+export {
+  createBreakdownMessage,
+  showBreakdownNotification,
+} from "../ui/notifications.ts";

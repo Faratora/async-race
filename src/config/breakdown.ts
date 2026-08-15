@@ -100,38 +100,3 @@ export const resetBreakdown = (race: CarRace): void => {
   race.isRepairing = false;
   race.repairStartTime = undefined;
 };
-
-// ============ УВЕДОМЛЕНИЕ ============
-export const showBreakdownNotification = (carId: number, type: BreakdownType): void => {
-  const app = document.querySelector("#app");
-  if (!(app instanceof HTMLElement)) return;
-
-  const message = document.createElement("div");
-  message.className = "breakdown-notification";
-  message.textContent = `${getBreakdownMessage(type)} (Car ${carId})`;
-  message.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #ff4444;
-    color: white;
-    padding: 10px;
-    border-radius: 5px;
-    z-index: 1000;
-  `;
-
-  app.append(message);
-  setTimeout(() => message.remove(), 3000);
-};
-
-// ============ ПРОВЕРКА СОСТОЯНИЯ ============
-export const isCarBroken = (carId: number): boolean => {
-  const app = document.querySelector("#app");
-  if (!app) return false;
-  if (!(app instanceof HTMLElement)) return false;
-
-  // Проверяем по CSS-классу
-  const car = app.querySelector(`.car-road[data-id="${CSS.escape(String(carId))}"] .car`);
-  if (!(car instanceof HTMLElement)) return false;
-  return car.classList.contains("broken");
-};

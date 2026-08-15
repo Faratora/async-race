@@ -1,10 +1,15 @@
 import {
+  CARS_PER_PAGE,
+  WINNERS_PER_PAGE,
   TRACK_PADDING,
   FINISH_OFFSET,
   BREAKDOWN_CONFIG,
   getBreakdownChance,
   getBreakdownType,
+  triggerBreakdown,
 } from "../config/index.ts";
+
+import { showBreakdownNotification } from "./notifications.ts";
 
 import type { CarRace } from "../types/index.ts";
 
@@ -377,7 +382,7 @@ export const startRaceHandler = async (): Promise<void> => {
     };
 
     if (isBroken) {
-      console.log(`🚗 Car ${id} broke down at start!`);
+      console.log(`Car ${id} broke down at start!`);
       const car = getCarElement(id);
       if (car instanceof HTMLElement) {
         car.classList.add("broken");
