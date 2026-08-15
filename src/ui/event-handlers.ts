@@ -218,6 +218,7 @@ export const handleAppClick = (event: MouseEvent): void => {
     state.winners.sortOrder = sortOrder;
     state.winners.page = 1;
     renderWinners();
+    return;
   }
 };
 
@@ -226,6 +227,21 @@ export const setupEventDelegation = (): void => {
   if (app instanceof HTMLElement) {
     app.addEventListener("click", handleAppClick);
   }
+
+  // Обработчик для навигации (вне #app)
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    if (target.closest("#nav-tabs .nav-link")) {
+      const view = target.dataset.view;
+      if (view && isViewName(view)) {
+        import("./ui-manager.ts").then(({ switchView }) => {
+          switchView(view);
+        });
+      }
+    }
+  });
 };
 
 // ============ ТИП-ГВАРДЫ ============
