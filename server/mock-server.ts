@@ -466,15 +466,9 @@ app.get("/api/health", (req: express.Request, res: express.Response): void => {
 });
 
 // ============ ЗАПУСК СЕРВЕРА ============
-app.listen(CONSTANTS.SERVER_PORT, CONSTANTS.SERVER_HOST, () => {
+const server = app.listen(CONSTANTS.SERVER_PORT, CONSTANTS.SERVER_HOST, () => {
   console.log(`Server running at http://${CONSTANTS.SERVER_HOST}:${CONSTANTS.SERVER_PORT}`);
   console.log(`Health check: http://${CONSTANTS.SERVER_HOST}:${CONSTANTS.SERVER_PORT}/api/health`);
-});
-
-// Сохраняем ссылку на сервер для graceful shutdown
-const server = app.listen(CONSTANTS.SERVER_PORT, CONSTANTS.SERVER_HOST, () => {
-  console.log(`1Server running at http://${CONSTANTS.SERVER_HOST}:${CONSTANTS.SERVER_PORT}`);
-  console.log(`1Health check: http://${CONSTANTS.SERVER_HOST}:${CONSTANTS.SERVER_PORT}/api/health`);
 });
 
 // Graceful shutdown
