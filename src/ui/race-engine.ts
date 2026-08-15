@@ -3,8 +3,15 @@ import {
   WINNERS_PER_PAGE,
   TRACK_PADDING,
   FINISH_OFFSET,
-  CarRace,
-} from "../types/index.ts";
+  BREAKDOWN_CONFIG,
+  getBreakdownChance,
+  getBreakdownType,
+  triggerBreakdown,
+  showBreakdownNotification,
+  isCarBroken as isCarBrokenConfig,
+} from "../config/index.ts";
+
+import type { CarRace } from "../types/index.ts";
 
 import {
   startEngine,
@@ -18,7 +25,6 @@ import {
 
 import { state } from "../state/index.ts";
 import { element } from "./builder.ts";
-import { BREAKDOWN_CONFIG } from "../config/index.ts";
 
 // ============ УТИЛИТЫ ============
 export const getCarRace = (id: number): CarRace | undefined => state.race.carRaces[id];
@@ -35,27 +41,7 @@ export const isCarBroken = (id: number): boolean => {
 
 export const isCarFinished = (id: number): boolean => {
   const race = getCarRace(id);
-  return !!race && (race.finished || race.broken);
-};
-
-export const getBreakdownChance = (progress: number, velocity: number, elapsed: number): number => {
-  if (elapsed < BREAKDOWN_CONFIG.MIN_TIME_BEFORE_BREAKDOWN) return 0;
-
-  let chance = BREAKDOWN_CONFIG.BASE_CHANCE;
-  chance *= (1 + progress * BREAKDOWN_CONFIG.DISTANCE_MULTIPLIER);
-
-  if (velocity > 0.8) {
-    chance += BREAKDOWN_CONFIG.HIGH_SPEED_BONUS;
-  }
-
-  return chance;
-};
-
-export const getBreakdownType = (progress: number, velocity: number): string => {
-  if (progress > 0.8) return "engine_overheating";
-  if (velocity > 0.8) return "transmission_failure";
-  if (progress < 0.3) return "start_stall";
-  return "random_breakdown";
+  return !!race && race.finished && !race.broken;
 };
 
 export const getCarElement = (id: number): HTMLElement | null =>
@@ -86,7 +72,7 @@ export const updateCarButtonStates = (): void => {
     const isFinished = isCarFinished(carId);
 
     startButton.disabled = isDriving || isBroken || isFinished;
-    stopButton.disabled = !(isDriving || isBroken) && !isFinished;
+    stopButton.disabled = !isDriving && !isBroken && !isFinished;
 
     if (startButton.disabled) {
       startButton.setAttribute("disabled", "");
@@ -204,9 +190,9 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
   const elapsed = performance.now() - race.startTime;
   const elapsedSeconds = elapsed / 1000;
   const progress = Math.min(1, elapsed * race.velocity / trackWidth);
-  const left = Math.min(progress * trackWidth, trackWidth - FINISH_OFFSET);
+  const left = progress * trackWidth;
 
-  car.style.transform = `translateX(${left}px)`;
+  car.style.transform = `translateX(${Math.min(left, trackWidth - FINISH_OFFSET)}px)`;
   car.dataset.lastPosition = String(left);
 
   if (race.isRepairing) {
@@ -250,10 +236,17 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
     showBreakdownMessage(carId, breakdownType);
     updateCarButtonStates();
 
+    // Принудительная активация кнопки B при поломке
     const stopButton = document.querySelector<HTMLButtonElement>(`.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`);
     if (stopButton) {
       stopButton.disabled = false;
       stopButton.removeAttribute("disabled");
+    }
+
+    const startButton = document.querySelector<HTMLButtonElement>(`.btn-start-engine[data-id="${CSS.escape(String(carId))}"]`);
+    if (startButton) {
+      startButton.disabled = true;
+      startButton.setAttribute("disabled", "");
     }
 
     return;
@@ -279,6 +272,13 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
 
   void driveCar(carId).catch(error => console.error("Failed to drive car:", error));
   updateCarButtonStates();
+
+  // Принудительная активация кнопки B при финише
+  const stopButton = document.querySelector<HTMLButtonElement>(`.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`);
+  if (stopButton) {
+    stopButton.disabled = false;
+    stopButton.removeAttribute("disabled");
+  }
 
   if (!state.race.winnerAnnounced) {
     state.race.winnerAnnounced = true;
@@ -309,23 +309,6 @@ export const animateRace = (): void => {
   if (allFinished) {
     state.race.isRacing = false;
     state.race.animationId = 0;
-
-    Object.keys(state.race.carRaces).forEach(idStr => {
-      const carId = Number(idStr);
-      const race = state.race.carRaces[carId];
-      race.broken = false;
-      race.isRepairing = false;
-      race.repairStartTime = undefined;
-
-      const car = getCarElement(carId);
-      if (car instanceof HTMLElement) {
-        car.classList.remove("broken");
-        car.classList.remove("broken-engine_overheating", "broken-transmission_failure", "broken-start_stall", "broken-random_breakdown");
-        car.style.opacity = "1";
-        car.style.scale = "1";
-        car.style.rotate = "0deg";
-      }
-    });
 
     updateCarButtonStates();
     return;

@@ -191,7 +191,7 @@ export const createCarCard = (car: Car): HTMLElement => {
     class: "btn btn-stop-engine btn btn-sm",
     dataAction: "stop",
     dataId: String(car.id),
-    disabled: !(isDriving || isBroken || isFinished) ? true : undefined
+    disabled: !(isDriving || isBroken || isFinished) ? undefined : true
   }, "B");
 
   const actions = element("div", { class: "car-actions" },
@@ -227,7 +227,7 @@ export const renderCarCards = (app: HTMLElement): void => {
   }
 
   state.garage.cars.forEach(car => app.append(createCarCard(car)));
-  // updateCarButtonStates is imported from race-engine via global scope or we need to import it
+  updateCarButtonStates();
 };
 
 const renderGaragePagination = (app: HTMLElement, totalPages: number): void => {

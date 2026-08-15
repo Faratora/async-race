@@ -56,6 +56,8 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
           race.broken = false;
           race.isRepairing = false;
           race.repairStartTime = undefined;
+          race.finished = false;
+          race.time = undefined;
         }
         const car = getCarElement(id);
         if (car instanceof HTMLElement) {
@@ -64,7 +66,14 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
           car.style.opacity = "1";
           car.style.scale = "1";
           car.style.rotate = "0deg";
+          car.style.transform = "translateX(0px)";
         }
+        // Останавливаем анимацию гонки
+        if (state.race.animationId) {
+          cancelAnimationFrame(state.race.animationId);
+          state.race.animationId = 0;
+        }
+        state.race.isRacing = false;
         updateCarButtonStates();
       } else if (isFinished) {
         resetCarToStart(id);

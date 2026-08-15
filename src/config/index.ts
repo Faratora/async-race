@@ -16,3 +16,13 @@ export const BREAKDOWN_CONFIG = {
   REPAIR_TIME: 2,
   MAX_BREAKDOWNS: 2,
 };
+
+export {
+  getBreakdownChance,
+  getBreakdownType,
+  getBreakdownMessage,
+  triggerBreakdown,
+  resetBreakdown,
+  showBreakdownNotification,
+  isCarBroken,
+} from "./breakdown.ts";
