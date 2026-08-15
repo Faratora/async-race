@@ -90,8 +90,4 @@ export interface RaceResult {
   time: number;
 }
 
-export const CARS_PER_PAGE = 7;
-export const WINNERS_PER_PAGE = 10;
-export const API_BASE = "/api";
-export const TRACK_PADDING = 65;
-export const FINISH_OFFSET = 75;
+export { CARS_PER_PAGE, WINNERS_PER_PAGE, API_BASE, TRACK_PADDING, FINISH_OFFSET } from "../config/index.ts";

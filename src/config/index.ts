@@ -1,0 +1,18 @@
+export const CARS_PER_PAGE = 7;
+export const WINNERS_PER_PAGE = 10;
+export const API_BASE = "/api";
+export const TRACK_PADDING = 65;
+export const FINISH_OFFSET = 75;
+
+export const INPUT_NAME_WIDTH = 200;
+export const DEFAULT_COLOR = "#ff0000";
+
+export const BREAKDOWN_CONFIG = {
+  BASE_CHANCE: 0.001,
+  DISTANCE_MULTIPLIER: 3,
+  HIGH_SPEED_BONUS: 0.002,
+  MIN_TIME_BEFORE_BREAKDOWN: 0.5,
+  REPAIR_CHANCE_PER_FRAME: 0.005,
+  REPAIR_TIME: 2,
+  MAX_BREAKDOWNS: 2,
+};

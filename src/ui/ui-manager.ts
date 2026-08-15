@@ -19,12 +19,9 @@ import {
 
 import { state } from "../state/index.ts";
 import { element } from "./builder.ts";
+import { INPUT_NAME_WIDTH, DEFAULT_COLOR } from "../config/index.ts";
 
 import { startRaceHandler, resetRaceHandler, updateCarButtonStates, isCarRacing, isCarBroken, isCarFinished } from "./race-engine.ts";
-
-// ============ КОНСТАНТЫ ============
-export const INPUT_NAME_WIDTH = 200;
-export const DEFAULT_COLOR = "#ff0000";
 
 // ============ УТИЛИТЫ ============
 export const escapeHtml = (text: string): string => {
