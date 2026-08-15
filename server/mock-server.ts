@@ -384,7 +384,7 @@ app.post("/api/race/start", (req: express.Request, res: express.Response): void 
     const randomIndex = Math.floor(Math.random() * carIds.length);
     const brokenCarId = carIds[randomIndex];
     store.setBrokenCarId(brokenCarId);
-    console.log(`🔧 Car ${brokenCarId} selected to break down during race`);
+    console.log(`Car ${brokenCarId} selected to break down during race`);
   }
   
   res.json({ status: "race_started", carCount: carIds.length });
