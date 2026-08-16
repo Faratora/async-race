@@ -400,6 +400,17 @@ body {
 
 
 
+.breakdown-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #ff4444;
+  color: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 1000;
+}
+
 .winner-message {
   background-color: #28a745;
   color: #fff;
