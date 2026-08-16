@@ -41,11 +41,36 @@ export const showBreakdownNotification = (carId: number, type: BreakdownType): v
 };
 
 // ============ ПОБЕДИТЕЛЬ ============
-export const showWinnerNotification = (carName: string, time: number): void => {
+export interface BrokenCar {
+  id: number;
+  name: string;
+  type: string;
+}
+
+export const showWinnerNotification = (
+  winnerName: string,
+  time: number,
+  brokenCars: BrokenCar[] = []
+): void => {
+  const message = `🏆 ${winnerName} wins with time ${formatTime(time)}!`;
+
   showNotification({
     className: "winner-message",
-    message: `🏆 ${carName} wins with time ${formatTime(time)}!`,
+    message,
     duration: 30000,
     insertFirst: true,
   });
+
+  if (brokenCars.length > 0) {
+    const brokenList = brokenCars
+      .map(car => `${car.name} (Car ${car.id})`)
+      .join(", ");
+    const breakdownMessage = `💥 Broken: ${brokenList}`;
+
+    showNotification({
+      className: "breakdown-notification",
+      message: breakdownMessage,
+      duration: 30000,
+    });
+  }
 };

@@ -10,7 +10,7 @@ import {
   speedToProgressPerMs,
 } from "../config/index.ts";
 
-import { showBreakdownNotification, showWinnerNotification } from "./notifications.ts";
+import { showBreakdownNotification, showWinnerNotification, type BrokenCar } from "./notifications.ts";
 
 import type { CarRace } from "../types/index.ts";
 import { formatTime } from "../types/index.ts";
@@ -252,13 +252,29 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
     state.race.winnerAnnounced = true;
     const car = state.garage.cars.find(c => c.id === carId);
     if (car) {
+      // Собираем список всех сломанных машинок
+      const brokenCars: BrokenCar[] = [];
+      for (const [raceIdStr, race] of Object.entries(state.race.carRaces)) {
+        if (race.broken && race.breakdownHistory && race.breakdownHistory.count > 0) {
+          const raceCar = state.garage.cars.find(c => c.id === Number(raceIdStr));
+          if (raceCar) {
+            const lastType = race.breakdownHistory.types[race.breakdownHistory.types.length - 1];
+            brokenCars.push({
+              id: raceCar.id,
+              name: raceCar.name,
+              type: lastType,
+            });
+          }
+        }
+      }
+
       void recordWinner({
         carId: car.id,
         carName: car.name,
         carColor: car.color,
         time: race.time,
       });
-      showWinnerNotification(car.name, race.time);
+      showWinnerNotification(car.name, race.time, brokenCars);
     }
   }
 };
