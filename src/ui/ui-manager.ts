@@ -91,7 +91,10 @@ export const renderGarage = async (): Promise<void> => {
   renderEditForm(app);
   renderRaceControls(app);
   renderCarCards(app);
-  renderGaragePagination(app, totalPages);
+
+  const garagePrevDisabled = state.garage.page <= 1 || state.race.isRacing;
+  const garageNextDisabled = state.garage.page >= totalPages || state.race.isRacing;
+  app.append(createPagination("btn-prev", "btn-next", state.garage.page, totalPages, garagePrevDisabled, garageNextDisabled));
 };
 
 const renderHeader = (
@@ -233,23 +236,26 @@ export const renderCarCards = (app: HTMLElement): void => {
   updateCarButtonStates();
 };
 
-const renderGaragePagination = (app: HTMLElement, totalPages: number): void => {
-  if (totalPages <= 1) return;
-
-  app.append(
-    element("div", { class: "pagination-controls" },
-      element("button", {
-        class: "btn btn-secondary",
-        id: "btn-prev",
-        disabled: state.garage.page <= 1 || state.race.isRacing ? true : undefined
-      }, "Previous"),
-      element("span", undefined, `Page ${state.garage.page} of ${totalPages}`),
-      element("button", {
-        class: "btn btn-secondary",
-        id: "btn-next",
-        disabled: state.garage.page >= totalPages || state.race.isRacing ? true : undefined
-      }, "Next")
-    )
+const createPagination = (
+  prevId: string,
+  nextId: string,
+  currentPage: number,
+  totalPages: number,
+  isPrevDisabled: boolean,
+  isNextDisabled: boolean
+): HTMLElement => {
+  return element("div", { class: "pagination-controls" },
+    element("button", {
+      class: "btn btn-secondary",
+      id: prevId,
+      disabled: isPrevDisabled ? true : undefined
+    }, "Previous"),
+    element("span", undefined, `Page ${currentPage} of ${totalPages}`),
+    element("button", {
+      class: "btn btn-secondary",
+      id: nextId,
+      disabled: isNextDisabled ? true : undefined
+    }, "Next")
   );
 };
 
@@ -265,7 +271,10 @@ export const renderWinners = async (): Promise<void> => {
 
   renderHeader(app, "Winners", state.winners.total, state.winners.page, totalPages, "winners");
   renderWinnersTable(app);
-  renderWinnersPagination(app, totalPages);
+
+  const winnersPrevDisabled = state.winners.page <= 1;
+  const winnersNextDisabled = state.winners.page >= totalPages;
+  app.append(createPagination("btn-prev-winners", "btn-next-winners", state.winners.page, totalPages, winnersPrevDisabled, winnersNextDisabled));
 };
 
 const createWinnerRow = (winner: Winner, index: number): HTMLElement =>
@@ -310,22 +319,4 @@ const renderWinnersTable = (app: HTMLElement): void => {
   }
 
   app.append(table);
-};
-
-const renderWinnersPagination = (app: HTMLElement, totalPages: number): void => {
-  app.append(
-    element("div", { class: "pagination-controls" },
-      element("button", {
-        class: "btn btn-secondary",
-        id: "btn-prev-winners",
-        disabled: state.winners.page <= 1 ? true : undefined
-      }, "Previous"),
-      element("span", undefined, `Page ${state.winners.page} of ${totalPages}`),
-      element("button", {
-        class: "btn btn-secondary",
-        id: "btn-next-winners",
-        disabled: state.winners.page >= totalPages ? true : undefined
-      }, "Next")
-    )
-  );
 };
