@@ -3,7 +3,6 @@ import {
   WINNERS_PER_PAGE,
   ViewName,
   Car,
-  Winner,
 } from "../types/index.ts";
 
 import {
@@ -17,6 +16,7 @@ import { INPUT_NAME_WIDTH, DEFAULT_COLOR } from "../config/index.ts";
 
 import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
 import { updateCarButtonStates, isCarRacing, isCarBroken, isCarFinished } from "./animations.ts";
+import { renderWinnersTable } from "./winners-table.ts";
 
 // ============ УТИЛИТЫ ============
 export const escapeHtml = (text: string): string => {
@@ -89,7 +89,7 @@ export const renderGarage = async (): Promise<void> => {
 
   const fragment = document.createDocumentFragment();
   
-  renderHeader(fragment, `Garage (${state.garage.total})`, state.garage.total, state.garage.page, totalPages, "cars");
+  renderHeader(fragment, "Garage", state.garage.total, state.garage.page, totalPages);
   renderAddCarForm(fragment);
   renderEditForm(fragment);
   renderRaceControls(fragment);
@@ -108,14 +108,13 @@ const renderHeader = (
   title: string,
   total: number,
   currentPage: number,
-  totalPages: number,
-  extraInfo?: string
+  totalPages: number
 ): void => {
   container.append(
     element("div", { class: "view-header" },
       element("span", { class: "view-title" }, title),
       element("span", { class: "view-info" },
-        `Page ${currentPage} / ${totalPages} (${total}${extraInfo ? `, ${extraInfo}` : ''})`
+        `Page ${currentPage} of ${totalPages} · ${total} total`
       )
     )
   );
@@ -277,7 +276,7 @@ export const renderWinners = async (): Promise<void> => {
 
   const fragment = document.createDocumentFragment();
   
-  renderHeader(fragment, "Winners", state.winners.total, state.winners.page, totalPages, "winners");
+  renderHeader(fragment, "Winners", state.winners.total, state.winners.page, totalPages);
   renderWinnersTable(fragment);
 
   const winnersPrevDisabled = state.winners.page <= 1;
@@ -285,48 +284,4 @@ export const renderWinners = async (): Promise<void> => {
   fragment.appendChild(createPagination("btn-prev-winners", "btn-next-winners", state.winners.page, totalPages, winnersPrevDisabled, winnersNextDisabled));
   
   app.replaceChildren(fragment);
-};
-
-const createWinnerRow = (winner: Winner, index: number): HTMLElement =>
-  element("div", { class: "table-row" },
-    element("span", undefined, String(index + 1)),
-    element("span", undefined,
-      element("div", { class: "winner-car-icon", style: `background-color: ${winner.carColor};` })
-    ),
-    element("span", undefined, escapeHtml(winner.carName)),
-    element("span", undefined, String(winner.wins)),
-    element("span", undefined, `${winner.bestTime.toFixed(2)}`)
-  );
-
-const renderWinnersTable = (container: HTMLElement | DocumentFragment): void => {
-  const table = element("div");
-
-  const header = element("div", { class: "table-header" },
-    element("span", undefined, "Number"),
-    element("span", undefined, "Car"),
-    element("span", { class: "table-header-sortable", dataSort: "name" },
-      `Name ${state.winners.sortBy === "name" ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : ""}`
-    ),
-    element("span", { class: "table-header-sortable", dataSort: "wins" },
-      `Wins ${state.winners.sortBy === "wins" ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : ""}`
-    ),
-    element("span", { class: "table-header-sortable", dataSort: "bestTime" },
-      `Best time (sec) ${state.winners.sortBy === "bestTime" ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : ""}`
-    )
-  );
-  table.append(header);
-
-  if (state.winners.winners.length === 0) {
-    table.append(
-      element("div", { class: "table-row", style: "grid-column: 1 / -1; text-align: center;" },
-        "No winners yet. Start a race!"
-      )
-    );
-  } else {
-    state.winners.winners.forEach((winner, index) => {
-      table.append(createWinnerRow(winner, index));
-    });
-  }
-
-  container.append(table);
 };

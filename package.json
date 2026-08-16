@@ -1,7 +1,7 @@
 {
   "name": "async-race",
   "version": "1.0.0",
-  "description": "",
+  "description": "Fun with promises",
   "main": "index.js",
   "scripts": {
     "dev": "node scripts/dev.mjs",

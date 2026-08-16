@@ -17,7 +17,7 @@ import {
 
 // ============ УПРАВЛЕНИЕ ГОНКОЙ ============
 export const removeWinnerMessage = (): void => {
-  document.querySelector(".winner-message")?.remove();
+  document.querySelectorAll(".winner-message, .breakdown-notification").forEach(el => el.remove());
 };
 
 // ============ ОБРАБОТЧИКИ ГОНКИ ============
@@ -95,7 +95,7 @@ export const resetRaceHandler = async (): Promise<void> => {
   resetCarVisualState(carIds);
   resetCarPositions(carIds);
 
-  document.querySelectorAll(".breakdown-message").forEach(el => el.remove());
+  document.querySelectorAll(".breakdown-message, .winner-message, .breakdown-notification").forEach(el => el.remove());
 
   if (carIds.length > 0) {
     await resetRace(carIds);

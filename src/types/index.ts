@@ -1,97 +1,107 @@
 export interface Car {
-  id: number;
-  name: string;
-  color: string;
-  maxSpeed: number; // максимальная скорость в км/ч
+    id: number;
+    name: string;
+    color: string;
+    maxSpeed: number; // максимальная скорость в км/ч
 }
 
 export interface Winner {
-  id: number;
-  carId: number;
-  carName: string;
-  carColor: string;
-  wins: number;
-  bestTime: number;
+    id: number;
+    carId: number;
+    carName: string;
+    carColor: string;
+    wins: number;
+    bestTime: number;
 }
 
-export type EngineState = "idle" | "starting" | "driving" | "stopping";
+export type EngineState = 'idle' | 'starting' | 'driving' | 'stopping';
 
-export type ViewName = "garage" | "winners";
+export type ViewName = 'garage' | 'winners';
 
 export interface SortConfig {
-  sortBy: "wins" | "bestTime" | "name";
-  sortOrder: "asc" | "desc";
+    sortBy: 'wins' | 'bestTime' | 'name';
+    sortOrder: 'asc' | 'desc';
 }
 
 export interface GarageState {
-  cars: Car[];
-  page: number;
-  total: number;
-  selectedColor: string;
-  editingCarId: number | undefined;
-  editName: string;
-  editColor: string;
-  createCarName: string;
+    cars: Car[];
+    page: number;
+    total: number;
+    selectedColor: string;
+    editingCarId: number | undefined;
+    editName: string;
+    editColor: string;
+    createCarName: string;
 }
 
 export interface WinnersState {
-  winners: Winner[];
-  page: number;
-  total: number;
-  sortBy: SortConfig["sortBy"];
-  sortOrder: SortConfig["sortOrder"];
+    winners: Winner[];
+    page: number;
+    total: number;
+    sortBy: SortConfig['sortBy'];
+    sortOrder: SortConfig['sortOrder'];
 }
 
 export interface RaceState {
-  isRacing: boolean;
-  carRaces: Record<number, CarRace>;
-  animationId: number;
-  drivingCars: Record<number, DrivingCar>;
-  driveAnimationId: number;
-  winnerAnnounced: boolean;
+    isRacing: boolean;
+    carRaces: Record<number, CarRace>;
+    animationId: number;
+    drivingCars: Record<number, DrivingCar>;
+    driveAnimationId: number;
+    winnerAnnounced: boolean;
 }
 
 export interface CarRace {
-  startTime: number;
-  maxSpeed: number; // максимальная скорость в км/ч
-  finished: boolean;
-  broken: boolean;
-  time: number | undefined;
-  breakdownHistory: {
-    count: number;
-    timestamps: number[];
-    positions: number[];
-    types: string[];
-  };
-  repairStartTime?: number;
-  isRepairing?: boolean;
+    startTime: number;
+    maxSpeed: number; // максимальная скорость в км/ч
+    finished: boolean;
+    broken: boolean;
+    time: number | undefined;
+    breakdownHistory: {
+        count: number;
+        timestamps: number[];
+        positions: number[];
+        types: string[];
+    };
+    repairStartTime?: number;
+    isRepairing?: boolean;
 }
 
 export interface DrivingCar {
-  startTime: number;
-  maxSpeed: number; // максимальная скорость в км/ч
+    startTime: number;
+    maxSpeed: number; // максимальная скорость в км/ч
 }
 
 export interface AppState {
-  currentView: ViewName;
-  garage: GarageState;
-  winners: WinnersState;
-  race: RaceState;
+    currentView: ViewName;
+    garage: GarageState;
+    winners: WinnersState;
+    race: RaceState;
 }
 
 export interface CarFormData {
-  name: string;
-  color: string;
+    name: string;
+    color: string;
 }
 
 export interface RaceResult {
-  carId: number;
-  carName: string;
-  carColor: string;
-  time: number;
+    carId: number;
+    carName: string;
+    carColor: string;
+    time: number;
 }
 
-export { CARS_PER_PAGE, WINNERS_PER_PAGE, API_BASE, TRACK_PADDING, FINISH_OFFSET, TRACK_LENGTH, MIN_SPEED_KMH, MAX_SPEED_KMH, speedToProgressPerMs } from "../config/index.ts";
+export {
+    CARS_PER_PAGE,
+    WINNERS_PER_PAGE,
+    API_BASE,
+    TRACK_PADDING,
+    FINISH_OFFSET,
+    TRACK_LENGTH,
+    MIN_SPEED_KMH,
+    MAX_SPEED_KMH,
+    speedToProgressPerMs,
+} from '../config/index.ts';
 
 // ============ УТИЛИТЫ ВРЕМЕНИ ============
 
@@ -99,10 +109,10 @@ export { CARS_PER_PAGE, WINNERS_PER_PAGE, API_BASE, TRACK_PADDING, FINISH_OFFSET
  * Форматирует время в секундах в строку MM:SS.ms
  */
 export const formatTime = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  if (mins > 0) {
-    return `${mins}:${secs.toFixed(2).padStart(5, "0")}`;
-  }
-  return secs.toFixed(2);
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins > 0) {
+        return `${mins}:${secs.toFixed(2).padStart(5, '0')}`;
+    }
+    return secs.toFixed(2);
 };

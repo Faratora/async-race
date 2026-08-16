@@ -40,8 +40,8 @@ export const createCarCard = (car: Car): HTMLElement => {
   }, "B");
 
   const actions = element("div", { class: "car-actions" },
-    element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "select", dataId: String(car.id) }, "Select"),
-    element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove")
+    element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "select", dataId: String(car.id) }, "Update"),
+    element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Delete")
   );
 
   const road = element("div", { class: "car-road", dataId: String(car.id) },

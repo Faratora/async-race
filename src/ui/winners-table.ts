@@ -16,7 +16,7 @@ export const createWinnerRow = (winner: import("../types/index.ts").Winner, inde
   );
 
 // ============ ТАБЛИЦА ПОБЕДИТЕЛЕЙ ============
-export const renderWinnersTable = (app: HTMLElement): void => {
+export const renderWinnersTable = (app: HTMLElement | DocumentFragment): void => {
   const table = element("div");
 
   const header = element("div", { class: "table-header" },
