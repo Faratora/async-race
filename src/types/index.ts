@@ -56,7 +56,7 @@ export interface CarRace {
   finished: boolean;
   broken: boolean;
   time: number | undefined;
-  breakdownHistory?: {
+  breakdownHistory: {
     count: number;
     timestamps: number[];
     positions: number[];

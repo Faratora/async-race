@@ -1,12 +1,9 @@
 import {
-  CARS_PER_PAGE,
-  WINNERS_PER_PAGE,
   TRACK_PADDING,
   FINISH_OFFSET,
   BREAKDOWN_CONFIG,
   getBreakdownChance,
   getBreakdownType,
-  triggerBreakdown,
   API_BASE,
 } from "../config/index.ts";
 
@@ -24,7 +21,6 @@ import {
 } from "../api/index.ts";
 
 import { state } from "../state/index.ts";
-import { element } from "./builder.ts";
 
 // ============ УТИЛИТЫ ============
 export const getCarRace = (id: number): CarRace | undefined => state.race.carRaces[id];
@@ -169,9 +165,6 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
     const breakdownType = getBreakdownType(progress, race.velocity);
 
     race.broken = true;
-    if (!race.breakdownHistory) {
-      race.breakdownHistory = { count: 0, timestamps: [], positions: [], types: [] };
-    }
     race.breakdownHistory.count++;
     race.breakdownHistory.timestamps.push(performance.now());
     race.breakdownHistory.positions.push(progress);
@@ -428,6 +421,7 @@ export const animateDriveCar = (): void => {
           finished: true,
           broken: false,
           time: undefined,
+          breakdownHistory: { count: 0, timestamps: [], positions: [], types: [] },
         };
       }
       void driveCar(carId)
