@@ -17,7 +17,9 @@ import {
 import { state } from "../state/index.ts";
 
 import { renderGarage, renderWinners, loadGarageCars } from "./ui-manager.ts";
-import { startDriveCar, stopDriveCar, resetCarToStart, isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./race-engine.ts";
+import { startDriveCar, stopDriveCar, resetCarToStart } from "./animations.ts";
+import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
+import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
 
 // ============ ОБРАБОТЧИКИ СОБЫТИЙ ============
 export const handleCarAction = (action: string | undefined, id: number): void => {

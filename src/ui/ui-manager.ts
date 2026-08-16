@@ -15,7 +15,8 @@ import { state } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { INPUT_NAME_WIDTH, DEFAULT_COLOR } from "../config/index.ts";
 
-import { startRaceHandler, resetRaceHandler, updateCarButtonStates, isCarRacing, isCarBroken, isCarFinished } from "./race-engine.ts";
+import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
+import { updateCarButtonStates, isCarRacing, isCarBroken, isCarFinished } from "./animations.ts";
 
 // ============ УТИЛИТЫ ============
 export const escapeHtml = (text: string): string => {

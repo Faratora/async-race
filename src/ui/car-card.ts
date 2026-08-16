@@ -2,7 +2,7 @@ import { Car } from "../types/index.ts";
 import { state } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { escapeHtml } from "./ui-manager.ts";
-import { isCarRacing, isCarBroken, isCarFinished, updateCarButtonStates } from "./race-engine.ts";
+import { isCarRacing, isCarBroken, isCarFinished, updateCarButtonStates } from "./animations.ts";
 
 // ============ КАРТОЧКА АВТОМОБИЛЯ ============
 export const createCarCard = (car: Car): HTMLElement => {
