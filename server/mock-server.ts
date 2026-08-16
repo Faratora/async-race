@@ -421,9 +421,9 @@ app.post("/api/race/reset", (req: express.Request, res: express.Response): void 
     return;
   }
 
-    // Сбрасываем поломку при сбросе гонки
   store.clearBrokenCar();
-  console.log(`Race reset, broken car cleared`);
+  store.resetSpam();
+  console.log(`Race reset, broken car cleared, spam counter reset`);
   
   res.json({ status: "race_reset", carCount: carIds.length });
 });
