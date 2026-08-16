@@ -2,10 +2,16 @@ import express from "express";
 import cors from "cors";
 
 const app: express.Express = express();
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean) || [];
+
+const corsOrigin = process.env.NODE_ENV === "production"
+  ? allowedOrigins.length > 0
+    ? allowedOrigins
+    : true
+  : "http://localhost:5173";
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.ALLOWED_ORIGINS?.split(',') || []
-    : "http://localhost:5173",
+  origin: corsOrigin,
   credentials: true,
 }));
 app.use(express.json());
