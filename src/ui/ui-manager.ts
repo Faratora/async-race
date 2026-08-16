@@ -8,7 +8,7 @@ import {
 
 import {
   fetchCars,
-  fetchWinners,  
+  fetchWinners,
 } from "../api/index.ts";
 
 import { state } from "../state/index.ts";
@@ -86,7 +86,7 @@ export const renderGarage = async (): Promise<void> => {
 
   const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
 
-  renderGarageHeader(app, totalPages);
+  renderHeader(app, `Garage (${state.garage.total})`, state.garage.total, state.garage.page, totalPages, "cars");
   renderAddCarForm(app);
   renderEditForm(app);
   renderRaceControls(app);
@@ -94,11 +94,20 @@ export const renderGarage = async (): Promise<void> => {
   renderGaragePagination(app, totalPages);
 };
 
-const renderGarageHeader = (app: HTMLElement, totalPages: number): void => {
+const renderHeader = (
+  app: HTMLElement,
+  title: string,
+  total: number,
+  currentPage: number,
+  totalPages: number,
+  extraInfo?: string
+): void => {
   app.append(
     element("div", { class: "view-header" },
-      element("span", { class: "view-title" }, `Garage (${state.garage.total})`),
-      element("span", { class: "view-info" }, `Page ${state.garage.page} / ${totalPages} (${state.garage.total} cars)`)
+      element("span", { class: "view-title" }, title),
+      element("span", { class: "view-info" },
+        `Page ${currentPage} / ${totalPages} (${total}${extraInfo ? `, ${extraInfo}` : ''})`
+      )
     )
   );
 };
@@ -254,20 +263,9 @@ export const renderWinners = async (): Promise<void> => {
 
   const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
 
-  renderWinnersHeader(app, totalPages);
+  renderHeader(app, "Winners", state.winners.total, state.winners.page, totalPages, "winners");
   renderWinnersTable(app);
   renderWinnersPagination(app, totalPages);
-};
-
-const renderWinnersHeader = (app: HTMLElement, totalPages: number): void => {
-  app.append(
-    element("div", { class: "view-header" },
-      element("span", { class: "view-title" }, "Winners"),
-      element("span", { class: "view-info" },
-        `Page ${state.winners.page} / ${totalPages} (${state.winners.total} winners)`
-      )
-    )
-  );
 };
 
 const createWinnerRow = (winner: Winner, index: number): HTMLElement =>
