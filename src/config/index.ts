@@ -34,4 +34,5 @@ export type {
 export {
   createBreakdownMessage,
   showBreakdownNotification,
+  showWinnerNotification,
 } from "../ui/notifications.ts";

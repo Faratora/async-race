@@ -368,6 +368,16 @@ app.post("/api/cars/:id/stop", (req: express.Request, res: express.Response): vo
   res.json({ status: "stopped" });
 });
 
+app.post("/api/cars/:id/repair", (req: express.Request, res: express.Response): void => {
+  const id = parseInt(String(req.params.id), 10);
+  if (isNaN(id) || !store.getCar(id)) {
+    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
+    return;
+  }
+  store.clearBrokenCar();
+  res.json({ status: "repaired" });
+});
+
 // ----- RACE -----
 app.post("/api/race/start", (req: express.Request, res: express.Response): void => {
   const carIds = req.body?.carIds;

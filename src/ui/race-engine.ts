@@ -7,9 +7,10 @@ import {
   getBreakdownChance,
   getBreakdownType,
   triggerBreakdown,
+  API_BASE,
 } from "../config/index.ts";
 
-import { showBreakdownNotification } from "./notifications.ts";
+import { showBreakdownNotification, showWinnerNotification } from "./notifications.ts";
 
 import type { CarRace } from "../types/index.ts";
 
@@ -90,43 +91,6 @@ export const updateCarButtonStates = (): void => {
 // ============ УПРАВЛЕНИЕ ГОНКОЙ ============
 export const removeWinnerMessage = (): void => {
   document.querySelector(".winner-message")?.remove();
-};
-
-export const showWinnerMessage = (carName: string, time: number): void => {
-  const app = document.querySelector("#app");
-  if (!(app instanceof HTMLElement)) return;
-
-  const message = element("div", { class: "winner-message" },
-    `🏆 ${carName} wins with time ${time.toFixed(2)}s!`
-  );
-  app.insertBefore(message, app.firstChild);
-};
-
-export const showBreakdownMessage = (carId: number, type: string): void => {
-  const app = document.querySelector("#app");
-  if (!(app instanceof HTMLElement)) return;
-
-  const messages: Record<string, string> = {
-    engine_overheating: "Engine overheating!",
-    transmission_failure: "Transmission failure!",
-    start_stall: "Stalled at start!",
-    random_breakdown: "Random breakdown!",
-  };
-
-  const message = element(
-    "div",
-    {
-      class: "breakdown-message",
-      style: "position: fixed; top: 20px; right: 20px; background: #ff4444; color: white; padding: 10px; border-radius: 5px; z-index: 1000;",
-    },
-    `${messages[type] ?? "Breakdown!"} (Car ${carId})`
-  );
-
-  app.append(message);
-
-  setTimeout(() => {
-    message.remove();
-  }, 3000);
 };
 
 export const resetCarPositions = (carIds: number[]): void => {
@@ -232,7 +196,7 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
         console.log(`Car ${carId} broke down at ${Math.round(progress * 100)}%!`);
     }
 
-    showBreakdownMessage(carId, breakdownType);
+    showBreakdownNotification(carId, breakdownType);
     updateCarButtonStates();
 
     // Принудительная активация кнопки B при поломке
@@ -289,7 +253,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
         carColor: car.color,
         time: race.time,
       });
-      showWinnerMessage(car.name, race.time);
+      showWinnerNotification(car.name, race.time);
     }
   }
 };
@@ -481,6 +445,12 @@ export const animateDriveCar = (): void => {
 };
 
 export const startDriveCar = async (carId: number): Promise<void> => {
+  try {
+    await fetch(`${API_BASE}/cars/${carId}/repair`, { method: "POST" });
+  } catch {
+    // ignore repair errors
+  }
+
   const velocity = await getVelocity(carId);
 
   if (state.race.carRaces[carId]) {
