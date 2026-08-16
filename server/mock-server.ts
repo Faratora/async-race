@@ -229,6 +229,14 @@ function parsePagination(query: any): { page: number; limit: number } {
   return { page, limit };
 }
 
+function parseId(param: any): number | null {
+  const id = parseInt(String(param), 10);
+  if (isNaN(id) || id <= 0) {
+    return null;
+  }
+  return id;
+}
+
 function handleError(res: express.Response, status: number, message: string): void {
   console.error(`[ERROR] ${status}: ${message}`);
   res.status(status).json({ error: message });
@@ -275,8 +283,8 @@ app.post("/api/cars", (req: express.Request, res: express.Response): void => {
 
 app.put("/api/cars/:id", (req: express.Request, res: express.Response): void => {
   try {
-    const id = parseInt(String(req.params.id), 10);
-    if (isNaN(id)) {
+    const id = parseId(req.params.id);
+    if (!id) {
       handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid car ID");
       return;
     }
@@ -298,8 +306,8 @@ app.put("/api/cars/:id", (req: express.Request, res: express.Response): void => 
 
 app.delete("/api/cars/:id", (req: express.Request, res: express.Response): void => {
   try {
-    const id = parseInt(String(req.params.id), 10);
-    if (isNaN(id)) {
+    const id = parseId(req.params.id);
+    if (!id) {
       handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid car ID");
       return;
     }
@@ -328,8 +336,8 @@ app.post("/api/cars/bulk", (req: express.Request, res: express.Response): void =
 // ----- CAR CONTROL -----
 app.post("/api/cars/:id/start", (req: express.Request, res: express.Response): void => {
   if (checkSpam(res, CONSTANTS.SPAM_LIMIT_START)) return;
-  const id = parseInt(String(req.params.id), 10);
-  if (isNaN(id) || !store.getCar(id)) {
+  const id = parseId(req.params.id);
+  if (!id || !store.getCar(id)) {
     handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
     return;
   }
@@ -337,8 +345,8 @@ app.post("/api/cars/:id/start", (req: express.Request, res: express.Response): v
 });
 
 app.get("/api/cars/:id/velocity", (req: express.Request, res: express.Response): void => {
-  const id = parseInt(String(req.params.id), 10);
-  if (isNaN(id) || !store.getCar(id)) {
+  const id = parseId(req.params.id);
+  if (!id || !store.getCar(id)) {
     handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
     return;
   }
@@ -357,8 +365,8 @@ app.post("/api/cars/:id/drive", (req: express.Request, res: express.Response): v
     handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Simulated server error");
     return;
   }
-  const id = parseInt(String(req.params.id), 10);
-  if (isNaN(id) || !store.getCar(id)) {
+  const id = parseId(req.params.id);
+  if (!id || !store.getCar(id)) {
     handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
     return;
   }
@@ -366,8 +374,8 @@ app.post("/api/cars/:id/drive", (req: express.Request, res: express.Response): v
 });
 
 app.post("/api/cars/:id/stop", (req: express.Request, res: express.Response): void => {
-  const id = parseInt(String(req.params.id), 10);
-  if (isNaN(id) || !store.getCar(id)) {
+  const id = parseId(req.params.id);
+  if (!id || !store.getCar(id)) {
     handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
     return;
   }
@@ -375,8 +383,8 @@ app.post("/api/cars/:id/stop", (req: express.Request, res: express.Response): vo
 });
 
 app.post("/api/cars/:id/repair", (req: express.Request, res: express.Response): void => {
-  const id = parseInt(String(req.params.id), 10);
-  if (isNaN(id) || !store.getCar(id)) {
+  const id = parseId(req.params.id);
+  if (!id || !store.getCar(id)) {
     handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
     return;
   }

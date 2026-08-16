@@ -98,6 +98,20 @@ export const resetCarPositions = (carIds: number[]): void => {
   });
 };
 
+export const resetCarVisualState = (carIds: number[]): void => {
+  carIds.forEach(id => {
+    const car = getCarElement(id);
+    if (car instanceof HTMLElement) {
+      car.classList.remove("broken");
+      car.classList.remove("broken-engine_overheating", "broken-transmission_failure", "broken-start_stall", "broken-random_breakdown");
+      car.style.opacity = "1";
+      car.style.scale = "1";
+      car.style.rotate = "0deg";
+      delete car.dataset.lastPosition;
+    }
+  });
+};
+
 // ============ АНИМАЦИЯ ============
 export const animateCarRace = (carId: number, race: CarRace): void => {
   const car = getCarElement(carId);
@@ -318,6 +332,10 @@ export const startRaceHandler = async (): Promise<void> => {
   const now = performance.now();
 
   state.race.carRaces = {};
+
+  resetCarVisualState(carIds);
+  resetCarPositions(carIds);
+
   carIds.forEach((id, index) => {
     const result = velocities[index];
     const isBroken = result.status === "rejected";
@@ -348,7 +366,6 @@ export const startRaceHandler = async (): Promise<void> => {
     }
   });
 
-  resetCarPositions(carIds);
   updateCarButtonStates();
   animateRace();
 };
@@ -368,21 +385,12 @@ export const resetRaceHandler = async (): Promise<void> => {
   state.race.drivingCars = {};
   state.race.winnerAnnounced = false;
 
-  document.querySelectorAll(".car").forEach(car => {
-    if (car instanceof HTMLElement) {
-      car.classList.remove("broken");
-      car.classList.remove("broken-engine_overheating", "broken-transmission_failure", "broken-start_stall", "broken-random_breakdown");
-      car.style.transform = "translateX(0px)";
-      car.style.opacity = "1";
-      car.style.scale = "1";
-      car.style.rotate = "0deg";
-      delete car.dataset.lastPosition;
-    }
-  });
+  const carIds = state.garage.cars.map(c => c.id);
+  resetCarVisualState(carIds);
+  resetCarPositions(carIds);
 
   document.querySelectorAll(".breakdown-message").forEach(el => el.remove());
 
-  const carIds = state.garage.cars.map(c => c.id);
   if (carIds.length > 0) {
     await resetRace(carIds);
   }
