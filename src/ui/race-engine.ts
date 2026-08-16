@@ -48,7 +48,7 @@ export const startRaceHandler = async (): Promise<void> => {
 
     state.race.carRaces[id] = {
       startTime: now,
-      velocity: result.status === "fulfilled" ? result.value : 0.5,
+      maxSpeed: result.status === "fulfilled" ? result.value : 0,
       finished: false,
       broken: isBroken,
       time: undefined,

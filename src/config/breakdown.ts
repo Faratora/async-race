@@ -18,7 +18,7 @@ export interface BreakdownHistory {
 export interface BreakdownEvent {
   type: BreakdownType;
   progress: number;
-  velocity: number;
+  maxSpeed: number;
   timestamp: number;
 }
 
@@ -33,7 +33,7 @@ const BREAKDOWN_MESSAGES: Record<BreakdownType, string> = {
 // ============ РАСЧЁТ ШАНСА ПОЛОМКИ ============
 export const getBreakdownChance = (
   progress: number,
-  velocity: number,
+  maxSpeed: number,
   elapsed: number
 ): number => {
   if (elapsed < BREAKDOWN_CONFIG.MIN_TIME_BEFORE_BREAKDOWN) return 0;
@@ -41,7 +41,8 @@ export const getBreakdownChance = (
   let chance = BREAKDOWN_CONFIG.BASE_CHANCE;
   chance *= (1 + progress * BREAKDOWN_CONFIG.DISTANCE_MULTIPLIER);
 
-  if (velocity > 0.8) {
+  // Высокая скорость (>250 км/ч) увеличивает шанс поломки
+  if (maxSpeed > 250) {
     chance += BREAKDOWN_CONFIG.HIGH_SPEED_BONUS;
   }
 
@@ -49,9 +50,9 @@ export const getBreakdownChance = (
 };
 
 // ============ ТИП ПОЛОМКИ ============
-export const getBreakdownType = (progress: number, velocity: number): BreakdownType => {
+export const getBreakdownType = (progress: number, maxSpeed: number): BreakdownType => {
   if (progress > 0.8) return "engine_overheating";
-  if (velocity > 0.8) return "transmission_failure";
+  if (maxSpeed > 250) return "transmission_failure";
   if (progress < 0.3) return "start_stall";
   return "random_breakdown";
 };
@@ -66,9 +67,9 @@ export const triggerBreakdown = (
   carId: number,
   race: CarRace,
   progress: number,
-  velocity: number
+  maxSpeed: number
 ): BreakdownEvent | null => {
-  const breakdownType = getBreakdownType(progress, velocity);
+  const breakdownType = getBreakdownType(progress, maxSpeed);
 
   if (!race.breakdownHistory) {
     race.breakdownHistory = { count: 0, timestamps: [], positions: [], types: [] };
@@ -81,7 +82,7 @@ export const triggerBreakdown = (
   const event: BreakdownEvent = {
     type: breakdownType,
     progress,
-    velocity,
+    maxSpeed,
     timestamp: performance.now(),
   };
 

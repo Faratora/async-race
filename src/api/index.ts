@@ -124,9 +124,9 @@ export async function stopEngine(carId: number): Promise<void> {
 
 export async function getVelocity(carId: number): Promise<number> {
   const response: Response = await fetch(`${API_BASE}/cars/${carId}/velocity`);
-  const data: { velocity: number } =
-    await handleResponse<{ velocity: number }>(response);
-  return data.velocity;
+  const data: { maxSpeed: number } =
+    await handleResponse<{ maxSpeed: number }>(response);
+  return data.maxSpeed;
 }
 
 export async function driveCar(carId: number): Promise<void> {

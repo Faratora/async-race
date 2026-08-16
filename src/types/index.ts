@@ -2,6 +2,7 @@ export interface Car {
   id: number;
   name: string;
   color: string;
+  maxSpeed: number; // максимальная скорость в км/ч
 }
 
 export interface Winner {
@@ -52,7 +53,7 @@ export interface RaceState {
 
 export interface CarRace {
   startTime: number;
-  velocity: number;
+  maxSpeed: number; // максимальная скорость в км/ч
   finished: boolean;
   broken: boolean;
   time: number | undefined;
@@ -68,7 +69,7 @@ export interface CarRace {
 
 export interface DrivingCar {
   startTime: number;
-  velocity: number;
+  maxSpeed: number; // максимальная скорость в км/ч
 }
 
 export interface AppState {
@@ -90,4 +91,18 @@ export interface RaceResult {
   time: number;
 }
 
-export { CARS_PER_PAGE, WINNERS_PER_PAGE, API_BASE, TRACK_PADDING, FINISH_OFFSET } from "../config/index.ts";
+export { CARS_PER_PAGE, WINNERS_PER_PAGE, API_BASE, TRACK_PADDING, FINISH_OFFSET, TRACK_LENGTH, MIN_SPEED_KMH, MAX_SPEED_KMH, speedToProgressPerMs } from "../config/index.ts";
+
+// ============ УТИЛИТЫ ВРЕМЕНИ ============
+
+/**
+ * Форматирует время в секундах в строку MM:SS.ms
+ */
+export const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (mins > 0) {
+    return `${mins}:${secs.toFixed(2).padStart(5, "0")}`;
+  }
+  return secs.toFixed(2);
+};

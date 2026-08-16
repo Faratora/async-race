@@ -21,6 +21,7 @@ interface Car {
   id: number;
   name: string;
   color: string;
+  maxSpeed: number; // максимальная скорость в км/ч
 }
 
 interface Winner {
@@ -40,8 +41,8 @@ const CONSTANTS = {
   ERROR_PROBABILITY: 0.05,
   DEFAULT_CARS_LIMIT: 7,
   DEFAULT_WINNERS_LIMIT: 10,
-  VELOCITY_MIN: 0.4,
-  VELOCITY_MAX: 1.1,
+  MIN_SPEED_KMH: 150,
+  MAX_SPEED_KMH: 350,
   SERVER_PORT: 3001,
   SERVER_HOST: "127.0.0.1",
   // HTTP статусы
@@ -84,10 +85,13 @@ class DataStore {
   }
 
   addCar(name: string, color: string): Car {
+    const maxSpeed = CONSTANTS.MIN_SPEED_KMH + 
+      Math.floor(Math.random() * (CONSTANTS.MAX_SPEED_KMH - CONSTANTS.MIN_SPEED_KMH + 1));
     const car: Car = { 
       id: this.carIdCounter++, 
       name: name.trim(), 
-      color: color.trim() 
+      color: color.trim(),
+      maxSpeed,
     };
     this.cars.set(car.id, car);
     return car;
@@ -372,8 +376,9 @@ app.get("/api/cars/:id/velocity", (req: express.Request, res: express.Response):
     handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Car broke down");
     return;
   }
-  const velocity = CONSTANTS.VELOCITY_MIN + Math.random() * (CONSTANTS.VELOCITY_MAX - CONSTANTS.VELOCITY_MIN);
-  res.json({ velocity: parseFloat(velocity.toFixed(2)) });
+  const car = store.getCar(id);
+  // Возвращаем реальную максимальную скорость машины
+  res.json({ maxSpeed: car!.maxSpeed });
 });
 
 app.post("/api/cars/:id/drive", (req: express.Request, res: express.Response): void => {

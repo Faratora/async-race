@@ -1,5 +1,6 @@
 import type { BreakdownType } from "../config/index.ts";
 import { getBreakdownMessage } from "../config/index.ts";
+import { formatTime } from "../types/index.ts";
 
 // ============ ОБЩАЯ ЛОГИКА УВЕДОМЛЕНИЙ ============
 interface NotificationOptions {
@@ -43,7 +44,7 @@ export const showBreakdownNotification = (carId: number, type: BreakdownType): v
 export const showWinnerNotification = (carName: string, time: number): void => {
   showNotification({
     className: "winner-message",
-    message: `🏆 ${carName} wins with time ${time.toFixed(2)}s!`,
+    message: `🏆 ${carName} wins with time ${formatTime(time)}!`,
     duration: 30000,
     insertFirst: true,
   });

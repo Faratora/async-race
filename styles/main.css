@@ -248,6 +248,12 @@ body {
   color: #1a73e8;
 }
 
+.car-speed {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
 .car-actions {
   display: flex;
   gap: 4px;

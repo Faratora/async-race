@@ -1,6 +1,7 @@
 import { state } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { escapeHtml } from "./ui-manager.ts";
+import { formatTime } from "../types/index.ts";
 
 // ============ СТРОКА ПОБЕДИТЕЛЯ ============
 export const createWinnerRow = (winner: import("../types/index.ts").Winner, index: number): HTMLElement =>
@@ -11,7 +12,7 @@ export const createWinnerRow = (winner: import("../types/index.ts").Winner, inde
     ),
     element("span", undefined, escapeHtml(winner.carName)),
     element("span", undefined, String(winner.wins)),
-    element("span", undefined, `${winner.bestTime.toFixed(2)}`)
+    element("span", undefined, formatTime(winner.bestTime))
   );
 
 // ============ ТАБЛИЦА ПОБЕДИТЕЛЕЙ ============

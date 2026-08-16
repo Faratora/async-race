@@ -4,13 +4,35 @@ export const API_BASE = "/api";
 export const TRACK_PADDING = 65;
 export const FINISH_OFFSET = 75;
 
+// Длина трассы в метрах
+export const TRACK_LENGTH = 400;
+
+// Коэффициент замедления анимации
+// Реальное время гонки умножается на этот коэффициент для зрелищности
+// TIME_SCALE = 1 → гонка идёт в реальном времени
+// TIME_SCALE = 20 → гонка в 20 раз медленнее (180 км/ч = ~160 сек вместо 8 сек)
+export const TIME_SCALE = 1.1;
+
 export const INPUT_NAME_WIDTH = 200;
 export const DEFAULT_COLOR = "#ff0000";
 
+// Диапазон максимальной скорости машин (км/ч)
+export const MIN_SPEED_KMH = 150;
+export const MAX_SPEED_KMH = 350;
+
+// Конвертирует км/ч в прогресс трассы за миллисекунду
+// velocity = (maxSpeed * 1000 / 3600) / TRACK_LENGTH / 1000
+// / 1000 — перевод секунд в миллисекунды
+export const speedToProgressPerMs = (maxSpeedKmh: number): number => {
+  const metersPerSecond = maxSpeedKmh * 1000 / 3600;
+  const metersPerMillisecond = metersPerSecond / 1000;
+  return metersPerMillisecond / TRACK_LENGTH;
+};
+
 export const BREAKDOWN_CONFIG = {
-  BASE_CHANCE: 0.001,
-  DISTANCE_MULTIPLIER: 3,
-  HIGH_SPEED_BONUS: 0.002,
+  BASE_CHANCE: 0.0001,
+  DISTANCE_MULTIPLIER: 1,
+  HIGH_SPEED_BONUS: 0.0004,
   MIN_TIME_BEFORE_BREAKDOWN: 0.5,
   REPAIR_CHANCE_PER_FRAME: 0.005,
   REPAIR_TIME: 2,

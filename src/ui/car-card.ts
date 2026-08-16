@@ -21,7 +21,9 @@ export const createCarCard = (car: Car): HTMLElement => {
 
   const carImage = element("div", { class: "car-image", style: `background-color: ${car.color}` }, initial);
   const carName = element("div", { class: "car-name", dataAction: "select", dataId: String(car.id) }, escapeHtml(car.name));
-  const carInfo = element("div", { class: "car-info" }, carName);
+  // Отображаем максимальную скорость
+  const carSpeed = element("div", { class: "car-speed" }, `${car.maxSpeed} km/h`);
+  const carInfo = element("div", { class: "car-info" }, carName, carSpeed);
 
   const startButton = element("button", {
     class: "btn btn-start-engine btn btn-sm",

@@ -1,15 +1,19 @@
 import {
   TRACK_PADDING,
   FINISH_OFFSET,
+  TRACK_LENGTH,
+  TIME_SCALE,
   BREAKDOWN_CONFIG,
   getBreakdownChance,
   getBreakdownType,
   API_BASE,
+  speedToProgressPerMs,
 } from "../config/index.ts";
 
 import { showBreakdownNotification, showWinnerNotification } from "./notifications.ts";
 
 import type { CarRace } from "../types/index.ts";
+import { formatTime } from "../types/index.ts";
 
 import {
   startEngine,
@@ -158,8 +162,13 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
   const trackWidth = getTrackWidth(road);
   const elapsed = performance.now() - race.startTime;
   const elapsedSeconds = elapsed / 1000;
-  const progress = Math.min(1, elapsed * race.velocity / trackWidth);
-  const left = progress * trackWidth;
+  
+  // Конвертируем maxSpeed (км/ч) в прогресс за миллисекунду
+  // Делим на TIME_SCALE для замедления анимации (TIME_SCALE=3 → в 3 раза медленнее)
+  const progressPerMs = speedToProgressPerMs(race.maxSpeed) / TIME_SCALE;
+  // progress — это доля трассы (0..1), умноженная на trackWidth для пикселей
+  const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
+  const progress = left / trackWidth; // реальная доля трассы [0, 1]
 
   car.style.transform = `translateX(${Math.min(left, trackWidth - FINISH_OFFSET)}px)`;
   car.dataset.lastPosition = String(left);
@@ -169,10 +178,10 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
     race.isRepairing = false;
   }
 
-  const breakdownChance = getBreakdownChance(progress, race.velocity, elapsedSeconds);
+  const breakdownChance = getBreakdownChance(progress, race.maxSpeed, elapsedSeconds);
 
   if (Math.random() < breakdownChance) {
-    const breakdownType = getBreakdownType(progress, race.velocity);
+    const breakdownType = getBreakdownType(progress, race.maxSpeed);
 
     race.broken = true;
     race.breakdownHistory.count++;
@@ -227,13 +236,8 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
 
   race.finished = true;
 
-  const road = getRoadElement(carId);
-  if (road instanceof HTMLElement) {
-    const trackWidth = getTrackWidth(road);
-    race.time = trackWidth / race.velocity;
-  } else {
-    race.time = elapsed / 1000;
-  }
+  // Время гонки в секундах с учётом замедления анимации
+  race.time = (elapsed * TIME_SCALE) / 1000;
 
   void driveCar(carId).catch(error => console.error("Failed to drive car:", error));
   updateCarButtonStates();
@@ -283,7 +287,7 @@ export const animateRace = (): void => {
 
 // ============ ОБРАБОТКА ИЗМЕНЕНИЯ РАЗМЕРА ============
 export const handleResize = (): void => {
-  const updateCarPosition = (id: number, startTime: number, velocity: number): void => {
+  const updateCarPosition = (id: number, startTime: number, maxSpeed: number): void => {
     const car = getCarElement(id);
     if (!(car instanceof HTMLElement)) return;
 
@@ -292,19 +296,19 @@ export const handleResize = (): void => {
 
     const trackWidth = getTrackWidth(road);
     const elapsed = performance.now() - startTime;
-    const progress = Math.min(1, elapsed * velocity / trackWidth);
-    const left = Math.min(progress * trackWidth, trackWidth - FINISH_OFFSET);
+    const progressPerMs = speedToProgressPerMs(maxSpeed) / TIME_SCALE;
+    const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
     car.style.transform = `translateX(${left}px)`;
   };
 
   Object.entries(state.race.carRaces).forEach(([idStr, race]) => {
     if (!race.finished && !race.broken) {
-      updateCarPosition(Number(idStr), race.startTime, race.velocity);
+      updateCarPosition(Number(idStr), race.startTime, race.maxSpeed);
     }
   });
 
   Object.entries(state.race.drivingCars).forEach(([idStr, drive]) => {
-    updateCarPosition(Number(idStr), drive.startTime, drive.velocity);
+    updateCarPosition(Number(idStr), drive.startTime, drive.maxSpeed);
   });
 };
 
@@ -323,11 +327,11 @@ export const animateDriveCar = (): void => {
 
     const trackWidth = getTrackWidth(road);
     const elapsed = now - drive.startTime;
-    const progress = Math.min(1, elapsed * drive.velocity / trackWidth);
-    const left = Math.min(progress * trackWidth, trackWidth - FINISH_OFFSET);
+    const progressPerMs = speedToProgressPerMs(drive.maxSpeed) / TIME_SCALE;
+    const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
     carElement.style.transform = `translateX(${left}px)`;
 
-    if (progress >= 1) {
+    if (left >= trackWidth - FINISH_OFFSET) {
       delete state.race.drivingCars[carId];
       const existing = state.race.carRaces[carId];
       if (existing) {
@@ -335,7 +339,7 @@ export const animateDriveCar = (): void => {
       } else {
         state.race.carRaces[carId] = {
           startTime: drive.startTime,
-          velocity: drive.velocity,
+          maxSpeed: drive.maxSpeed,
           finished: true,
           broken: false,
           time: undefined,
@@ -363,14 +367,14 @@ export const startDriveCar = async (carId: number): Promise<void> => {
     // ignore repair errors
   }
 
-  const velocity = await getVelocity(carId);
+  const maxSpeed = await getVelocity(carId);
 
   if (state.race.carRaces[carId]) {
     state.race.carRaces[carId].finished = false;
     state.race.carRaces[carId].broken = false;
   }
 
-  state.race.drivingCars[carId] = { startTime: performance.now(), velocity };
+  state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed };
 
   const carElement = getCarElement(carId);
   if (carElement instanceof HTMLElement) {
