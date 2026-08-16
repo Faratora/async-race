@@ -72,6 +72,7 @@ class DataStore {
   private winnerIdCounter = 1;
   private spamCounter = 0;
   private brokenCarId: number | null = null;
+  private winnerLocks = new Map<number, Promise<void>>();
 
   // ===== CAR METHODS =====
   getCars(): Car[] {
@@ -144,25 +145,41 @@ class DataStore {
     return undefined;
   }
 
-  addOrUpdateWinner(carId: number, carName: string, carColor: string, time: number): Winner {
-    let winner = this.getWinnerByCarId(carId);
-    if (winner) {
-      winner.wins += 1;
-      if (time < winner.bestTime) {
-        winner.bestTime = time;
-      }
-      return winner;
+  async addOrUpdateWinner(carId: number, carName: string, carColor: string, time: number): Promise<Winner> {
+    const existingLock = this.winnerLocks.get(carId);
+    if (existingLock) {
+      await existingLock;
     }
-    const newWinner: Winner = {
-      id: this.winnerIdCounter++,
-      carId,
-      carName: carName.trim(),
-      carColor: carColor.trim(),
-      wins: 1,
-      bestTime: time,
-    };
-    this.winners.set(newWinner.id, newWinner);
-    return newWinner;
+
+    const lockPromise = (async (): Promise<void> => {
+      try {
+        let winner = this.getWinnerByCarId(carId);
+        if (winner) {
+          winner.wins += 1;
+          if (time < winner.bestTime) {
+            winner.bestTime = time;
+          }
+          return;
+        }
+
+        const newWinner: Winner = {
+          id: this.winnerIdCounter++,
+          carId,
+          carName: carName.trim(),
+          carColor: carColor.trim(),
+          wins: 1,
+          bestTime: time,
+        };
+        this.winners.set(newWinner.id, newWinner);
+      } finally {
+        this.winnerLocks.delete(carId);
+      }
+    })();
+
+    this.winnerLocks.set(carId, lockPromise);
+    await lockPromise;
+
+    return this.getWinnerByCarId(carId)!;
   }
 
   // ===== UTILITY METHODS =====
@@ -460,14 +477,14 @@ app.get("/api/winners", (req: express.Request, res: express.Response): void => {
   }
 });
 
-app.post("/api/winners", (req: express.Request, res: express.Response): void => {
+app.post("/api/winners", async (req: express.Request, res: express.Response): Promise<void> => {
   try {
     const body = req.body;
     if (!store.isValidWinnerData(body)) {
       handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid winner data");
       return;
     }
-    const winner = store.addOrUpdateWinner(
+    const winner = await store.addOrUpdateWinner(
       body.carId,
       body.carName,
       body.carColor,
