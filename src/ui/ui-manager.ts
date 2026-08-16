@@ -75,6 +75,8 @@ export const renderGarage = async (): Promise<void> => {
   const app = getApp();
   if (!app) return;
 
+  app.innerHTML = '<div class="loader">Loading...</div>';
+
   try {
     await loadGarageCars();
   } catch {
@@ -82,30 +84,33 @@ export const renderGarage = async (): Promise<void> => {
     state.garage.total = 0;
   }
 
-  app.replaceChildren();
-
   const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
 
-  renderHeader(app, `Garage (${state.garage.total})`, state.garage.total, state.garage.page, totalPages, "cars");
-  renderAddCarForm(app);
-  renderEditForm(app);
-  renderRaceControls(app);
-  renderCarCards(app);
+  const fragment = document.createDocumentFragment();
+  
+  renderHeader(fragment, `Garage (${state.garage.total})`, state.garage.total, state.garage.page, totalPages, "cars");
+  renderAddCarForm(fragment);
+  renderEditForm(fragment);
+  renderRaceControls(fragment);
+  renderCarCards(fragment);
 
   const garagePrevDisabled = state.garage.page <= 1 || state.race.isRacing;
   const garageNextDisabled = state.garage.page >= totalPages || state.race.isRacing;
-  app.append(createPagination("btn-prev", "btn-next", state.garage.page, totalPages, garagePrevDisabled, garageNextDisabled));
+  fragment.appendChild(createPagination("btn-prev", "btn-next", state.garage.page, totalPages, garagePrevDisabled, garageNextDisabled));
+  
+  app.replaceChildren(fragment);
+  updateCarButtonStates();
 };
 
 const renderHeader = (
-  app: HTMLElement,
+  container: HTMLElement | DocumentFragment,
   title: string,
   total: number,
   currentPage: number,
   totalPages: number,
   extraInfo?: string
 ): void => {
-  app.append(
+  container.append(
     element("div", { class: "view-header" },
       element("span", { class: "view-title" }, title),
       element("span", { class: "view-info" },
@@ -115,7 +120,7 @@ const renderHeader = (
   );
 };
 
-const renderAddCarForm = (app: HTMLElement): void => {
+const renderAddCarForm = (container: HTMLElement | DocumentFragment): void => {
   const form = element("div", { class: "add-car-form" });
   form.innerHTML = `
     <input type="text" id="car-name" placeholder="Car name" value="${escapeHtml(state.garage.createCarName)}" class="form-control" style="width: ${INPUT_NAME_WIDTH}px;">
@@ -134,10 +139,10 @@ const renderAddCarForm = (app: HTMLElement): void => {
     state.garage.selectedColor = colorInput.value;
   });
 
-  app.append(form);
+  container.append(form);
 };
 
-const renderEditForm = (app: HTMLElement): void => {
+const renderEditForm = (container: HTMLElement | DocumentFragment): void => {
   if (state.garage.editingCarId === undefined) return;
 
   const form = element("div", { class: "edit-car-form" });
@@ -147,10 +152,10 @@ const renderEditForm = (app: HTMLElement): void => {
     <button class="btn btn-primary" id="btn-update">Update</button>
     <button class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
   `;
-  app.append(form);
+  container.append(form);
 };
 
-const renderRaceControls = (app: HTMLElement): void => {
+const renderRaceControls = (container: HTMLElement | DocumentFragment): void => {
   const controls = element("div", { class: "race-controls" });
   controls.innerHTML = `
     <button class="btn btn-success" id="btn-start-race">Start Race</button>
@@ -164,7 +169,7 @@ const renderRaceControls = (app: HTMLElement): void => {
     void resetRaceHandler();
   });
 
-  app.append(controls);
+  container.append(controls);
 };
 
 // ============ КАРТОЧКИ АВТОМОБИЛЕЙ ============
@@ -222,9 +227,9 @@ export const createCarCard = (car: Car): HTMLElement => {
   return card;
 };
 
-export const renderCarCards = (app: HTMLElement): void => {
+export const renderCarCards = (container: HTMLElement | DocumentFragment): void => {
   if (state.garage.cars.length === 0) {
-    app.append(
+    container.append(
       element("div", { class: "view-info", style: "padding: 2rem; text-align: center;" },
         "No cars yet. Create one above!"
       )
@@ -232,8 +237,7 @@ export const renderCarCards = (app: HTMLElement): void => {
     return;
   }
 
-  state.garage.cars.forEach(car => app.append(createCarCard(car)));
-  updateCarButtonStates();
+  state.garage.cars.forEach(car => container.append(createCarCard(car)));
 };
 
 const createPagination = (
@@ -264,17 +268,22 @@ export const renderWinners = async (): Promise<void> => {
   const app = getApp();
   if (!app) return;
 
-  app.replaceChildren();
+  app.innerHTML = '<div class="loader">Loading...</div>';
+
   await loadWinners();
 
   const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
 
-  renderHeader(app, "Winners", state.winners.total, state.winners.page, totalPages, "winners");
-  renderWinnersTable(app);
+  const fragment = document.createDocumentFragment();
+  
+  renderHeader(fragment, "Winners", state.winners.total, state.winners.page, totalPages, "winners");
+  renderWinnersTable(fragment);
 
   const winnersPrevDisabled = state.winners.page <= 1;
   const winnersNextDisabled = state.winners.page >= totalPages;
-  app.append(createPagination("btn-prev-winners", "btn-next-winners", state.winners.page, totalPages, winnersPrevDisabled, winnersNextDisabled));
+  fragment.appendChild(createPagination("btn-prev-winners", "btn-next-winners", state.winners.page, totalPages, winnersPrevDisabled, winnersNextDisabled));
+  
+  app.replaceChildren(fragment);
 };
 
 const createWinnerRow = (winner: Winner, index: number): HTMLElement =>
@@ -288,7 +297,7 @@ const createWinnerRow = (winner: Winner, index: number): HTMLElement =>
     element("span", undefined, `${winner.bestTime.toFixed(2)}`)
   );
 
-const renderWinnersTable = (app: HTMLElement): void => {
+const renderWinnersTable = (container: HTMLElement | DocumentFragment): void => {
   const table = element("div");
 
   const header = element("div", { class: "table-header" },
@@ -318,5 +327,5 @@ const renderWinnersTable = (app: HTMLElement): void => {
     });
   }
 
-  app.append(table);
+  container.append(table);
 };
