@@ -1,7 +1,6 @@
 import {
   TRACK_PADDING,
   FINISH_OFFSET,
-  TRACK_LENGTH,
   TIME_SCALE,
   BREAKDOWN_CONFIG,
   getBreakdownChance,
@@ -12,15 +11,11 @@ import {
 
 import { showBreakdownNotification, showWinnerNotification, type BrokenCar } from "./notifications.ts";
 
-import type { CarRace } from "../types/index.ts";
-import { formatTime } from "../types/index.ts";
+import type { Car, CarRace, DrivingCar } from "../types/index.ts";
 
 import {
-  startEngine,
   getVelocity,
   driveCar,
-  startRace,
-  resetRace,
   recordWinner,
 } from "../api/index.ts";
 
@@ -228,6 +223,20 @@ const handleCarBreakdown = (
   race.breakdownHistory.positions.push(progress);
   race.breakdownHistory.types.push(breakdownType);
 
+  applyBreakdownVisuals(car, breakdownType, left, progress, carId);
+  showBreakdownNotification(carId, breakdownType);
+  updateCarButtonStates();
+  updateCarButtonsOnBreakdown(carId);
+};
+
+// ============ ВИЗУАЛЬНЫЕ ЭФФЕКТЫ ПОЛОМКИ ============
+const applyBreakdownVisuals = (
+  car: HTMLElement,
+  breakdownType: string,
+  left: number,
+  progress: number,
+  carId: number,
+): void => {
   car.classList.add("broken");
   car.classList.add(`broken-${breakdownType}`);
 
@@ -246,17 +255,21 @@ const handleCarBreakdown = (
     default:
       console.log(`Car ${carId} broke down at ${Math.round(progress * 100)}%!`);
   }
+};
 
-  showBreakdownNotification(carId, breakdownType);
-  updateCarButtonStates();
-
-  const stopButton = document.querySelector<HTMLButtonElement>(`.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`);
+// ============ ОБНОВЛЕНИЕ КНОПОК ПРИ ПОЛОМКЕ ============
+const updateCarButtonsOnBreakdown = (carId: number): void => {
+  const stopButton = document.querySelector<HTMLButtonElement>(
+    `.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`,
+  );
   if (stopButton) {
     stopButton.disabled = false;
     stopButton.removeAttribute("disabled");
   }
 
-  const startButton = document.querySelector<HTMLButtonElement>(`.btn-start-engine[data-id="${CSS.escape(String(carId))}"]`);
+  const startButton = document.querySelector<HTMLButtonElement>(
+    `.btn-start-engine[data-id="${CSS.escape(String(carId))}"]`,
+  );
   if (startButton) {
     startButton.disabled = true;
     startButton.setAttribute("disabled", "");
@@ -391,26 +404,7 @@ export const animateDriveCar = (): void => {
     carElement.style.transform = `translateX(${left}px)`;
 
     if (left >= trackWidth - FINISH_OFFSET) {
-      delete state.race.drivingCars[carId];
-      const existing = state.race.carRaces[carId];
-      if (existing) {
-        existing.finished = true;
-      } else {
-        state.race.carRaces[carId] = {
-          startTime: drive.startTime,
-          maxSpeed: drive.maxSpeed,
-          finished: true,
-          broken: false,
-          time: undefined,
-          breakdownHistory: { count: 0, timestamps: [], positions: [], types: [] },
-        };
-      }
-      void driveCar(carId)
-        .then(updateCarButtonStates)
-        .catch(error => {
-          console.error("Failed to drive car:", error);
-          updateCarButtonStates();
-        });
+      handleDriveCarFinished(carId, drive);
     }
   });
 
@@ -418,6 +412,36 @@ export const animateDriveCar = (): void => {
     state.race.driveAnimationId = requestAnimationFrame(animateDriveCar);
   }
 };
+
+// ============ ЗАВЕРШЕНИЕ ЕЗДЫ ============
+const handleDriveCarFinished = (carId: number, drive: DrivingCar): void => {
+  delete state.race.drivingCars[carId];
+  handleDriveCarComplete(carId, drive);
+  void driveCar(carId)
+    .then(updateCarButtonStates)
+    .catch(error => {
+      console.error("Failed to drive car:", error);
+      updateCarButtonStates();
+    });
+};
+
+const handleDriveCarComplete = (carId: number, drive: DrivingCar): void => {
+  const existing = state.race.carRaces[carId];
+  if (existing) {
+    existing.finished = true;
+  } else {
+    state.race.carRaces[carId] = createDefaultFinishedRace(drive);
+  }
+};
+
+const createDefaultFinishedRace = (drive: DrivingCar): CarRace => ({
+  startTime: drive.startTime,
+  maxSpeed: drive.maxSpeed,
+  finished: true,
+  broken: false,
+  time: undefined,
+  breakdownHistory: { count: 0, timestamps: [], positions: [], types: [] },
+});
 
 export const startDriveCar = async (carId: number): Promise<void> => {
   try {

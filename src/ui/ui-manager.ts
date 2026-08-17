@@ -175,21 +175,43 @@ const renderRaceControls = (container: HTMLElement | DocumentFragment): void => 
 // ============ КАРТОЧКИ АВТОМОБИЛЕЙ ============
 export const createCarCard = (car: Car): HTMLElement => {
   const carId = Number(car.id);
-  const isDriving = state.race.drivingCars[carId] !== undefined ||
-    (state.race.isRacing && isCarRacing(carId));
-  const isBroken = isCarBroken(carId);
-  const isFinished = isCarFinished(carId);
-  const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
-
   const card = element("div", { class: "car-card" });
 
   if (state.garage.editingCarId === carId) {
     card.classList.add("selected");
   }
 
+  card.append(createCarCardTop(car));
+  card.append(createCarCardBottom(car));
+
+  return card;
+};
+
+const createCarCardTop = (car: Car): HTMLElement => {
+  const carId = Number(car.id);
+  const isDriving = state.race.drivingCars[carId] !== undefined ||
+    (state.race.isRacing && isCarRacing(carId));
+  const isBroken = isCarBroken(carId);
+  const isFinished = isCarFinished(carId);
+  const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
+
   const carImage = element("div", { class: "car-image", style: `background-color: ${car.color}` }, initial);
   const carName = element("div", { class: "car-name", dataAction: "select", dataId: String(car.id) }, escapeHtml(car.name));
   const carInfo = element("div", { class: "car-info" }, carName);
+  const actions = element("div", { class: "car-actions" },
+    element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "select", dataId: String(car.id) }, "Select"),
+    element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove")
+  );
+
+  return element("div", { class: "car-card-top" }, actions, carImage, carInfo);
+};
+
+const createCarCardBottom = (car: Car): HTMLElement => {
+  const carId = Number(car.id);
+  const isDriving = state.race.drivingCars[carId] !== undefined ||
+    (state.race.isRacing && isCarRacing(carId));
+  const isBroken = isCarBroken(carId);
+  const isFinished = isCarFinished(carId);
 
   const startButton = element("button", {
     class: "btn btn-start-engine btn btn-sm",
@@ -205,11 +227,6 @@ export const createCarCard = (car: Car): HTMLElement => {
     disabled: !(isDriving || isBroken || isFinished) ? undefined : true
   }, "B");
 
-  const actions = element("div", { class: "car-actions" },
-    element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "select", dataId: String(car.id) }, "Select"),
-    element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove")
-  );
-
   const road = element("div", { class: "car-road", dataId: String(car.id) },
     element("div", { class: "car-road-line" }),
     element("div", { class: "car-road-finish" }),
@@ -217,14 +234,9 @@ export const createCarCard = (car: Car): HTMLElement => {
     element("div", { class: "car", style: `background-color: ${car.color}` })
   );
 
-  card.append(
-    element("div", { class: "car-card-top" }, actions, carImage, carInfo),
-    element("div", { class: "car-card-bottom" }, road,
-      element("div", { class: "car-start-stop" }, startButton, stopButton)
-    )
+  return element("div", { class: "car-card-bottom" }, road,
+    element("div", { class: "car-start-stop" }, startButton, stopButton)
   );
-
-  return card;
 };
 
 export const renderCarCards = (container: HTMLElement | DocumentFragment): void => {

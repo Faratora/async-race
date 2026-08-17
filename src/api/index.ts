@@ -31,28 +31,39 @@ async function fetchWithRetry<T>(
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const response: Response = await fetch(url, options);
-      const shouldRetry = (response.status === 429 || response.status === 500) && attempt < retries - 1;
-      if (shouldRetry) {
+      if (shouldRetry(response, attempt, retries)) {
         await new Promise((resolve) => setTimeout(resolve, delay * 2 ** attempt));
         continue;
       }
-      if (!response.ok) {
-        const errorText: string = await response.clone().text();
-        throw new Error(
-          `HTTP ${response.status} ${response.statusText}: ${errorText}`,
-        );
-      }
-      const text: string = await response.text();
-      if (!text) {
-        throw new Error("Empty response body");
-      }
-      return JSON.parse(text);
+      return await processResponse<T>(response);
     } catch (error) {
       if (attempt === retries - 1) throw error;
       await new Promise((resolve) => setTimeout(resolve, delay * 2 ** attempt));
     }
   }
   throw new Error("Retry limit exceeded");
+}
+
+const shouldRetry = (
+  response: Response,
+  attempt: number,
+  retries: number,
+): boolean => {
+  return (response.status === 429 || response.status === 500) && attempt < retries - 1;
+};
+
+async function processResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorText: string = await response.clone().text();
+    throw new Error(
+      `HTTP ${response.status} ${response.statusText}: ${errorText}`,
+    );
+  }
+  const text: string = await response.text();
+  if (!text) {
+    throw new Error("Empty response body");
+  }
+  return JSON.parse(text);
 }
 
 export async function fetchCars(
