@@ -1,3 +1,5 @@
+import type { CarRace } from "../types/index.ts";
+
 import {
   startEngine,
   getVelocity,
@@ -38,32 +40,17 @@ export const startRaceHandler = async (): Promise<void> => {
   const now = performance.now();
 
   state.race.carRaces = {};
-
   resetCarVisualState(carIds);
   resetCarPositions(carIds);
 
   carIds.forEach((id, index) => {
     const result = velocities[index];
     const isBroken = result.status === "rejected";
+    state.race.carRaces[id] = createCarRace(now, isBroken, result);
+  });
 
-    state.race.carRaces[id] = {
-      startTime: now,
-      maxSpeed: result.status === "fulfilled" ? result.value : 0,
-      finished: false,
-      broken: isBroken,
-      time: undefined,
-      breakdownHistory: {
-        count: isBroken ? 1 : 0,
-        timestamps: isBroken ? [now] : [],
-        positions: isBroken ? [0] : [],
-        types: isBroken ? ["start_stall"] : [],
-      },
-      repairStartTime: undefined,
-      isRepairing: false,
-    };
-
-    if (isBroken) {
-      console.log(`Car ${id} broke down at start!`);
+  carIds.forEach(id => {
+    if (isCarBrokenAtStart(id)) {
       const car = getCarElement(id);
       if (car instanceof HTMLElement) {
         car.classList.add("broken");
@@ -74,6 +61,31 @@ export const startRaceHandler = async (): Promise<void> => {
 
   updateCarButtonStates();
   animateRace();
+};
+
+const createCarRace = (
+  now: number,
+  isBroken: boolean,
+  result: PromiseFulfilledResult<number> | PromiseRejectedResult,
+): CarRace => ({
+  startTime: now,
+  maxSpeed: result.status === "fulfilled" ? result.value : 0,
+  finished: false,
+  broken: isBroken,
+  time: undefined,
+  breakdownHistory: {
+    count: isBroken ? 1 : 0,
+    timestamps: isBroken ? [now] : [],
+    positions: isBroken ? [0] : [],
+    types: isBroken ? ["start_stall"] : [],
+  },
+  repairStartTime: undefined,
+  isRepairing: false,
+});
+
+const isCarBrokenAtStart = (id: number): boolean => {
+  const result = state.race.carRaces[id];
+  return result?.broken ?? false;
 };
 
 export const resetRaceHandler = async (): Promise<void> => {

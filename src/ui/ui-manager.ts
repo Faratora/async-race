@@ -89,7 +89,7 @@ export const renderGarage = async (): Promise<void> => {
 
   const fragment = document.createDocumentFragment();
   
-  renderHeader(fragment, "Garage", state.garage.total, state.garage.page, totalPages);
+  renderHeader(fragment, `Garage (${state.garage.total})`, state.garage.total, state.garage.page, totalPages);
   renderAddCarForm(fragment);
   renderEditForm(fragment);
   renderRaceControls(fragment);
@@ -276,7 +276,7 @@ export const renderWinners = async (): Promise<void> => {
 
   const fragment = document.createDocumentFragment();
   
-  renderHeader(fragment, "Winners", state.winners.total, state.winners.page, totalPages);
+  renderHeader(fragment, `Winners (${state.winners.total})`, state.winners.total, state.winners.page, totalPages);
   renderWinnersTable(fragment);
 
   const winnersPrevDisabled = state.winners.page <= 1;

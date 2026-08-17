@@ -118,57 +118,79 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
   if (!(car instanceof HTMLElement)) return;
 
   if (race.broken) {
-    car.classList.add("broken");
+    handleBrokenCar(carId, car, race);
+    return;
+  }
 
-    if (race.breakdownHistory && race.breakdownHistory.count < BREAKDOWN_CONFIG.MAX_BREAKDOWNS) {
-      if (race.repairStartTime === undefined) {
-        race.repairStartTime = performance.now();
-        race.isRepairing = true;
-        console.log(`Starting repair for car ${carId}...`);
-        updateCarButtonStates();
-        return;
-      }
+  animateCarMovement(carId, car, race);
+};
 
-      const repairElapsed = (performance.now() - race.repairStartTime) / 1000;
-      if (repairElapsed >= BREAKDOWN_CONFIG.REPAIR_TIME) {
-        race.broken = false;
-        race.isRepairing = false;
-        race.repairStartTime = undefined;
-        car.classList.remove("broken");
-        console.log(`Car ${carId} repaired!`);
+// ============ ОБРАБОТКА СЛОМАННОЙ МАШИНЫ ============
+const handleBrokenCar = (
+  carId: number,
+  car: HTMLElement,
+  race: CarRace,
+): void => {
+  car.classList.add("broken");
 
-        const currentTransform = car.style.transform;
-        const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-        const currentLeft = match ? parseFloat(match[1]) : 0;
-        car.dataset.lastPosition = String(currentLeft);
-        updateCarButtonStates();
-        return;
-      }
+  if (race.breakdownHistory && race.breakdownHistory.count < BREAKDOWN_CONFIG.MAX_BREAKDOWNS) {
+    handleRepairProgress(carId, car, race);
+    return;
+  }
 
-      const repairProgress = repairElapsed / BREAKDOWN_CONFIG.REPAIR_TIME;
-      car.style.opacity = String(0.3 + repairProgress * 0.7);
-      updateCarButtonStates();
-      return;
-    }
+  console.log(`Car ${carId} is out of the race!`);
+  updateCarButtonStates();
+};
 
-    console.log(`Car ${carId} is out of the race!`);
+const handleRepairProgress = (
+  carId: number,
+  car: HTMLElement,
+  race: CarRace,
+): void => {
+  if (race.repairStartTime === undefined) {
+    race.repairStartTime = performance.now();
+    race.isRepairing = true;
+    console.log(`Starting repair for car ${carId}...`);
     updateCarButtonStates();
     return;
   }
 
+  const repairElapsed = (performance.now() - race.repairStartTime) / 1000;
+  if (repairElapsed >= BREAKDOWN_CONFIG.REPAIR_TIME) {
+    race.broken = false;
+    race.isRepairing = false;
+    race.repairStartTime = undefined;
+    car.classList.remove("broken");
+    console.log(`Car ${carId} repaired!`);
+
+    const currentTransform = car.style.transform;
+    const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
+    const currentLeft = match ? parseFloat(match[1]) : 0;
+    car.dataset.lastPosition = String(currentLeft);
+    updateCarButtonStates();
+    return;
+  }
+
+  const repairProgress = repairElapsed / BREAKDOWN_CONFIG.REPAIR_TIME;
+  car.style.opacity = String(0.3 + repairProgress * 0.7);
+  updateCarButtonStates();
+};
+
+// ============ АНИМАЦИЯ ДВИЖЕНИЯ ============
+const animateCarMovement = (
+  carId: number,
+  car: HTMLElement,
+  race: CarRace,
+): void => {
   const road = car.parentElement;
   if (!(road instanceof HTMLElement)) return;
 
   const trackWidth = getTrackWidth(road);
   const elapsed = performance.now() - race.startTime;
   const elapsedSeconds = elapsed / 1000;
-  
-  // Конвертируем maxSpeed (км/ч) в прогресс за миллисекунду
-  // Делим на TIME_SCALE для замедления анимации (TIME_SCALE=3 → в 3 раза медленнее)
   const progressPerMs = speedToProgressPerMs(race.maxSpeed) / TIME_SCALE;
-  // progress — это доля трассы (0..1), умноженная на trackWidth для пикселей
   const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
-  const progress = left / trackWidth; // реальная доля трассы [0, 1]
+  const progress = left / trackWidth;
 
   car.style.transform = `translateX(${Math.min(left, trackWidth - FINISH_OFFSET)}px)`;
   car.dataset.lastPosition = String(left);
@@ -181,48 +203,7 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
   const breakdownChance = getBreakdownChance(progress, race.maxSpeed, elapsedSeconds);
 
   if (Math.random() < breakdownChance) {
-    const breakdownType = getBreakdownType(progress, race.maxSpeed);
-
-    race.broken = true;
-    race.breakdownHistory.count++;
-    race.breakdownHistory.timestamps.push(performance.now());
-    race.breakdownHistory.positions.push(progress);
-    race.breakdownHistory.types.push(breakdownType);
-
-    car.classList.add("broken");
-    car.classList.add(`broken-${breakdownType}`);
-
-    switch (breakdownType) {
-      case "engine_overheating":
-        car.style.transform = `translateX(${left}px) scale(1.1)`;
-        console.log(`Car ${carId} engine overheated at ${Math.round(progress * 100)}%!`);
-        break;
-      case "transmission_failure":
-        car.style.transform = `translateX(${left}px) rotate(5deg)`;
-        console.log(`Car ${carId} transmission failed at ${Math.round(progress * 100)}%!`);
-        break;
-      case "start_stall":
-        console.log(`Car ${carId} stalled at start!`);
-        break;
-      default:
-        console.log(`Car ${carId} broke down at ${Math.round(progress * 100)}%!`);
-    }
-
-    showBreakdownNotification(carId, breakdownType);
-    updateCarButtonStates();
-
-    const stopButton = document.querySelector<HTMLButtonElement>(`.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`);
-    if (stopButton) {
-      stopButton.disabled = false;
-      stopButton.removeAttribute("disabled");
-    }
-
-    const startButton = document.querySelector<HTMLButtonElement>(`.btn-start-engine[data-id="${CSS.escape(String(carId))}"]`);
-    if (startButton) {
-      startButton.disabled = true;
-      startButton.setAttribute("disabled", "");
-    }
-
+    handleCarBreakdown(carId, car, race, progress, left);
     return;
   }
 
@@ -231,12 +212,61 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
   }
 };
 
+// ============ ОБРАБОТКА ПОЛОМКИ ============
+const handleCarBreakdown = (
+  carId: number,
+  car: HTMLElement,
+  race: CarRace,
+  progress: number,
+  left: number,
+): void => {
+  const breakdownType = getBreakdownType(progress, race.maxSpeed);
+
+  race.broken = true;
+  race.breakdownHistory.count++;
+  race.breakdownHistory.timestamps.push(performance.now());
+  race.breakdownHistory.positions.push(progress);
+  race.breakdownHistory.types.push(breakdownType);
+
+  car.classList.add("broken");
+  car.classList.add(`broken-${breakdownType}`);
+
+  switch (breakdownType) {
+    case "engine_overheating":
+      car.style.transform = `translateX(${left}px) scale(1.1)`;
+      console.log(`Car ${carId} engine overheated at ${Math.round(progress * 100)}%!`);
+      break;
+    case "transmission_failure":
+      car.style.transform = `translateX(${left}px) rotate(5deg)`;
+      console.log(`Car ${carId} transmission failed at ${Math.round(progress * 100)}%!`);
+      break;
+    case "start_stall":
+      console.log(`Car ${carId} stalled at start!`);
+      break;
+    default:
+      console.log(`Car ${carId} broke down at ${Math.round(progress * 100)}%!`);
+  }
+
+  showBreakdownNotification(carId, breakdownType);
+  updateCarButtonStates();
+
+  const stopButton = document.querySelector<HTMLButtonElement>(`.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`);
+  if (stopButton) {
+    stopButton.disabled = false;
+    stopButton.removeAttribute("disabled");
+  }
+
+  const startButton = document.querySelector<HTMLButtonElement>(`.btn-start-engine[data-id="${CSS.escape(String(carId))}"]`);
+  if (startButton) {
+    startButton.disabled = true;
+    startButton.setAttribute("disabled", "");
+  }
+};
+
 export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): void => {
   if (race.broken) return;
 
   race.finished = true;
-
-  // Время гонки в секундах с учётом замедления анимации
   race.time = (elapsed * TIME_SCALE) / 1000;
 
   void driveCar(carId).catch(error => console.error("Failed to drive car:", error));
@@ -252,31 +282,44 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
     state.race.winnerAnnounced = true;
     const car = state.garage.cars.find(c => c.id === carId);
     if (car) {
-      // Собираем список всех сломанных машинок
-      const brokenCars: BrokenCar[] = [];
-      for (const [raceIdStr, race] of Object.entries(state.race.carRaces)) {
-        if (race.broken && race.breakdownHistory && race.breakdownHistory.count > 0) {
-          const raceCar = state.garage.cars.find(c => c.id === Number(raceIdStr));
-          if (raceCar) {
-            const lastType = race.breakdownHistory.types[race.breakdownHistory.types.length - 1];
-            brokenCars.push({
-              id: raceCar.id,
-              name: raceCar.name,
-              type: lastType,
-            });
-          }
-        }
-      }
-
-      void recordWinner({
-        carId: car.id,
-        carName: car.name,
-        carColor: car.color,
-        time: race.time,
-      });
-      showWinnerNotification(car.name, race.time, brokenCars);
+      const brokenCars = collectBrokenCars();
+      announceWinner(car, race.time, brokenCars);
     }
   }
+};
+
+// ============ СБОР СЛОМАННЫХ МАШИН ============
+const collectBrokenCars = (): BrokenCar[] => {
+  const brokenCars: BrokenCar[] = [];
+  for (const [raceIdStr, race] of Object.entries(state.race.carRaces)) {
+    if (race.broken && race.breakdownHistory && race.breakdownHistory.count > 0) {
+      const raceCar = state.garage.cars.find(c => c.id === Number(raceIdStr));
+      if (raceCar) {
+        const lastType = race.breakdownHistory.types[race.breakdownHistory.types.length - 1];
+        brokenCars.push({
+          id: raceCar.id,
+          name: raceCar.name,
+          type: lastType,
+        });
+      }
+    }
+  }
+  return brokenCars;
+};
+
+// ============ ОБЪЯВЛЕНИЕ ПОБЕДИТЕЛЯ ============
+const announceWinner = (
+  car: Car,
+  time: number,
+  brokenCars: BrokenCar[],
+): void => {
+  void recordWinner({
+    carId: car.id,
+    carName: car.name,
+    carColor: car.color,
+    time,
+  });
+  showWinnerNotification(car.name, time, brokenCars);
 };
 
 export const animateRace = (): void => {
