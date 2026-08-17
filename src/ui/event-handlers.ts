@@ -112,6 +112,12 @@ const stopRaceAnimation = (): void => {
   state.race.isRacing = false;
 };
 
+// ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ГАРАЖА ============
+const reloadGarage = (): void => {
+  state.garage.page = 1;
+  void loadGarageCars().then(renderGarage);
+};
+
 export const handleCreateButton = (): void => {
   const name = state.garage.createCarName.trim();
   if (!name) return;
@@ -119,19 +125,13 @@ export const handleCreateButton = (): void => {
   void createCar({ name, color: state.garage.selectedColor })
     .then(() => {
       state.garage.createCarName = "";
-      state.garage.page = 1;
-      return loadGarageCars();
-    })
-    .then(renderGarage);
+      reloadGarage();
+    });
 };
 
 export const handleGenerateButton = (): void => {
   void generateCars(100)
-    .then(() => {
-      state.garage.page = 1;
-      return loadGarageCars();
-    })
-    .then(renderGarage);
+    .then(reloadGarage);
 };
 
 export const handleUpdateButton = (): void => {
@@ -151,9 +151,8 @@ export const handleUpdateButton = (): void => {
       state.garage.editingCarId = undefined;
       state.garage.editName = "";
       state.garage.editColor = "#ff0000";
-      return loadGarageCars();
-    })
-    .then(renderGarage);
+      reloadGarage();
+    });
 };
 
 export const handleCancelEditButton = (): void => {
