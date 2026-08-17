@@ -21,6 +21,31 @@ import { startDriveCar, stopDriveCar, resetCarToStart } from "./animations.ts";
 import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
 
+// ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ГАРАЖА ============
+const reloadGarage = (): void => {
+  state.garage.page = 1;
+  void loadGarageCars().then(renderGarage);
+};
+
+// ============ ЗАЩИТА ОТ ГОНКИ СОСТОЯНИЙ ============
+const pendingActions = new Set<number>();
+
+export const handleCreateButton = (): void => {
+  const name = state.garage.createCarName.trim();
+  if (!name) return;
+
+  void createCar({ name, color: state.garage.selectedColor })
+    .then(() => {
+      state.garage.createCarName = "";
+      reloadGarage();
+    });
+};
+
+export const handleGenerateButton = (): void => {
+  void generateCars(100)
+    .then(reloadGarage);
+};
+
 // ============ ОБРАБОТЧИКИ СОБЫТИЙ ============
 export const handleCarAction = (action: string | undefined, id: number): void => {
   if (!action) return;
@@ -35,11 +60,11 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
       break;
 
     case "start":
-      handleStartEngine(id);
+      void handleStartEngine(id);
       break;
 
     case "stop":
-      handleStopEngine(id);
+      void handleStopEngine(id);
       break;
   }
 };
@@ -62,19 +87,37 @@ const handleSelectCar = (id: number): void => {
   renderGarage();
 };
 
-const handleStartEngine = (id: number): void => {
-  void startEngine(id).then(() => startDriveCar(id));
+const handleStartEngine = async (id: number): Promise<void> => {
+  if (pendingActions.has(id)) return;
+  pendingActions.add(id);
+  try {
+    await startEngine(id);
+    startDriveCar(id);
+  } catch (error) {
+    console.error(`Failed to start engine for car ${id}:`, error);
+  } finally {
+    pendingActions.delete(id);
+  }
 };
 
-const handleStopEngine = (id: number): void => {
-  const isBroken = isCarBroken(id);
-  const isFinished = isCarFinished(id);
-  if (isBroken) {
-    handleRepairCar(id);
-  } else if (isFinished) {
-    resetCarToStart(id);
-  } else {
-    void stopEngine(id).then(() => stopDriveCar(id));
+const handleStopEngine = async (id: number): Promise<void> => {
+  if (pendingActions.has(id)) return;
+  pendingActions.add(id);
+  try {
+    const isBroken = isCarBroken(id);
+    const isFinished = isCarFinished(id);
+    if (isBroken) {
+      handleRepairCar(id);
+    } else if (isFinished) {
+      resetCarToStart(id);
+    } else {
+      await stopEngine(id);
+      stopDriveCar(id);
+    }
+  } catch (error) {
+    console.error(`Failed to stop engine for car ${id}:`, error);
+  } finally {
+    pendingActions.delete(id);
   }
 };
 
@@ -110,28 +153,6 @@ const stopRaceAnimation = (): void => {
     state.race.animationId = 0;
   }
   state.race.isRacing = false;
-};
-
-// ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ГАРАЖА ============
-const reloadGarage = (): void => {
-  state.garage.page = 1;
-  void loadGarageCars().then(renderGarage);
-};
-
-export const handleCreateButton = (): void => {
-  const name = state.garage.createCarName.trim();
-  if (!name) return;
-
-  void createCar({ name, color: state.garage.selectedColor })
-    .then(() => {
-      state.garage.createCarName = "";
-      reloadGarage();
-    });
-};
-
-export const handleGenerateButton = (): void => {
-  void generateCars(100)
-    .then(reloadGarage);
 };
 
 export const handleUpdateButton = (): void => {
