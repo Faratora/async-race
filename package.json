@@ -1,43 +1,27 @@
 {
   "name": "async-race",
   "version": "1.0.0",
-  "description": "Fun with promises",
-  "main": "index.js",
+  "description": "Async Race project",
+  "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "server": "tsx server/mock-server.ts",
     "start": "concurrently \"npm run server\" \"npm run dev\"",
-    "build": "tsc --noEmit && vite build",
-    "lint": "eslint src/"
+    "build": "tsc",
+    "preview": "vite preview"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Faratora/async-race.git"
-  },
-  "keywords": [],
   "author": "",
-  "license": "ISC",
-  "type": "module",
-  "bugs": {
-    "url": "https://github.com/Faratora/async-race/issues"
-  },
-  "homepage": "https://github.com/Faratora/async-race#readme",
+  "license": "MIT",
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.1.2",
-    "@typescript-eslint/eslint-plugin": "^8.66.0",
-    "@typescript-eslint/parser": "^8.66.0",
-    "concurrently": "^10.0.4",
-    "eslint": "^10.8.0",
-    "eslint-plugin-unicorn": "^73.0.0",
-    "globals": "^17.9.0",
-    "tsx": "^4.23.12",
-    "typescript": "^7.0.2",
-    "vite": "^8.2.1"
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.14.0",
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
   },
   "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
   }
 }

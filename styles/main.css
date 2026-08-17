@@ -276,15 +276,13 @@ body {
   margin-top: 4px;
   position: relative;
   overflow: visible;
-  width: 960px;
-  max-width: 100%;
+  width: 100%;
 }
 
 .car-road {
   background-color: #1a1a2e;
   border-radius: 4px;
-  width: 960px;
-  max-width: 100%;
+  width: 100%;
   height: 100%;
   position: relative;
 }
@@ -339,6 +337,67 @@ body {
   left: 75px;
   -webkit-mask: url('/img/car.svg') 50% / contain no-repeat;
   mask: url('/img/car.svg') 50% / contain no-repeat;
+}
+
+@media (max-width: 500px) {
+  .navbar {
+    padding: 8px 12px;
+  }
+
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  #app {
+    padding: 16px 12px;
+  }
+
+  .view-title {
+    font-size: 18px;
+  }
+
+  .car-card-top {
+    flex-wrap: wrap;
+  }
+
+  .car-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .btn-sm {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .car-card-bottom {
+    height: 60px;
+  }
+
+  .car {
+    width: 50px;
+    height: 26px;
+    left: 40px;
+  }
+
+  .car-road-finish {
+    right: 40px;
+  }
+
+  .car-flag {
+    right: 40px;
+  }
+
+  .car-image {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .car-name {
+    font-size: 13px;
+  }
 }
 
 .table-header,
@@ -431,56 +490,4 @@ body {
   transform: translateX(-50%);
   z-index: 1000;
   min-width: 300px;
-}
-
-@media (max-width: 500px) {
-  .navbar {
-    padding: 8px 12px;
-  }
-
-  .nav-link {
-    padding: 8px 12px;
-    font-size: 12px;
-  }
-
-  #app {
-    padding: 16px 12px;
-  }
-
-  .view-title {
-    font-size: 18px;
-  }
-
-  .car-card-top {
-    flex-wrap: wrap;
-  }
-
-  .car-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .btn-sm {
-    padding: 3px 8px;
-    font-size: 11px;
-  }
-
-  .car-card-bottom {
-    height: 60px;
-  }
-
-  .car {
-    width: 50px;
-    height: 26px;
-  }
-
-  .car-image {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-  }
-
-  .car-name {
-    font-size: 13px;
-  }
 }

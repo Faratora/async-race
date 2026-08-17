@@ -1,7 +1,7 @@
 import { state } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { escapeHtml } from "./ui-manager.ts";
-import { formatTime } from "../types/index.ts";
+import { formatTime, WINNERS_PER_PAGE } from "../types/index.ts";
 
 // ============ СТРОКА ПОБЕДИТЕЛЯ ============
 export const createWinnerRow = (winner: import("../types/index.ts").Winner, index: number): HTMLElement =>
@@ -41,8 +41,9 @@ export const renderWinnersTable = (app: HTMLElement | DocumentFragment): void =>
       )
     );
   } else {
+    const startIndex = (state.winners.page - 1) * WINNERS_PER_PAGE;
     state.winners.winners.forEach((winner, index) => {
-      table.append(createWinnerRow(winner, index));
+      table.append(createWinnerRow(winner, startIndex + index));
     });
   }
 
