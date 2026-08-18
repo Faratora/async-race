@@ -36,6 +36,7 @@ interface Winner {
 // ============ КОНСТАНТЫ ============
 const CONSTANTS = {
   COLOR_MAX: 256,
+  COLOR_MIN: 128,
   SPAM_LIMIT_START: 50,
   SPAM_LIMIT_DRIVE: 30,
   ERROR_PROBABILITY: 0.05,
@@ -188,9 +189,9 @@ class DataStore {
 
   // ===== UTILITY METHODS =====
   private randomColor(): string {
-    const r = Math.floor(Math.random() * CONSTANTS.COLOR_MAX);
-    const g = Math.floor(Math.random() * CONSTANTS.COLOR_MAX);
-    const b = Math.floor(Math.random() * CONSTANTS.COLOR_MAX);
+    const r = CONSTANTS.COLOR_MIN + Math.floor(Math.random() * (CONSTANTS.COLOR_MAX - CONSTANTS.COLOR_MIN));
+    const g = CONSTANTS.COLOR_MIN + Math.floor(Math.random() * (CONSTANTS.COLOR_MAX - CONSTANTS.COLOR_MIN));
+    const b = CONSTANTS.COLOR_MIN + Math.floor(Math.random() * (CONSTANTS.COLOR_MAX - CONSTANTS.COLOR_MIN));
     return `#${[r, g, b].map(c => c.toString(16).padStart(2, "0")).join("")}`;
   }
 

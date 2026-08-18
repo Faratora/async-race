@@ -417,12 +417,6 @@ export const animateDriveCar = (): void => {
 const handleDriveCarFinished = (carId: number, drive: DrivingCar): void => {
   delete state.race.drivingCars[carId];
   handleDriveCarComplete(carId, drive);
-  void driveCar(carId)
-    .then(updateCarButtonStates)
-    .catch(error => {
-      console.error("Failed to drive car:", error);
-      updateCarButtonStates();
-    });
 };
 
 const handleDriveCarComplete = (carId: number, drive: DrivingCar): void => {
@@ -465,10 +459,25 @@ export const startDriveCar = async (carId: number): Promise<void> => {
   }
 
   updateCarButtonStates();
+  void startDrive(carId);
 
   if (Object.keys(state.race.drivingCars).length === 1) {
     animateDriveCar();
   }
+};
+
+// ============ ЗАПУСК ДВИЖЕНИЯ ============
+const startDrive = async (carId: number): Promise<void> => {
+  try {
+    await driveCar(carId);
+  } catch {
+    stopDriveAnimation(carId);
+  }
+};
+
+const stopDriveAnimation = (carId: number): void => {
+  delete state.race.drivingCars[carId];
+  updateCarButtonStates();
 };
 
 export const stopDriveCar = (carId: number): void => {
