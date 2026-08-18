@@ -21,11 +21,20 @@ export const MIN_SPEED_KMH = 150;
 export const MAX_SPEED_KMH = 350;
 
 // Конвертирует км/ч в прогресс трассы за миллисекунду
-// velocity = (maxSpeed * 1000 / 3600) / TRACK_LENGTH / 1000
-// / 1000 — перевод секунд в миллисекунды
+// Возвращает долю трассы (0..1), проходимую за 1 мс при данной скорости
 export const speedToProgressPerMs = (maxSpeedKmh: number): number => {
-  const metersPerSecond = maxSpeedKmh * 1000 / 3600;
+  if (maxSpeedKmh <= 0 || !isFinite(maxSpeedKmh)) {
+    console.warn(`Invalid speed: ${maxSpeedKmh} km/h, using default`);
+    return 0.01;
+  }
+
+  // км/ч → м/с (1 км/ч = 1/3.6 м/с)
+  const metersPerSecond = maxSpeedKmh / 3.6;
+
+  // м/с → м/мс
   const metersPerMillisecond = metersPerSecond / 1000;
+
+  // м/мс → доля трассы за 1 мс
   return metersPerMillisecond / TRACK_LENGTH;
 };
 
