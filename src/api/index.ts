@@ -1,6 +1,6 @@
 import { API_BASE, Car, Winner } from "../types/index.ts";
 
-async function handleResponse<T>(response: Response): Promise<T> {
+async function processResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorText: string = await response.clone().text();
     throw new Error(
@@ -52,20 +52,6 @@ const shouldRetry = (
   return (response.status === 429 || response.status === 500) && attempt < retries - 1;
 };
 
-async function processResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const errorText: string = await response.clone().text();
-    throw new Error(
-      `HTTP ${response.status} ${response.statusText}: ${errorText}`,
-    );
-  }
-  const text: string = await response.text();
-  if (!text) {
-    throw new Error("Empty response body");
-  }
-  return JSON.parse(text);
-}
-
 export async function fetchCars(
   page: number,
   limit: number,
@@ -73,7 +59,7 @@ export async function fetchCars(
   const response: Response = await fetch(
     `${API_BASE}/cars?page=${page}&limit=${limit}`,
   );
-  const data: { cars: Car[] } = await handleResponse<{ cars: Car[] }>(response);
+  const data: { cars: Car[] } = await processResponse<{ cars: Car[] }>(response);
   const totalHeader: string | null = response.headers.get("X-Total-Count");
   const total: number = totalHeader === null ? data.cars.length : Number(totalHeader);
   return { cars: data.cars, total };
@@ -88,7 +74,7 @@ export async function createCar(data: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return handleResponse<Car>(response);
+  return processResponse<Car>(response);
 }
 
 export async function updateCar(
@@ -100,7 +86,7 @@ export async function updateCar(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return handleResponse<Car>(response);
+  return processResponse<Car>(response);
 }
 
 export async function deleteCar(id: number): Promise<void> {
@@ -117,7 +103,7 @@ export async function generateCars(count: number): Promise<Car[]> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ count }),
   });
-  return handleResponse<Car[]>(response);
+  return processResponse<Car[]>(response);
 }
 
 export async function startEngine(carId: number): Promise<void> {
@@ -136,7 +122,7 @@ export async function stopEngine(carId: number): Promise<void> {
 export async function getVelocity(carId: number): Promise<number> {
   const response: Response = await fetch(`${API_BASE}/cars/${carId}/velocity`);
   const data: { maxSpeed: number } =
-    await handleResponse<{ maxSpeed: number }>(response);
+    await processResponse<{ maxSpeed: number }>(response);
   return data.maxSpeed;
 }
 
@@ -171,7 +157,7 @@ export async function fetchWinners(
   const response: Response = await fetch(
     `${API_BASE}/winners?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
   );
-  const data: { winners: Winner[] } = await handleResponse<{ winners: Winner[] }>(response);
+  const data: { winners: Winner[] } = await processResponse<{ winners: Winner[] }>(response);
   const totalHeader: string | null = response.headers.get("X-Total-Count");
   const total: number = totalHeader === null ? data.winners.length : Number(totalHeader);
   return { winners: data.winners, total };
@@ -188,5 +174,5 @@ export async function recordWinner(data: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return handleResponse<Winner>(response);
+  return processResponse<Winner>(response);
 }
