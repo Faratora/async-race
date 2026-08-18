@@ -1,4 +1,5 @@
-import { API_BASE, Car, Winner } from "../types/index.ts";
+import { API_BASE } from "../config/index.ts";
+import type { Car, Winner } from "../types/index.ts";
 
 async function processResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
