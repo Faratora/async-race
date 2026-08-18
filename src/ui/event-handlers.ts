@@ -30,6 +30,7 @@ const reloadGarage = (): void => {
 // ============ ЗАЩИТА ОТ ГОНКИ СОСТОЯНИЙ ============
 const pendingActions = new Set<number>();
 
+// ============ ОБРАБОТЧИКИ КНОПОК ============
 export const handleCreateButton = (): void => {
   const name = state.garage.createCarName.trim();
   if (!name) return;
@@ -46,7 +47,67 @@ export const handleGenerateButton = (): void => {
     .then(reloadGarage);
 };
 
-// ============ ОБРАБОТЧИКИ СОБЫТИЙ ============
+export const handleUpdateButton = (): void => {
+  if (state.garage.editingCarId === undefined) return;
+
+  const nameInput = document.querySelector<HTMLInputElement>("#update-name");
+  if (!nameInput) return;
+
+  const name = nameInput.value.trim();
+  if (!name) return;
+
+  const colorInput = document.querySelector<HTMLInputElement>("#update-color");
+  const color = colorInput?.value || "#ff0000";
+
+  void updateCar(state.garage.editingCarId, { name, color })
+    .then(() => {
+      state.garage.editingCarId = undefined;
+      state.garage.editName = "";
+      state.garage.editColor = "#ff0000";
+      reloadGarage();
+    });
+};
+
+export const handleCancelEditButton = (): void => {
+  state.garage.editingCarId = undefined;
+  state.garage.editName = "";
+  state.garage.editColor = "#ff0000";
+
+  if (state.race.driveAnimationId) {
+    cancelAnimationFrame(state.race.driveAnimationId);
+  }
+  state.race.drivingCars = {};
+  renderGarage();
+};
+
+// ============ ОБЩАЯ ЛОГИКА ПАГИНАЦИИ ============
+const changeGaragePage = (delta: number): void => {
+  const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE);
+  const newPage = state.garage.page + delta;
+
+  if (state.race.isRacing) return;
+  if (newPage < 1 || newPage > totalPages) return;
+
+  state.garage.page = newPage;
+  void loadGarageCars().then(renderGarage);
+};
+
+const changeWinnersPage = (delta: number): void => {
+  const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE);
+  const newPage = state.winners.page + delta;
+
+  if (newPage < 1 || newPage > totalPages) return;
+
+  state.winners.page = newPage;
+  renderWinners();
+};
+
+export const handlePreviousButton = (): void => changeGaragePage(-1);
+export const handleNextButton = (): void => changeGaragePage(1);
+export const handlePreviousWinnersButton = (): void => changeWinnersPage(-1);
+export const handleNextWinnersButton = (): void => changeWinnersPage(1);
+
+// ============ ОБРАБОТЧИКИ ДЕЙСТВИЙ С МАШИНОЙ ============
 export const handleCarAction = (action: string | undefined, id: number): void => {
   if (!action) return;
 
@@ -155,68 +216,36 @@ const stopRaceAnimation = (): void => {
   state.race.isRacing = false;
 };
 
-export const handleUpdateButton = (): void => {
-  if (state.garage.editingCarId === undefined) return;
-
-  const nameInput = document.querySelector<HTMLInputElement>("#update-name");
-  if (!nameInput) return;
-
-  const name = nameInput.value.trim();
-  if (!name) return;
-
-  const colorInput = document.querySelector<HTMLInputElement>("#update-color");
-  const color = colorInput?.value || "#ff0000";
-
-  void updateCar(state.garage.editingCarId, { name, color })
-    .then(() => {
-      state.garage.editingCarId = undefined;
-      state.garage.editName = "";
-      state.garage.editColor = "#ff0000";
-      reloadGarage();
-    });
-};
-
-export const handleCancelEditButton = (): void => {
-  state.garage.editingCarId = undefined;
-  state.garage.editName = "";
-  state.garage.editColor = "#ff0000";
-
-  if (state.race.driveAnimationId) {
-    cancelAnimationFrame(state.race.driveAnimationId);
-  }
-  state.race.drivingCars = {};
-  renderGarage();
-};
-
-export const handlePreviousButton = (): void => {
-  if (state.race.isRacing || state.garage.page <= 1) return;
-  state.garage.page--;
-  void loadGarageCars().then(renderGarage);
-};
-
-export const handleNextButton = (): void => {
-  if (state.race.isRacing) return;
-  const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE);
-  if (state.garage.page >= totalPages) return;
-  state.garage.page++;
-  void loadGarageCars().then(renderGarage);
-};
-
-export const handlePreviousWinnersButton = (): void => {
-  if (state.winners.page <= 1) return;
-  state.winners.page--;
-  renderWinners();
-};
-
-export const handleNextWinnersButton = (): void => {
-  const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE);
-  if (state.winners.page >= totalPages) return;
-  state.winners.page++;
-  renderWinners();
-};
-
 // ============ ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ============
-export const handleAppClick = (event: MouseEvent): void => {
+let appClickHandler: ((event: MouseEvent) => void) | null = null;
+let navClickHandler: ((event: MouseEvent) => void) | null = null;
+
+export const setupEventDelegation = (): (() => void) => {
+  const app = document.querySelector("#app");
+
+  if (app instanceof HTMLElement) {
+    appClickHandler = appClickHandlerInternal;
+    app.addEventListener("click", appClickHandler);
+  }
+
+  navClickHandler = navClickHandlerInternal;
+  document.addEventListener("click", navClickHandler);
+
+  // Возвращаем функцию очистки
+  return () => {
+    if (app instanceof HTMLElement && appClickHandler) {
+      app.removeEventListener("click", appClickHandler);
+      appClickHandler = null;
+    }
+    if (navClickHandler) {
+      document.removeEventListener("click", navClickHandler);
+      navClickHandler = null;
+    }
+  };
+};
+
+// ============ ВНУТРЕННИЕ ОБРАБОТЧИКИ ============
+const appClickHandlerInternal = (event: MouseEvent): void => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
 
@@ -284,26 +313,17 @@ const handleSortByChange = (sortBy: SortConfig["sortBy"]): void => {
   renderWinners();
 };
 
-export const setupEventDelegation = (): void => {
-  const app = document.querySelector("#app");
-  if (app instanceof HTMLElement) {
-    app.addEventListener("click", handleAppClick);
-  }
+const navClickHandlerInternal = async (event: MouseEvent): Promise<void> => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
 
-  // Обработчик для навигации (вне #app)
-  document.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-
-    if (target.closest("#nav-tabs .nav-link")) {
-      const view = target.dataset.view;
-      if (view && isViewName(view)) {
-        import("./ui-manager.ts").then(({ switchView }) => {
-          switchView(view);
-        });
-      }
+  if (target.closest("#nav-tabs .nav-link")) {
+    const view = target.dataset.view;
+    if (view && isViewName(view)) {
+      const { switchView } = await import("./ui-manager.ts");
+      switchView(view);
     }
-  });
+  }
 };
 
 // ============ ТИП-ГВАРДЫ ============
