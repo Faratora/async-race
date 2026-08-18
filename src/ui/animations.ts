@@ -48,6 +48,22 @@ export const getRoadElement = (id: number): HTMLElement | null =>
 export const getTrackWidth = (road: HTMLElement): number =>
   road.offsetWidth - TRACK_PADDING;
 
+// ============ ОБНОВЛЕНИЕ ПОЗИЦИИ МАШИНЫ ============
+export const updateCarPosition = (carId: number, startTime: number, maxSpeed: number): void => {
+  const car = getCarElement(carId);
+  if (!(car instanceof HTMLElement)) return;
+
+  const road = car.parentElement;
+  if (!(road instanceof HTMLElement)) return;
+
+  const trackWidth = getTrackWidth(road);
+  const elapsed = performance.now() - startTime;
+  const progressPerMs = speedToProgressPerMs(maxSpeed) / TIME_SCALE;
+  const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
+  car.style.transform = `translateX(${left}px)`;
+  car.dataset.lastPosition = String(left);
+};
+
 // ============ ОБНОВЛЕНИЕ СОСТОЯНИЯ КНОПОК ============
 export const updateCarButtonStates = (): void => {
   for (const car of state.garage.cars) {
@@ -359,20 +375,6 @@ export const animateRace = (): void => {
 
 // ============ ОБРАБОТКА ИЗМЕНЕНИЯ РАЗМЕРА ============
 export const handleResize = (): void => {
-  const updateCarPosition = (id: number, startTime: number, maxSpeed: number): void => {
-    const car = getCarElement(id);
-    if (!(car instanceof HTMLElement)) return;
-
-    const road = car.parentElement;
-    if (!(road instanceof HTMLElement)) return;
-
-    const trackWidth = getTrackWidth(road);
-    const elapsed = performance.now() - startTime;
-    const progressPerMs = speedToProgressPerMs(maxSpeed) / TIME_SCALE;
-    const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
-    car.style.transform = `translateX(${left}px)`;
-  };
-
   Object.entries(state.race.carRaces).forEach(([idStr, race]) => {
     if (!race.finished && !race.broken) {
       updateCarPosition(Number(idStr), race.startTime, race.maxSpeed);
@@ -386,11 +388,12 @@ export const handleResize = (): void => {
 
 // ============ ДВИЖЕНИЕ АВТОМОБИЛЯ ============
 export const animateDriveCar = (): void => {
-  const now = performance.now();
   const entries = Object.entries(state.race.drivingCars);
 
   entries.forEach(([idStr, drive]) => {
     const carId = Number(idStr);
+    updateCarPosition(carId, drive.startTime, drive.maxSpeed);
+
     const carElement = getCarElement(carId);
     if (!(carElement instanceof HTMLElement)) return;
 
@@ -398,10 +401,7 @@ export const animateDriveCar = (): void => {
     if (!(road instanceof HTMLElement)) return;
 
     const trackWidth = getTrackWidth(road);
-    const elapsed = now - drive.startTime;
-    const progressPerMs = speedToProgressPerMs(drive.maxSpeed) / TIME_SCALE;
-    const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
-    carElement.style.transform = `translateX(${left}px)`;
+    const left = parseFloat(carElement.dataset.lastPosition ?? "0");
 
     if (left >= trackWidth - FINISH_OFFSET) {
       handleDriveCarFinished(carId, drive);
