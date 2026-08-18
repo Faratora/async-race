@@ -46,7 +46,7 @@ export const startRaceHandler = async (): Promise<void> => {
   carIds.forEach((id, index) => {
     const result = velocities[index];
     const isBroken = result.status === "rejected";
-    state.race.carRaces[id] = createCarRace(now, isBroken, result);
+    state.race.carRaces[id] = createCarRace(id, now, isBroken, result);
   });
 
   carIds.forEach(id => {
@@ -64,10 +64,12 @@ export const startRaceHandler = async (): Promise<void> => {
 };
 
 const createCarRace = (
+  carId: number,
   now: number,
   isBroken: boolean,
   result: PromiseFulfilledResult<number> | PromiseRejectedResult,
 ): CarRace => ({
+  carId,
   startTime: now,
   maxSpeed: result.status === "fulfilled" ? result.value : 0,
   finished: false,

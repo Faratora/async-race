@@ -52,6 +52,7 @@ export interface RaceState {
 }
 
 export interface CarRace {
+    carId: number;
     startTime: number;
     maxSpeed: number; // максимальная скорость в км/ч
     finished: boolean;

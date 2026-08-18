@@ -1,7 +1,7 @@
 import {
   TRACK_PADDING,
   FINISH_OFFSET,
-  TIME_SCALE,
+  TIME_DILATION,
   BREAKDOWN_CONFIG,
   getBreakdownChance,
   getBreakdownType,
@@ -58,7 +58,8 @@ export const updateCarPosition = (carId: number, startTime: number, maxSpeed: nu
 
   const trackWidth = getTrackWidth(road);
   const elapsed = performance.now() - startTime;
-  const progressPerMs = speedToProgressPerMs(maxSpeed) / TIME_SCALE;
+  const effectiveSpeed = maxSpeed / TIME_DILATION;
+  const progressPerMs = speedToProgressPerMs(effectiveSpeed);
   const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
   car.style.transform = `translateX(${left}px)`;
   car.dataset.lastPosition = String(left);
@@ -199,7 +200,8 @@ const animateCarMovement = (
   const trackWidth = getTrackWidth(road);
   const elapsed = performance.now() - race.startTime;
   const elapsedSeconds = elapsed / 1000;
-  const progressPerMs = speedToProgressPerMs(race.maxSpeed) / TIME_SCALE;
+  const effectiveSpeed = race.maxSpeed / TIME_DILATION;
+  const progressPerMs = speedToProgressPerMs(effectiveSpeed);
   const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
   const progress = left / trackWidth;
 
@@ -296,7 +298,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
   if (race.broken) return;
 
   race.finished = true;
-  race.time = (elapsed * TIME_SCALE) / 1000;
+  race.time = (elapsed * TIME_DILATION) / 1000;
 
   void driveCar(carId).catch(error => console.error("Failed to drive car:", error));
   updateCarButtonStates();
@@ -320,14 +322,14 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
 // ============ СБОР СЛОМАННЫХ МАШИН ============
 const collectBrokenCars = (): BrokenCar[] => {
   const brokenCars: BrokenCar[] = [];
-  for (const [raceIdStr, race] of Object.entries(state.race.carRaces)) {
+  for (const race of Object.values(state.race.carRaces)) {
     if (race.broken && race.breakdownHistory && race.breakdownHistory.count > 0) {
-      const raceCar = state.garage.cars.find(c => c.id === Number(raceIdStr));
-      if (raceCar) {
+      const car = state.garage.cars.find(c => c.id === race.carId);
+      if (car) {
         const lastType = race.breakdownHistory.types[race.breakdownHistory.types.length - 1];
         brokenCars.push({
-          id: raceCar.id,
-          name: raceCar.name,
+          id: car.id,
+          name: car.name,
           type: lastType,
         });
       }
@@ -424,11 +426,12 @@ const handleDriveCarComplete = (carId: number, drive: DrivingCar): void => {
   if (existing) {
     existing.finished = true;
   } else {
-    state.race.carRaces[carId] = createDefaultFinishedRace(drive);
+    state.race.carRaces[carId] = createDefaultFinishedRace(carId, drive);
   }
 };
 
-const createDefaultFinishedRace = (drive: DrivingCar): CarRace => ({
+const createDefaultFinishedRace = (carId: number, drive: DrivingCar): CarRace => ({
+  carId,
   startTime: drive.startTime,
   maxSpeed: drive.maxSpeed,
   finished: true,

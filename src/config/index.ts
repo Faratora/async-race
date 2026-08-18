@@ -8,10 +8,9 @@ export const FINISH_OFFSET = 75;
 export const TRACK_LENGTH = 400;
 
 // Коэффициент замедления анимации
-// Реальное время гонки умножается на этот коэффициент для зрелищности
-// TIME_SCALE = 1 → гонка идёт в реальном времени
-// TIME_SCALE = 20 → гонка в 20 раз медленнее (180 км/ч = ~160 сек вместо 8 сек)
-export const TIME_SCALE = 1.1;
+// TIME_DILATION = 1 → гонка идёт в реальном времени
+// TIME_DILATION > 1 → гонка медленнее (1.1 → в 1.1 раза медленнее)
+export const TIME_DILATION = 1.1;
 
 export const INPUT_NAME_WIDTH = 200;
 export const DEFAULT_COLOR = "#ff0000";
