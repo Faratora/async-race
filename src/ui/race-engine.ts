@@ -8,6 +8,7 @@ import {
 } from "../api/index.ts";
 
 import { state } from "../state/index.ts";
+import { BREAKDOWN_CONFIG } from "../config/index.ts";
 
 import {
   resetCarVisualState,
