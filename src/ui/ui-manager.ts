@@ -76,7 +76,7 @@ export const renderGarage = async (): Promise<void> => {
   const app = getApp();
   if (!app) return;
 
-  app.innerHTML = '<div class="loader">Loading...</div>';
+  app.append(element("div", { class: "loader" }, "Loading..."));
 
   try {
     await loadGarageCars();
@@ -120,14 +120,24 @@ const renderHeader = (
   );
 };
 
+const createInput = (id: string, type: string, value: string, placeholder = "", width = 0): HTMLElement => {
+  const attrs: Record<string, string | number> = { id, type, value, class: "form-control" };
+  if (placeholder) attrs.placeholder = placeholder;
+  if (width > 0) attrs.style = `width: ${width}px;`;
+  return element("input", attrs);
+};
+
+const createButton = (id: string, text: string, btnClass: string): HTMLElement =>
+  element("button", { id, class: btnClass }, text);
+
 const renderAddCarForm = (container: HTMLElement | DocumentFragment): void => {
   const form = element("div", { class: "add-car-form" });
-  form.innerHTML = `
-    <input type="text" id="car-name" placeholder="Car name" value="${escapeHtml(state.garage.createCarName)}" class="form-control" style="width: ${CONFIG.UI.INPUT_NAME_WIDTH}px;">
-    <input type="color" id="car-color" value="${state.garage.selectedColor}" class="form-control form-control-color">
-    <button class="btn btn-primary" id="btn-create">Create</button>
-    <button class="btn btn-generate" id="btn-generate">Generate 100 Cars</button>
-  `;
+  form.append(
+    createInput("car-name", "text", escapeHtml(state.garage.createCarName), "Car name", CONFIG.UI.INPUT_NAME_WIDTH),
+    createInput("car-color", "color", state.garage.selectedColor),
+    createButton("btn-create", "Create", "btn btn-primary"),
+    createButton("btn-generate", "Generate 100 Cars", "btn btn-generate"),
+  );
 
   const nameInput = form.querySelector<HTMLInputElement>("#car-name");
   nameInput?.addEventListener("input", () => {
@@ -146,21 +156,21 @@ const renderEditForm = (container: HTMLElement | DocumentFragment): void => {
   if (state.garage.editingCarId === undefined) return;
 
   const form = element("div", { class: "edit-car-form" });
-  form.innerHTML = `
-    <input type="text" id="update-name" value="${escapeHtml(state.garage.editName)}" class="form-control" style="width: ${CONFIG.UI.INPUT_NAME_WIDTH}px;">
-    <input type="color" id="update-color" value="${state.garage.editColor}" class="form-control form-control-color">
-    <button class="btn btn-primary" id="btn-update">Update</button>
-    <button class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
-  `;
+  form.append(
+    createInput("update-name", "text", escapeHtml(state.garage.editName), "", CONFIG.UI.INPUT_NAME_WIDTH),
+    createInput("update-color", "color", state.garage.editColor),
+    createButton("btn-update", "Update", "btn btn-primary"),
+    createButton("btn-cancel-edit", "Cancel", "btn btn-secondary"),
+  );
   container.append(form);
 };
 
 const renderRaceControls = (container: HTMLElement | DocumentFragment): void => {
   const controls = element("div", { class: "race-controls" });
-  controls.innerHTML = `
-    <button class="btn btn-success" id="btn-start-race">Start Race</button>
-    <button class="btn btn-warning" id="btn-reset-race">Reset Race</button>
-  `;
+  controls.append(
+    createButton("btn-start-race", "Start Race", "btn btn-success"),
+    createButton("btn-reset-race", "Reset Race", "btn btn-warning"),
+  );
 
   controls.querySelector<HTMLButtonElement>("#btn-start-race")?.addEventListener("click", () => {
     void startRaceHandler();
@@ -280,7 +290,7 @@ export const renderWinners = async (): Promise<void> => {
   const app = getApp();
   if (!app) return;
 
-  app.innerHTML = '<div class="loader">Loading...</div>';
+  app.append(element("div", { class: "loader" }, "Loading..."));
 
   await loadWinners();
 

@@ -1,10 +1,21 @@
+import type { Winner } from "../types/index.ts";
+import type { SortConfig } from "../types/index.ts";
+
 import { state } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { escapeHtml } from "./ui-manager.ts";
-import { formatTime, WINNERS_PER_PAGE } from "../types/index.ts";
+import { WINNERS_PER_PAGE } from "../config/index.ts";
+import { formatTime } from "../types/index.ts";
+
+// ============ УТИЛИТЫ ============
+const createSortHeader = (label: string, sortKey: SortConfig["sortBy"]): HTMLElement => {
+  const isActive = state.winners.sortBy === sortKey;
+  const arrow = isActive ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : "";
+  return element("span", { class: "table-header-sortable", dataSort: sortKey }, `${label} ${arrow}`);
+};
 
 // ============ СТРОКА ПОБЕДИТЕЛЯ ============
-export const createWinnerRow = (winner: import("../types/index.ts").Winner, index: number): HTMLElement =>
+export const createWinnerRow = (winner: Winner, index: number): HTMLElement =>
   element("div", { class: "table-row" },
     element("span", undefined, String(index + 1)),
     element("span", undefined,
@@ -22,15 +33,9 @@ export const renderWinnersTable = (app: HTMLElement | DocumentFragment): void =>
   const header = element("div", { class: "table-header" },
     element("span", undefined, "Number"),
     element("span", undefined, "Car"),
-    element("span", { class: "table-header-sortable", dataSort: "name" },
-      `Name ${state.winners.sortBy === "name" ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : ""}`
-    ),
-    element("span", { class: "table-header-sortable", dataSort: "wins" },
-      `Wins ${state.winners.sortBy === "wins" ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : ""}`
-    ),
-    element("span", { class: "table-header-sortable", dataSort: "bestTime" },
-      `Best time (sec) ${state.winners.sortBy === "bestTime" ? (state.winners.sortOrder === "asc" ? "▲" : "▼") : ""}`
-    )
+    createSortHeader("Name", "name"),
+    createSortHeader("Wins", "wins"),
+    createSortHeader("Best time (second)", "bestTime")
   );
   table.append(header);
 
