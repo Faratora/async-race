@@ -20,6 +20,7 @@ import { renderGarage, renderWinners, loadGarageCars } from "./ui-manager.ts";
 import { startDriveCar, stopDriveCar, resetCarToStart } from "./animations.ts";
 import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
+import { showGenericNotification } from "./notifications.ts";
 
 // ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ГАРАЖА ============
 const reloadGarage = (): void => {
@@ -28,23 +29,83 @@ const reloadGarage = (): void => {
 };
 
 // ============ ЗАЩИТА ОТ ГОНКИ СОСТОЯНИЙ ============
-const pendingActions = new Set<number>();
+const ACTION_TIMEOUT = 5000; // 5 секунд
+const pendingActions = new Map<number, number>(); // id -> timestamp
+
+const isActionPending = (id: number): boolean => {
+  const timestamp = pendingActions.get(id);
+  if (!timestamp) return false;
+  if (Date.now() - timestamp > ACTION_TIMEOUT) {
+    pendingActions.delete(id);
+    return false;
+  }
+  return true;
+};
+
+const withPendingAction = async <T>(
+  id: number,
+  action: () => Promise<T>,
+  onError?: (error: unknown) => void,
+): Promise<T | void> => {
+  if (isActionPending(id)) {
+    console.warn(`Action already pending for car ${id}`);
+    return;
+  }
+
+  pendingActions.set(id, Date.now());
+  try {
+    return await action();
+  } catch (error) {
+    if (onError) {
+      onError(error);
+    } else {
+      console.error(`Action failed for car ${id}:`, error);
+    }
+  } finally {
+    pendingActions.delete(id);
+  }
+};
+
+// ============ ЗАЩИТА ОТ СПАМА ============
+const spamFlags = new Set<string>();
+
+const withSpamGuard = (key: string, action: () => void): void => {
+  if (spamFlags.has(key)) {
+    showGenericNotification("Please wait for the previous action to complete");
+    return;
+  }
+  spamFlags.add(key);
+  action();
+};
+
+const clearSpamFlag = (key: string): void => {
+  spamFlags.delete(key);
+};
 
 // ============ ОБРАБОТЧИКИ КНОПОК ============
 export const handleCreateButton = (): void => {
   const name = state.garage.createCarName.trim();
   if (!name) return;
 
-  void createCar({ name, color: state.garage.selectedColor })
-    .then(() => {
-      state.garage.createCarName = "";
-      reloadGarage();
-    });
+  withSpamGuard("create", () => {
+    void createCar({ name, color: state.garage.selectedColor })
+      .then(() => {
+        state.garage.createCarName = "";
+        reloadGarage();
+      })
+      .finally(() => clearSpamFlag("create"));
+  });
 };
 
 export const handleGenerateButton = (): void => {
-  void generateCars(100)
-    .then(reloadGarage);
+  withSpamGuard("generate", () => {
+    void generateCars(100)
+      .then(reloadGarage)
+      .catch((error) => {
+        console.error("Failed to generate cars:", error);
+      })
+      .finally(() => clearSpamFlag("generate"));
+  });
 };
 
 export const handleUpdateButton = (): void => {
@@ -59,13 +120,17 @@ export const handleUpdateButton = (): void => {
   const colorInput = document.querySelector<HTMLInputElement>("#update-color");
   const color = colorInput?.value || "#ff0000";
 
-  void updateCar(state.garage.editingCarId, { name, color })
-    .then(() => {
-      state.garage.editingCarId = undefined;
-      state.garage.editName = "";
-      state.garage.editColor = "#ff0000";
-      reloadGarage();
-    });
+  const carId = state.garage.editingCarId;
+  withSpamGuard("update", () => {
+    void updateCar(carId, { name, color })
+      .then(() => {
+        state.garage.editingCarId = undefined;
+        state.garage.editName = "";
+        state.garage.editColor = "#ff0000";
+        reloadGarage();
+      })
+      .finally(() => clearSpamFlag("update"));
+  });
 };
 
 export const handleCancelEditButton = (): void => {
@@ -148,23 +213,15 @@ const handleSelectCar = (id: number): void => {
   renderGarage();
 };
 
-const handleStartEngine = async (id: number): Promise<void> => {
-  if (pendingActions.has(id)) return;
-  pendingActions.add(id);
-  try {
+const handleStartEngine = (id: number): void => {
+  void withPendingAction(id, async () => {
     await startEngine(id);
     startDriveCar(id);
-  } catch (error) {
-    console.error(`Failed to start engine for car ${id}:`, error);
-  } finally {
-    pendingActions.delete(id);
-  }
+  });
 };
 
-const handleStopEngine = async (id: number): Promise<void> => {
-  if (pendingActions.has(id)) return;
-  pendingActions.add(id);
-  try {
+const handleStopEngine = (id: number): void => {
+  void withPendingAction(id, async () => {
     const isBroken = isCarBroken(id);
     const isFinished = isCarFinished(id);
     if (isBroken) {
@@ -175,11 +232,7 @@ const handleStopEngine = async (id: number): Promise<void> => {
       await stopEngine(id);
       stopDriveCar(id);
     }
-  } catch (error) {
-    console.error(`Failed to stop engine for car ${id}:`, error);
-  } finally {
-    pendingActions.delete(id);
-  }
+  });
 };
 
 const handleRepairCar = (id: number): void => {

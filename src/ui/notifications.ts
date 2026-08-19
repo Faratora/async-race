@@ -27,6 +27,15 @@ const showNotification = (options: NotificationOptions): void => {
   setTimeout(() => element.remove(), options.duration ?? 3000);
 };
 
+// ============ ОБЩЕЕ УВЕДОМЛЕНИЕ ============
+export const showGenericNotification = (message: string): void => {
+  showNotification({
+    className: "breakdown-notification",
+    message,
+    duration: 3000,
+  });
+};
+
 // ============ ПОЛОМКА ============
 export const createBreakdownMessage = (carId: number, type: BreakdownType): string => {
   return `${getBreakdownMessage(type)} (Car ${carId})`;
