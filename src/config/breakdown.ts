@@ -42,7 +42,7 @@ export const getBreakdownChance = (
   chance *= (1 + progress * BREAKDOWN_CONFIG.DISTANCE_MULTIPLIER);
 
   // Высокая скорость (>250 км/ч) увеличивает шанс поломки
-  if (maxSpeed > 250) {
+  if (maxSpeed > BREAKDOWN_CONFIG.HIGH_SPEED_THRESHOLD) {
     chance += BREAKDOWN_CONFIG.HIGH_SPEED_BONUS;
   }
 
@@ -52,7 +52,7 @@ export const getBreakdownChance = (
 // ============ ТИП ПОЛОМКИ ============
 export const getBreakdownType = (progress: number, maxSpeed: number): BreakdownType => {
   if (progress > 0.8) return "engine_overheating";
-  if (maxSpeed > 250) return "transmission_failure";
+  if (maxSpeed > BREAKDOWN_CONFIG.HIGH_SPEED_THRESHOLD) return "transmission_failure";
   if (progress < 0.3) return "start_stall";
   return "random_breakdown";
 };

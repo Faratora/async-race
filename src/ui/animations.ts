@@ -1,11 +1,8 @@
 import {
-  TRACK_PADDING,
-  FINISH_OFFSET,
-  TIME_DILATION,
+  CONFIG,
   BREAKDOWN_CONFIG,
   getBreakdownChance,
   getBreakdownType,
-  API_BASE,
   speedToProgressPerMs,
 } from "../config/index.ts";
 
@@ -46,7 +43,7 @@ export const getRoadElement = (id: number): HTMLElement | null =>
   document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"]`);
 
 export const getTrackWidth = (road: HTMLElement): number =>
-  road.offsetWidth - TRACK_PADDING;
+  road.offsetWidth - CONFIG.UI.TRACK_PADDING;
 
 // ============ ОБНОВЛЕНИЕ ПОЗИЦИИ МАШИНЫ ============
 export const updateCarPosition = (carId: number, startTime: number, maxSpeed: number): void => {
@@ -58,9 +55,9 @@ export const updateCarPosition = (carId: number, startTime: number, maxSpeed: nu
 
   const trackWidth = getTrackWidth(road);
   const elapsed = performance.now() - startTime;
-  const effectiveSpeed = maxSpeed / TIME_DILATION;
+  const effectiveSpeed = maxSpeed / CONFIG.PHYSICS.TIME_DILATION;
   const progressPerMs = speedToProgressPerMs(effectiveSpeed);
-  const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
+  const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - CONFIG.UI.FINISH_OFFSET);
   car.style.transform = `translateX(${left}px)`;
   car.dataset.lastPosition = String(left);
 };
@@ -200,12 +197,12 @@ const animateCarMovement = (
   const trackWidth = getTrackWidth(road);
   const elapsed = performance.now() - race.startTime;
   const elapsedSeconds = elapsed / 1000;
-  const effectiveSpeed = race.maxSpeed / TIME_DILATION;
+  const effectiveSpeed = race.maxSpeed / CONFIG.PHYSICS.TIME_DILATION;
   const progressPerMs = speedToProgressPerMs(effectiveSpeed);
-  const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - FINISH_OFFSET);
+  const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - CONFIG.UI.FINISH_OFFSET);
   const progress = left / trackWidth;
 
-  car.style.transform = `translateX(${Math.min(left, trackWidth - FINISH_OFFSET)}px)`;
+  car.style.transform = `translateX(${Math.min(left, trackWidth - CONFIG.UI.FINISH_OFFSET)}px)`;
   car.dataset.lastPosition = String(left);
 
   if (race.isRepairing) {
@@ -220,7 +217,7 @@ const animateCarMovement = (
     return;
   }
 
-  if (left >= trackWidth - FINISH_OFFSET) {
+  if (left >= trackWidth - CONFIG.UI.FINISH_OFFSET) {
     handleCarFinish(carId, race, elapsed);
   }
 };
@@ -298,7 +295,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
   if (race.broken) return;
 
   race.finished = true;
-  race.time = (elapsed * TIME_DILATION) / 1000;
+  race.time = (elapsed * CONFIG.PHYSICS.TIME_DILATION) / 1000;
 
   void driveCar(carId).catch(error => console.error("Failed to drive car:", error));
   updateCarButtonStates();
@@ -405,7 +402,7 @@ export const animateDriveCar = (): void => {
     const trackWidth = getTrackWidth(road);
     const left = parseFloat(carElement.dataset.lastPosition ?? "0");
 
-    if (left >= trackWidth - FINISH_OFFSET) {
+    if (left >= trackWidth - CONFIG.UI.FINISH_OFFSET) {
       handleDriveCarFinished(carId, drive);
     }
   });
@@ -442,7 +439,7 @@ const createDefaultFinishedRace = (carId: number, drive: DrivingCar): CarRace =>
 
 export const startDriveCar = async (carId: number): Promise<void> => {
   try {
-    await fetch(`${API_BASE}/cars/${carId}/repair`, { method: "POST" });
+    await fetch(`${CONFIG.API.BASE}/cars/${carId}/repair`, { method: "POST" });
   } catch {
     // ignore repair errors
   }

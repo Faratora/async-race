@@ -1,4 +1,4 @@
-import { API_BASE } from "../config/index.ts";
+import { CONFIG } from "../config/index.ts";
 import type { Car, Winner } from "../types/index.ts";
 
 // ============ КОНСТАНТЫ ============
@@ -87,7 +87,7 @@ export async function fetchCars(
   limit: number,
 ): Promise<{ cars: Car[]; total: number }> {
   const response: Response = await fetchWithTimeout(
-    `${API_BASE}/cars?page=${page}&limit=${limit}`,
+    `${CONFIG.API.BASE}/cars?page=${page}&limit=${limit}`,
   );
   const data: { cars: Car[] } = await processResponse<{ cars: Car[] }>(response);
   const totalHeader: string | null = response.headers.get("X-Total-Count");
@@ -99,7 +99,7 @@ export async function createCar(data: {
   name: string;
   color: string;
 }): Promise<Car> {
-  const response: Response = await fetchWithTimeout(`${API_BASE}/cars`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -111,7 +111,7 @@ export async function updateCar(
   id: number,
   data: { name: string; color: string },
 ): Promise<Car> {
-  const response: Response = await fetchWithTimeout(`${API_BASE}/cars/${id}`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -120,7 +120,7 @@ export async function updateCar(
 }
 
 export async function deleteCar(id: number): Promise<void> {
-  const response: Response = await fetchWithTimeout(`${API_BASE}/cars/${id}`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${id}`, {
     method: "DELETE",
   });
   console.log("[api] deleteCar response status=", response.status);
@@ -128,7 +128,7 @@ export async function deleteCar(id: number): Promise<void> {
 }
 
 export async function generateCars(count: number): Promise<Car[]> {
-  const response: Response = await fetchWithTimeout(`${API_BASE}/cars/bulk`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/bulk`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ count }),
@@ -137,33 +137,33 @@ export async function generateCars(count: number): Promise<Car[]> {
 }
 
 export async function startEngine(carId: number): Promise<void> {
-  await fetchWithRetry<void>(`${API_BASE}/cars/${carId}/start`, {
+  await fetchWithRetry<void>(`${CONFIG.API.BASE}/cars/${carId}/start`, {
     method: "POST",
   });
 }
 
 export async function stopEngine(carId: number): Promise<void> {
-  const response: Response = await fetchWithTimeout(`${API_BASE}/cars/${carId}/stop`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${carId}/stop`, {
     method: "POST",
   });
   await handleVoidResponse(response);
 }
 
 export async function getVelocity(carId: number): Promise<number> {
-  const response: Response = await fetchWithTimeout(`${API_BASE}/cars/${carId}/velocity`);
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${carId}/velocity`);
   const data: { maxSpeed: number } =
     await processResponse<{ maxSpeed: number }>(response);
   return data.maxSpeed;
 }
 
 export async function driveCar(carId: number): Promise<void> {
-  await fetchWithRetry<void>(`${API_BASE}/cars/${carId}/drive`, {
+  await fetchWithRetry<void>(`${CONFIG.API.BASE}/cars/${carId}/drive`, {
     method: "POST",
   });
 }
 
 export async function startRace(carIds: number[]): Promise<void> {
-  await fetchWithRetry<void>(`${API_BASE}/race/start`, {
+  await fetchWithRetry<void>(`${CONFIG.API.BASE}/race/start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ carIds }),
@@ -171,7 +171,7 @@ export async function startRace(carIds: number[]): Promise<void> {
 }
 
 export async function resetRace(carIds: number[]): Promise<void> {
-  await fetchWithRetry<void>(`${API_BASE}/race/reset`, {
+  await fetchWithRetry<void>(`${CONFIG.API.BASE}/race/reset`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ carIds }),
@@ -185,7 +185,7 @@ export async function fetchWinners(
   sortOrder: string,
 ): Promise<{ winners: Winner[]; total: number }> {
   const response: Response = await fetchWithTimeout(
-    `${API_BASE}/winners?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
+    `${CONFIG.API.BASE}/winners?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
   );
   const data: { winners: Winner[] } = await processResponse<{ winners: Winner[] }>(response);
   const totalHeader: string | null = response.headers.get("X-Total-Count");
@@ -199,7 +199,7 @@ export async function recordWinner(data: {
   carColor: string;
   time: number;
 }): Promise<Winner> {
-  const response: Response = await fetchWithTimeout(`${API_BASE}/winners`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

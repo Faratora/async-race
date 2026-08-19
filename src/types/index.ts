@@ -93,6 +93,7 @@ export interface RaceResult {
 }
 
 export {
+    CONFIG,
     CARS_PER_PAGE,
     WINNERS_PER_PAGE,
     API_BASE,
