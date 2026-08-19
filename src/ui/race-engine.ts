@@ -17,9 +17,17 @@ import {
   getCarElement,
 } from "./animations.ts";
 
-// ============ УПРАВЛЕНИЕ ГОНКОЙ ============
+// ============ УПРАВЛЕНИЕ УВЕДОМЛЕНИЯМИ ============
 export const removeWinnerMessage = (): void => {
-  document.querySelectorAll(".winner-message, .breakdown-notification").forEach(el => el.remove());
+  document.querySelectorAll(".winner-message").forEach(el => el.remove());
+};
+
+export const removeBreakdownMessages = (): void => {
+  document.querySelectorAll(".breakdown-notification, .breakdown-message").forEach(el => el.remove());
+};
+
+export const removeAllNotifications = (): void => {
+  document.querySelectorAll(".winner-message, .breakdown-notification, .breakdown-message").forEach(el => el.remove());
 };
 
 // ============ ОБРАБОТЧИКИ ГОНКИ ============
@@ -29,7 +37,7 @@ export const startRaceHandler = async (): Promise<void> => {
   const carIds = state.garage.cars.map(c => c.id);
   if (carIds.length === 0) return;
 
-  removeWinnerMessage();
+  removeAllNotifications();
   state.race.isRacing = true;
   state.race.winnerAnnounced = false;
 
@@ -109,7 +117,7 @@ export const resetRaceHandler = async (): Promise<void> => {
   resetCarVisualState(carIds);
   resetCarPositions(carIds);
 
-  document.querySelectorAll(".breakdown-message, .winner-message, .breakdown-notification").forEach(el => el.remove());
+  removeAllNotifications();
 
   if (carIds.length > 0) {
     await resetRace(carIds);
