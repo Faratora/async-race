@@ -33,10 +33,31 @@ interface Winner {
   bestTime: number;
 }
 
+// ============ ПАЛИТРА ЦВЕТОВ ============
+const CAR_COLORS = [
+  "#ff0000", // красный
+  "#ff8800", // оранжевый
+  "#ffcc00", // жёлтый
+  "#00cc00", // зелёный
+  "#0088cc", // голубой
+  "#0000ff", // синий
+  "#8800cc", // фиолетовый
+  "#ff00ff", // розовый
+  "#ff4444", // светло-красный
+  "#44ff44", // светло-зелёный
+  "#4444ff", // светло-синий
+  "#ff88cc", // светло-розовый
+  "#00cccc", // бирюзовый
+  "#cc8800", // янтарный
+  "#888888", // серый
+  "#ffffff", // белый
+  "#cc0000", // бордовый
+  "#006600", // тёмно-зелёный
+  "#003366", // тёмно-синий
+] as const;
+
 // ============ КОНСТАНТЫ ============
 const CONSTANTS = {
-  COLOR_MAX: 256,
-  COLOR_MIN: 128,
   SPAM_LIMIT_START: 50,
   SPAM_LIMIT_DRIVE: 30,
   ERROR_PROBABILITY: 0.05,
@@ -76,6 +97,7 @@ class DataStore {
   private spamCounter = 0;
   private brokenCarId: number | null = null;
   private winnerLocks = new Map<number, Promise<void>>();
+  private lastColor: string | null = null;
 
   // ===== CAR METHODS =====
   getCars(): Car[] {
@@ -190,10 +212,15 @@ class DataStore {
 
   // ===== UTILITY METHODS =====
   private randomColor(): string {
-    const r = CONSTANTS.COLOR_MIN + Math.floor(Math.random() * (CONSTANTS.COLOR_MAX - CONSTANTS.COLOR_MIN));
-    const g = CONSTANTS.COLOR_MIN + Math.floor(Math.random() * (CONSTANTS.COLOR_MAX - CONSTANTS.COLOR_MIN));
-    const b = CONSTANTS.COLOR_MIN + Math.floor(Math.random() * (CONSTANTS.COLOR_MAX - CONSTANTS.COLOR_MIN));
-    return `#${[r, g, b].map(c => c.toString(16).padStart(2, "0")).join("")}`;
+    let color: string;
+    // Повторяем, пока не найдём цвет, отличный от предыдущего
+    do {
+      const index = Math.floor(Math.random() * CAR_COLORS.length);
+      color = CAR_COLORS[index];
+    } while (color === this.lastColor);
+    
+    this.lastColor = color;
+    return color;
   }
 
   private randomCarName(): string {
