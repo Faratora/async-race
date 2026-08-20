@@ -5,7 +5,8 @@ type Attributes = Record<string, string | number | boolean | undefined>;
 // ============ СОЗДАНИЕ ЭЛЕМЕНТОВ ============
 
 export const createInput = (id: string, type: string, value: string, placeholder = "", width = 0): HTMLElement => {
-  const attrs: Attributes = { id, type, value, class: "form-control" };
+  const inputClass = type === "color" ? "form-control form-control-color" : "form-control";
+  const attrs: Attributes = { id, type, value, class: inputClass };
   if (placeholder) attrs.placeholder = placeholder;
   if (width > 0) attrs.style = `width: ${width}px;`;
   return element("input", attrs);

@@ -114,9 +114,10 @@ body {
 }
 
 .form-control-color {
-  width: 40px;
+  width: 45px;
   height: 36px;
-  border: none;
+  padding: 5px;
+  border: 1px solid #2a2a4a;
   border-radius: 6px;
   cursor: pointer;
   background: transparent;
