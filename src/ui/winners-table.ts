@@ -54,22 +54,3 @@ export const renderWinnersTable = (app: HTMLElement | DocumentFragment): void =>
 
   app.append(table);
 };
-
-// ============ ПАГИНАЦИЯ ПОБЕДИТЕЛЕЙ ============
-export const renderWinnersPagination = (app: HTMLElement, totalPages: number): void => {
-  app.append(
-    element("div", { class: "pagination-controls" },
-      element("button", {
-        class: "btn btn-secondary",
-        id: "btn-prev-winners",
-        disabled: state.winners.page <= 1 ? true : undefined
-      }, "Previous"),
-      element("span", undefined, `Page ${state.winners.page} of ${totalPages}`),
-      element("button", {
-        class: "btn btn-secondary",
-        id: "btn-next-winners",
-        disabled: state.winners.page >= totalPages ? true : undefined
-      }, "Next")
-    )
-  );
-};

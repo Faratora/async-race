@@ -13,6 +13,7 @@ import {
 import { state } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { CONFIG } from "../config/index.ts";
+import { createInput, createButton, createPagination, renderHeader } from "./helpers.ts";
 
 import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
 import { updateCarButtonStates, isCarRacing, isCarBroken, isCarFinished } from "./animations.ts";
@@ -102,33 +103,6 @@ export const renderGarage = async (): Promise<void> => {
   app.replaceChildren(fragment);
   updateCarButtonStates();
 };
-
-const renderHeader = (
-  container: HTMLElement | DocumentFragment,
-  title: string,
-  total: number,
-  currentPage: number,
-  totalPages: number
-): void => {
-  container.append(
-    element("div", { class: "view-header" },
-      element("span", { class: "view-title" }, title),
-      element("span", { class: "view-info" },
-        `Page ${currentPage} of ${totalPages} · ${total} total`
-      )
-    )
-  );
-};
-
-const createInput = (id: string, type: string, value: string, placeholder = "", width = 0): HTMLElement => {
-  const attrs: Record<string, string | number> = { id, type, value, class: "form-control" };
-  if (placeholder) attrs.placeholder = placeholder;
-  if (width > 0) attrs.style = `width: ${width}px;`;
-  return element("input", attrs);
-};
-
-const createButton = (id: string, text: string, btnClass: string): HTMLElement =>
-  element("button", { id, class: btnClass }, text);
 
 const renderAddCarForm = (container: HTMLElement | DocumentFragment): void => {
   const form = element("div", { class: "add-car-form" });
@@ -260,29 +234,6 @@ export const renderCarCards = (container: HTMLElement | DocumentFragment): void 
   }
 
   state.garage.cars.forEach(car => container.append(createCarCard(car)));
-};
-
-const createPagination = (
-  prevId: string,
-  nextId: string,
-  currentPage: number,
-  totalPages: number,
-  isPrevDisabled: boolean,
-  isNextDisabled: boolean
-): HTMLElement => {
-  return element("div", { class: "pagination-controls" },
-    element("button", {
-      class: "btn btn-secondary",
-      id: prevId,
-      disabled: isPrevDisabled ? true : undefined
-    }, "Previous"),
-    element("span", undefined, `Page ${currentPage} of ${totalPages}`),
-    element("button", {
-      class: "btn btn-secondary",
-      id: nextId,
-      disabled: isNextDisabled ? true : undefined
-    }, "Next")
-  );
 };
 
 // ============ ПОБЕДИТЕЛИ ============

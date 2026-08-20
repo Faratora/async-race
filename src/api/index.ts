@@ -157,9 +157,10 @@ export async function getVelocity(carId: number): Promise<number> {
 }
 
 export async function driveCar(carId: number): Promise<void> {
-  await fetchWithRetry<void>(`${CONFIG.API.BASE}/cars/${carId}/drive`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${carId}/drive`, {
     method: "POST",
   });
+  await handleVoidResponse(response);
 }
 
 export async function startRace(carIds: number[]): Promise<void> {
