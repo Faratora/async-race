@@ -97,6 +97,19 @@ export const updateCarButtonStates = (): void => {
   }
 };
 
+// ============ ОБНОВЛЕНИЕ КНОПОК УПРАВЛЕНИЯ ГОНКОЙ ============
+export const updateRaceControls = (): void => {
+  const startButton = document.querySelector<HTMLButtonElement>("#btn-start-race");
+  if (!startButton) return;
+
+  startButton.disabled = state.race.isRacing;
+  if (startButton.disabled) {
+    startButton.setAttribute("disabled", "");
+  } else {
+    startButton.removeAttribute("disabled");
+  }
+};
+
 // ============ СБРОС ПОЗИЦИЙ И СОСТОЯНИЯ ============
 export const resetCarPositions = (carIds: number[]): void => {
   carIds.forEach(id => {
@@ -366,6 +379,7 @@ export const animateRace = (): void => {
     state.race.animationId = 0;
 
     updateCarButtonStates();
+    updateRaceControls();
     return;
   }
 

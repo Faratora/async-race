@@ -15,6 +15,7 @@ import {
   resetCarPositions,
   animateRace,
   updateCarButtonStates,
+  updateRaceControls,
   getCarElement,
 } from "./animations.ts";
 
@@ -41,6 +42,7 @@ export const startRaceHandler = async (): Promise<void> => {
   removeAllNotifications();
   state.race.isRacing = true;
   state.race.winnerAnnounced = false;
+  updateRaceControls();
 
   await startRace(carIds);
   await Promise.all(carIds.map(id => startEngine(id)));
@@ -113,6 +115,7 @@ export const resetRaceHandler = async (): Promise<void> => {
   state.race.carRaces = {};
   state.race.drivingCars = {};
   state.race.winnerAnnounced = false;
+  updateRaceControls();
 
   const carIds = state.garage.cars.map(c => c.id);
   resetCarVisualState(carIds);
