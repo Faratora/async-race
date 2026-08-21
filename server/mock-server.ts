@@ -21,7 +21,7 @@ interface Car {
   id: number;
   name: string;
   color: string;
-  maxSpeed: number; // максимальная скорость в км/ч
+  maxSpeed: number;
 }
 
 interface Winner {
@@ -301,16 +301,41 @@ function checkSpam(res: express.Response, limit: number): boolean {
   return false;
 }
 
+// === УНИВЕРСАЛЬНЫЕ УТИЛИТЫ ===
+const paginate = <T>(items: T[], page: number, limit: number): { paginated: T[]; total: number } => {
+  const start = (page - 1) * limit;
+  const end = start + limit;
+  return { paginated: items.slice(start, end), total: items.length };
+};
+
+const requireId = (req: express.Request, res: express.Response, notFoundMsg: string): number | null => {
+  const id = parseId(req.params.id);
+  if (!id) {
+    handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid ID");
+    return null;
+  }
+  if (!store.getCar(id)) {
+    handleError(res, CONSTANTS.HTTP_NOT_FOUND, notFoundMsg);
+    return null;
+  }
+  return id;
+};
+
+const execute = async (fn: () => Promise<void>, res: express.Response, errorMsg: string): Promise<void> => {
+  try {
+    await fn();
+  } catch {
+    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, errorMsg);
+  }
+};
+
 // ============ МАРШРУТЫ ============
 // ----- CARS -----
 app.get("/api/cars", (req: express.Request, res: express.Response): void => {
   try {
     const { page, limit } = parsePagination(req.query);
-    const allCars = store.getCars();
-    const start = (page - 1) * limit;
-    const end = start + limit;
-    const paginated = allCars.slice(start, end);
-    res.set("X-Total-Count", String(allCars.length));
+    const { paginated, total } = paginate(store.getCars(), page, limit);
+    res.set("X-Total-Count", String(total));
     res.json({ cars: paginated });
   } catch (error) {
     handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to fetch cars");
@@ -331,13 +356,11 @@ app.post("/api/cars", (req: express.Request, res: express.Response): void => {
   }
 });
 
-app.put("/api/cars/:id", (req: express.Request, res: express.Response): void => {
-  try {
-    const id = parseId(req.params.id);
-    if (!id) {
-      handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid car ID");
-      return;
-    }
+app.put("/api/cars/:id", async (req: express.Request, res: express.Response): Promise<void> => {
+  const id = requireId(req, res, "Car not found");
+  if (!id) return;
+
+  await execute(async () => {
     const body = req.body;
     if (!store.isValidCarData(body)) {
       handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Missing or invalid name/color");
@@ -349,27 +372,21 @@ app.put("/api/cars/:id", (req: express.Request, res: express.Response): void => 
       return;
     }
     res.json(car);
-  } catch (error) {
-    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to update car");
-  }
+  }, res, "Failed to update car");
 });
 
-app.delete("/api/cars/:id", (req: express.Request, res: express.Response): void => {
-  try {
-    const id = parseId(req.params.id);
-    if (!id) {
-      handleError(res, CONSTANTS.HTTP_BAD_REQUEST, "Invalid car ID");
-      return;
-    }
+app.delete("/api/cars/:id", async (req: express.Request, res: express.Response): Promise<void> => {
+  const id = requireId(req, res, "Car not found");
+  if (!id) return;
+
+  await execute(async () => {
     const car = store.deleteCar(id);
     if (!car) {
       handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
       return;
     }
     res.json({ success: true, car });
-  } catch (error) {
-    handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to delete car");
-  }
+  }, res, "Failed to delete car");
 });
 
 app.post("/api/cars/bulk", (req: express.Request, res: express.Response): void => {
@@ -386,61 +403,55 @@ app.post("/api/cars/bulk", (req: express.Request, res: express.Response): void =
 // ----- CAR CONTROL -----
 app.post("/api/cars/:id/start", (req: express.Request, res: express.Response): void => {
   if (checkSpam(res, CONSTANTS.SPAM_LIMIT_START)) return;
-  const id = parseId(req.params.id);
-  if (!id || !store.getCar(id)) {
-    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
-    return;
-  }
+  const id = requireId(req, res, "Car not found");
+  if (!id) return;
   res.json({ status: "started" });
 });
 
 app.get("/api/cars/:id/velocity", (req: express.Request, res: express.Response): void => {
-  const id = parseId(req.params.id);
-  if (!id || !store.getCar(id)) {
-    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
-    return;
-  }
+  const id = requireId(req, res, "Car not found");
+  if (!id) return;
+
   // Если машина сломана — возвращаем 500
   if (store.getBrokenCarId() === id) {
     handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Car broke down");
     return;
   }
   const car = store.getCar(id);
-  // Возвращаем реальную максимальную скорость машины
   res.json({ maxSpeed: car!.maxSpeed });
 });
 
-app.post("/api/cars/:id/drive", (req: express.Request, res: express.Response): void => {
+app.post("/api/cars/:id/drive", async (req: express.Request, res: express.Response): Promise<void> => {
   if (checkSpam(res, CONSTANTS.SPAM_LIMIT_DRIVE)) return;
   if (Math.random() < CONSTANTS.ERROR_PROBABILITY) {
     handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Simulated server error");
     return;
   }
-  const id = parseId(req.params.id);
-  if (!id || !store.getCar(id)) {
-    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
-    return;
-  }
-  res.json({ status: "driving" });
+  const id = requireId(req, res, "Car not found");
+  if (!id) return;
+
+  await execute(async () => {
+    res.json({ status: "driving" });
+  }, res, "Failed to drive car");
 });
 
-app.post("/api/cars/:id/stop", (req: express.Request, res: express.Response): void => {
-  const id = parseId(req.params.id);
-  if (!id || !store.getCar(id)) {
-    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
-    return;
-  }
-  res.json({ status: "stopped" });
+app.post("/api/cars/:id/stop", async (req: express.Request, res: express.Response): Promise<void> => {
+  const id = requireId(req, res, "Car not found");
+  if (!id) return;
+
+  await execute(async () => {
+    res.json({ status: "stopped" });
+  }, res, "Failed to stop car");
 });
 
-app.post("/api/cars/:id/repair", (req: express.Request, res: express.Response): void => {
-  const id = parseId(req.params.id);
-  if (!id || !store.getCar(id)) {
-    handleError(res, CONSTANTS.HTTP_NOT_FOUND, "Car not found");
-    return;
-  }
-  store.clearBrokenCar();
-  res.json({ status: "repaired" });
+app.post("/api/cars/:id/repair", async (req: express.Request, res: express.Response): Promise<void> => {
+  const id = requireId(req, res, "Car not found");
+  if (!id) return;
+
+  await execute(async () => {
+    store.clearBrokenCar();
+    res.json({ status: "repaired" });
+  }, res, "Failed to repair car");
 });
 
 // ----- RACE -----
@@ -486,7 +497,6 @@ app.get("/api/winners", (req: express.Request, res: express.Response): void => {
     const sortOrder = String(req.query.sortOrder || "desc");
     let winners = store.getWinners();
     
-    // Сортировка
     winners.sort((a: Winner, b: Winner) => {
       let valA: string | number, valB: string | number;
       if (sortBy === "name") {
@@ -501,10 +511,8 @@ app.get("/api/winners", (req: express.Request, res: express.Response): void => {
       return sortOrder === "asc" ? valA - valB : valB - valA;
     });
     
-    const start = (page - 1) * limit;
-    const end = start + limit;
-    const paginated = winners.slice(start, end);
-    res.set("X-Total-Count", String(winners.length));
+    const { paginated, total } = paginate(winners, page, limit);
+    res.set("X-Total-Count", String(total));
     res.json({ winners: paginated });
   } catch (error) {
     handleError(res, CONSTANTS.HTTP_INTERNAL_SERVER_ERROR, "Failed to fetch winners");

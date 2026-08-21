@@ -54,7 +54,7 @@ export interface RaceState {
 export interface CarRace {
     carId: number;
     startTime: number;
-    maxSpeed: number; // максимальная скорость в км/ч
+    maxSpeed: number;
     finished: boolean;
     broken: boolean;
     time: number | undefined;
@@ -91,19 +91,6 @@ export interface RaceResult {
     carColor: string;
     time: number;
 }
-
-export {
-    CONFIG,
-    CARS_PER_PAGE,
-    WINNERS_PER_PAGE,
-    API_BASE,
-    TRACK_PADDING,
-    FINISH_OFFSET,
-    TRACK_LENGTH,
-    MIN_SPEED_KMH,
-    MAX_SPEED_KMH,
-    speedToProgressPerMs,
-} from '../config/index.ts';
 
 // ============ УТИЛИТЫ ВРЕМЕНИ ============
 

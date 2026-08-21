@@ -2,6 +2,14 @@ import { element } from "./builder.ts";
 
 type Attributes = Record<string, string | number | boolean | undefined>;
 
+// ============ УТИЛИТЫ ============
+
+export const escapeHtml = (text: string): string => {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+};
+
 // ============ СОЗДАНИЕ ЭЛЕМЕНТОВ ============
 
 export const createInput = (id: string, type: string, value: string, placeholder = "", width = 0): HTMLElement => {
@@ -57,4 +65,18 @@ export const renderHeader = (
       )
     )
   );
+};
+
+// ============ СБРОС ВИЗУАЛА МАШИНЫ ============
+
+export const resetCarVisualReset = (car: HTMLElement, removeLastPosition = false): void => {
+  car.classList.remove("broken");
+  car.classList.remove("broken-engine_overheating", "broken-transmission_failure", "broken-start_stall", "broken-random_breakdown");
+  car.style.opacity = "1";
+  car.style.scale = "1";
+  car.style.rotate = "0deg";
+  car.style.transform = "translateX(0px)";
+  if (removeLastPosition) {
+    delete car.dataset.lastPosition;
+  }
 };

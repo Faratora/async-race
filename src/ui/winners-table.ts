@@ -3,7 +3,7 @@ import type { SortConfig } from "../types/index.ts";
 
 import { state } from "../state/index.ts";
 import { element } from "./builder.ts";
-import { escapeHtml } from "./ui-manager.ts";
+import { escapeHtml } from "./helpers.ts";
 import { WINNERS_PER_PAGE } from "../config/index.ts";
 import { formatTime } from "../types/index.ts";
 

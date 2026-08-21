@@ -149,6 +149,16 @@ export async function stopEngine(carId: number): Promise<void> {
   await handleVoidResponse(response);
 }
 
+export async function repairCar(carId: number): Promise<void> {
+  try {
+    await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${carId}/repair`, {
+      method: "POST",
+    });
+  } catch {
+    // ignore repair errors
+  }
+}
+
 export async function getVelocity(carId: number): Promise<number> {
   const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${carId}/velocity`);
   const data: { maxSpeed: number } =

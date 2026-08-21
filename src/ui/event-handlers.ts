@@ -1,18 +1,21 @@
 import {
   ViewName,
   SortConfig,
-  CARS_PER_PAGE,
-  WINNERS_PER_PAGE,
 } from "../types/index.ts";
 
 import {
-  createCar,
-  updateCar,
-  deleteCar,
-  generateCars,
-  startEngine,
-  stopEngine,
-} from "../api/index.ts";
+  CARS_PER_PAGE,
+  WINNERS_PER_PAGE,
+} from "../config/index.ts";
+
+import {
+  createCarAction,
+  updateCarAction,
+  deleteCarAction,
+  generateCarsAction,
+  startEngineAction,
+  stopEngineAction,
+} from "../state/index.ts";
 
 import { state } from "../state/index.ts";
 
@@ -21,6 +24,7 @@ import { startDriveCar, stopDriveCar, resetCarToStart } from "./animations.ts";
 import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
 import { showGenericNotification } from "./notifications.ts";
+import { resetCarVisualReset } from "./helpers.ts";
 
 // ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ГАРАЖА ============
 const reloadGarage = (): void => {
@@ -88,7 +92,7 @@ export const handleCreateButton = (): void => {
   if (!name) return;
 
   withSpamGuard("create", () => {
-    void createCar({ name, color: state.garage.selectedColor })
+    void createCarAction({ name, color: state.garage.selectedColor })
       .then(() => {
         state.garage.createCarName = "";
         reloadGarage();
@@ -99,7 +103,7 @@ export const handleCreateButton = (): void => {
 
 export const handleGenerateButton = (): void => {
   withSpamGuard("generate", () => {
-    void generateCars(100)
+    void generateCarsAction(100)
       .then(reloadGarage)
       .catch((error) => {
         console.error("Failed to generate cars:", error);
@@ -122,7 +126,7 @@ export const handleUpdateButton = (): void => {
 
   const carId = state.garage.editingCarId;
   withSpamGuard("update", () => {
-    void updateCar(carId, { name, color })
+    void updateCarAction(carId, { name, color })
       .then(() => {
         state.garage.editingCarId = undefined;
         state.garage.editName = "";
@@ -146,25 +150,39 @@ export const handleCancelEditButton = (): void => {
 };
 
 // ============ ОБЩАЯ ЛОГИКА ПАГИНАЦИИ ============
-const changeGaragePage = (delta: number): void => {
-  const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE);
-  const newPage = state.garage.page + delta;
 
-  if (state.race.isRacing) return;
+type PageState = { page: number; total: number; isRacing: boolean };
+
+const changePage = (
+  pageState: PageState,
+  limit: number,
+  onPageChange: () => void,
+  delta: number,
+): void => {
+  const totalPages = Math.ceil(pageState.total / limit) || 1;
+  const newPage = pageState.page + delta;
+  if (pageState.isRacing) return;
   if (newPage < 1 || newPage > totalPages) return;
+  pageState.page = newPage;
+  onPageChange();
+};
 
-  state.garage.page = newPage;
-  void loadGarageCars().then(renderGarage);
+const changeGaragePage = (delta: number): void => {
+  changePage(
+    { page: state.garage.page, total: state.garage.total, isRacing: state.race.isRacing },
+    CARS_PER_PAGE,
+    () => void loadGarageCars().then(renderGarage),
+    delta,
+  );
 };
 
 const changeWinnersPage = (delta: number): void => {
-  const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE);
-  const newPage = state.winners.page + delta;
-
-  if (newPage < 1 || newPage > totalPages) return;
-
-  state.winners.page = newPage;
-  renderWinners();
+  changePage(
+    { page: state.winners.page, total: state.winners.total, isRacing: false },
+    WINNERS_PER_PAGE,
+    () => renderWinners(),
+    delta,
+  );
 };
 
 export const handlePreviousButton = (): void => changeGaragePage(-1);
@@ -196,7 +214,7 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
 };
 
 const handleRemoveCar = (id: number): void => {
-  void deleteCar(id)
+  void deleteCarAction(id)
     .then(() => {
       state.winners.winners = state.winners.winners.filter(w => w.carId !== id);
       return loadGarageCars();
@@ -215,7 +233,7 @@ const handleSelectCar = (id: number): void => {
 
 const handleStartEngine = (id: number): void => {
   void withPendingAction(id, async () => {
-    await startEngine(id);
+    await startEngineAction(id);
     startDriveCar(id);
   });
 };
@@ -229,7 +247,7 @@ const handleStopEngine = (id: number): void => {
     } else if (isFinished) {
       resetCarToStart(id);
     } else {
-      await stopEngine(id);
+      await stopEngineAction(id);
       stopDriveCar(id);
     }
   });
@@ -246,19 +264,10 @@ const handleRepairCar = (id: number): void => {
   }
   const car = getCarElement(id);
   if (car instanceof HTMLElement) {
-    resetCarVisualStateForRepair(car);
+    resetCarVisualReset(car);
   }
   stopRaceAnimation();
   updateCarButtonStates();
-};
-
-const resetCarVisualStateForRepair = (car: HTMLElement): void => {
-  car.classList.remove("broken");
-  car.classList.remove("broken-engine_overheating", "broken-transmission_failure", "broken-start_stall", "broken-random_breakdown");
-  car.style.opacity = "1";
-  car.style.scale = "1";
-  car.style.rotate = "0deg";
-  car.style.transform = "translateX(0px)";
 };
 
 const stopRaceAnimation = (): void => {

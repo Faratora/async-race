@@ -1,11 +1,16 @@
 import type { CarRace } from "../types/index.ts";
 
 import {
-  startEngine,
-  getVelocity,
-  startRace,
-  resetRace,
-} from "../api/index.ts";
+  startRaceAction,
+  resetRaceAction,
+  startEngineAction,
+  getVelocityAction,
+  startRaceSetup,
+  setCarRaceVelocity,
+  setCarRaceBroken,
+  isCarRaceBroken,
+  clearRaceState,
+} from "../state/index.ts";
 
 import { state } from "../state/index.ts";
 import { BREAKDOWN_CONFIG } from "../config/index.ts";
@@ -20,14 +25,6 @@ import {
 } from "./animations.ts";
 
 // ============ УПРАВЛЕНИЕ УВЕДОМЛЕНИЯМИ ============
-export const removeWinnerMessage = (): void => {
-  document.querySelectorAll(".winner-message").forEach(el => el.remove());
-};
-
-export const removeBreakdownMessages = (): void => {
-  document.querySelectorAll(".breakdown-notification, .breakdown-message").forEach(el => el.remove());
-};
-
 export const removeAllNotifications = (): void => {
   document.querySelectorAll(".winner-message, .breakdown-notification, .breakdown-message").forEach(el => el.remove());
 };
@@ -40,28 +37,28 @@ export const startRaceHandler = async (): Promise<void> => {
   if (carIds.length === 0) return;
 
   removeAllNotifications();
-  state.race.isRacing = true;
-  state.race.winnerAnnounced = false;
+  startRaceSetup(carIds, performance.now());
   updateRaceControls();
 
-  await startRace(carIds);
-  await Promise.all(carIds.map(id => startEngine(id)));
+  await startRaceAction(carIds);
+  await Promise.all(carIds.map(id => startEngineAction(id)));
 
-  const velocities = await Promise.allSettled(carIds.map(id => getVelocity(id)));
-  const now = performance.now();
+  const velocities = await Promise.allSettled(carIds.map(id => getVelocityAction(id)));
 
-  state.race.carRaces = {};
   resetCarVisualState(carIds);
   resetCarPositions(carIds);
 
   carIds.forEach((id, index) => {
     const result = velocities[index];
-    const isBroken = result.status === "rejected";
-    state.race.carRaces[id] = createCarRace(id, now, isBroken, result);
+    if (result.status === "fulfilled") {
+      setCarRaceVelocity(id, result.value);
+    } else {
+      setCarRaceBroken(id, performance.now());
+    }
   });
 
   carIds.forEach(id => {
-    if (isCarBrokenAtStart(id)) {
+    if (isCarRaceBroken(id)) {
       const car = getCarElement(id);
       if (car instanceof HTMLElement) {
         car.classList.add("broken");
@@ -74,33 +71,6 @@ export const startRaceHandler = async (): Promise<void> => {
   animateRace();
 };
 
-const createCarRace = (
-  carId: number,
-  now: number,
-  isBroken: boolean,
-  result: PromiseFulfilledResult<number> | PromiseRejectedResult,
-): CarRace => ({
-  carId,
-  startTime: now,
-  maxSpeed: result.status === "fulfilled" ? result.value : 0,
-  finished: false,
-  broken: isBroken,
-  time: undefined,
-  breakdownHistory: {
-    count: isBroken ? 1 : 0,
-    timestamps: isBroken ? [now] : [],
-    positions: isBroken ? [0] : [],
-    types: isBroken ? ["start_stall"] : [],
-  },
-  repairStartTime: undefined,
-  isRepairing: false,
-});
-
-const isCarBrokenAtStart = (id: number): boolean => {
-  const result = state.race.carRaces[id];
-  return result?.broken ?? false;
-};
-
 export const resetRaceHandler = async (): Promise<void> => {
   if (state.race.animationId) {
     cancelAnimationFrame(state.race.animationId);
@@ -111,10 +81,7 @@ export const resetRaceHandler = async (): Promise<void> => {
     state.race.driveAnimationId = 0;
   }
 
-  state.race.isRacing = false;
-  state.race.carRaces = {};
-  state.race.drivingCars = {};
-  state.race.winnerAnnounced = false;
+  clearRaceState();
   updateRaceControls();
 
   const carIds = state.garage.cars.map(c => c.id);
@@ -124,7 +91,7 @@ export const resetRaceHandler = async (): Promise<void> => {
   removeAllNotifications();
 
   if (carIds.length > 0) {
-    await resetRace(carIds);
+    await resetRaceAction(carIds);
   }
 
   updateCarButtonStates();

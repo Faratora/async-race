@@ -11,12 +11,18 @@ import { showBreakdownNotification, showWinnerNotification, type BrokenCar } fro
 import type { Car, CarRace, DrivingCar } from "../types/index.ts";
 
 import {
-  getVelocity,
-  driveCar,
-  recordWinner,
-} from "../api/index.ts";
+  getVelocityAction,
+  driveCarAction,
+  recordWinnerAction,
+  repairCarAction,
+  resetRaceState,
+  clearDriveCar,
+  setDriveCar,
+  stopRaceAnimation,
+} from "../state/index.ts";
 
 import { state } from "../state/index.ts";
+import { resetCarVisualReset } from "./helpers.ts";
 
 // ============ УТИЛИТЫ ============
 export const getCarRace = (id: number): CarRace | undefined => state.race.carRaces[id];
@@ -38,9 +44,6 @@ export const isCarFinished = (id: number): boolean => {
 
 export const getCarElement = (id: number): HTMLElement | null =>
   document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"] .car`);
-
-export const getRoadElement = (id: number): HTMLElement | null =>
-  document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"]`);
 
 export const getTrackWidth = (road: HTMLElement): number =>
   road.offsetWidth - CONFIG.UI.TRACK_PADDING;
@@ -124,12 +127,7 @@ export const resetCarVisualState = (carIds: number[]): void => {
   carIds.forEach(id => {
     const car = getCarElement(id);
     if (car instanceof HTMLElement) {
-      car.classList.remove("broken");
-      car.classList.remove("broken-engine_overheating", "broken-transmission_failure", "broken-start_stall", "broken-random_breakdown");
-      car.style.opacity = "1";
-      car.style.scale = "1";
-      car.style.rotate = "0deg";
-      delete car.dataset.lastPosition;
+      resetCarVisualReset(car, true);
     }
   });
 };
@@ -310,7 +308,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
   race.finished = true;
   race.time = (elapsed * CONFIG.PHYSICS.TIME_DILATION) / 1000;
 
-  void driveCar(carId).catch(error => console.error("Failed to drive car:", error));
+  void driveCarAction(carId).catch(error => console.error("Failed to drive car:", error));
   updateCarButtonStates();
 
   const stopButton = document.querySelector<HTMLButtonElement>(`.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`);
@@ -354,7 +352,7 @@ const announceWinner = (
   time: number,
   brokenCars: BrokenCar[],
 ): void => {
-  void recordWinner({
+  void recordWinnerAction({
     carId: car.id,
     carName: car.name,
     carColor: car.color,
@@ -453,12 +451,12 @@ const createDefaultFinishedRace = (carId: number, drive: DrivingCar): CarRace =>
 
 export const startDriveCar = async (carId: number): Promise<void> => {
   try {
-    await fetch(`${CONFIG.API.BASE}/cars/${carId}/repair`, { method: "POST" });
+    await repairCarAction(carId);
   } catch {
     // ignore repair errors
   }
 
-  const maxSpeed = await getVelocity(carId);
+  const maxSpeed = await getVelocityAction(carId);
 
   if (state.race.carRaces[carId]) {
     state.race.carRaces[carId].finished = false;
@@ -483,7 +481,7 @@ export const startDriveCar = async (carId: number): Promise<void> => {
 // ============ ЗАПУСК ДВИЖЕНИЯ ============
 const startDrive = async (carId: number): Promise<void> => {
   try {
-    await driveCar(carId);
+    await driveCarAction(carId);
   } catch {
     stopDriveAnimation(carId);
   }
