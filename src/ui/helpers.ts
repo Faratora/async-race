@@ -69,8 +69,8 @@ export const renderHeader = (
 
 // ============ СБРОС ВИЗУАЛА МАШИНЫ ============
 
-export const resetCarVisualReset = (car: HTMLElement, removeLastPosition = false): void => {
-  for (const className of Array.from(car.classList)) {
+export const resetCarVisualReset = (car: HTMLElement, shouldRemoveLastPosition = false): void => {
+  for (const className of car.classList) {
     if (className.startsWith("broken-")) {
       car.classList.remove(className);
     }
@@ -80,7 +80,7 @@ export const resetCarVisualReset = (car: HTMLElement, removeLastPosition = false
   car.style.scale = "1";
   car.style.rotate = "0deg";
   car.style.transform = "translateX(0px)";
-  if (removeLastPosition) {
+  if (shouldRemoveLastPosition) {
     delete car.dataset.lastPosition;
   }
 };

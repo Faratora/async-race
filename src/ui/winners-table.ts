@@ -46,10 +46,10 @@ export const renderWinnersTable = (app: HTMLElement | DocumentFragment): void =>
       )
     );
   } else {
-    state.winners.winners.forEach((winner, index) => {
+    for (const [index, winner] of state.winners.winners.entries()) {
       const globalIndex = (state.winners.page - 1) * WINNERS_PER_PAGE + index;
       table.append(createWinnerRow(winner, globalIndex));
-    });
+    }
   }
 
   app.append(table);

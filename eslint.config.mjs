@@ -26,6 +26,7 @@ export default [
     rules: {
       ...tseslint.configs.recommended.rules,
       ...unicorn.configs.recommended.rules,
+     
     },
   },
 ];
