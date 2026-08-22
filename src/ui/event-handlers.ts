@@ -15,6 +15,7 @@ import {
   generateCarsAction,
   startEngineAction,
   stopEngineAction,
+  loadWinners,
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
@@ -164,7 +165,7 @@ const changeWinnersPage = (delta: number): void => {
   const newPage = state.winners.page + delta;
   if (newPage < 1 || newPage > totalPages) return;
   state.winners.page = newPage;
-  renderWinners();
+  void loadWinners().then(() => renderWinners());
 };
 
 export const handlePreviousButton = (): void => changeGaragePage(-1);
@@ -203,9 +204,19 @@ const handleRemoveCar = (id: number): void => {
   void deleteCarAction(id)
     .then(() => {
       state.winners.winners = state.winners.winners.filter(w => w.carId !== id);
+      state.winners.total = state.winners.winners.length;
+
+      const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
+      if (state.winners.page > totalPages) {
+        state.winners.page = Math.max(1, totalPages);
+      }
+
       return loadGarageCars();
     })
-    .then(renderGarage);
+    .then(() => renderGarage())
+    .catch((error) => {
+      console.error("Failed to remove car:", error);
+    });
 };
 
 const handleSelectCar = (id: number): void => {

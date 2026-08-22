@@ -244,8 +244,16 @@ export const renderCarCards = (container: HTMLElement | DocumentFragment): void 
 // ============ ПОБЕДИТЕЛИ ============
 
 export const renderWinners = async (): Promise<void> => {
+  await loadWinners();
+
+  const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
+  if (state.winners.page > totalPages) {
+    state.winners.page = 1;
+    await loadWinners();
+  }
+
   await renderView(
-    loadWinners,
+    () => Promise.resolve(null),
     (_data: unknown, fragment: DocumentFragment) => {
       const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
       renderHeader(fragment, `Winners (${state.winners.total})`, state.winners.total, state.winners.page, totalPages);

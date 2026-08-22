@@ -46,11 +46,9 @@ export const renderWinnersTable = (app: HTMLElement | DocumentFragment): void =>
       )
     );
   } else {
-    const startIndex = (state.winners.page - 1) * WINNERS_PER_PAGE;
-    const endIndex = startIndex + WINNERS_PER_PAGE;
-    const pageWinners = state.winners.winners.slice(startIndex, endIndex);
-    pageWinners.forEach((winner, index) => {
-      table.append(createWinnerRow(winner, startIndex + index));
+    state.winners.winners.forEach((winner, index) => {
+      const globalIndex = (state.winners.page - 1) * WINNERS_PER_PAGE + index;
+      table.append(createWinnerRow(winner, globalIndex));
     });
   }
 
