@@ -152,7 +152,6 @@ export const handleCancelEditButton = (): void => {
 // ============ ОБЩАЯ ЛОГИКА ПАГИНАЦИИ ============
 
 const changeGaragePage = (delta: number): void => {
-  if (state.race.isRacing) return;
   const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
   const newPage = state.garage.page + delta;
   if (newPage < 1 || newPage > totalPages) return;
@@ -213,7 +212,15 @@ const handleRemoveCar = (id: number): void => {
 
       return loadGarageCars();
     })
-    .then(() => renderGarage())
+    .then(async () => {
+      // Проверяем что страница не вышла за границы после удаления
+      const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
+      if (state.garage.page > totalPages) {
+        state.garage.page = Math.max(1, totalPages);
+        await loadGarageCars();
+      }
+      return renderGarage();
+    })
     .catch((error) => {
       console.error("Failed to remove car:", error);
     });

@@ -224,7 +224,9 @@ export function startRaceSetup(carIds: number[], now: number): void {
 export function setCarRaceVelocity(carId: number, maxSpeed: number): void {
   const race = state.race.carRaces[carId];
   if (race) {
-    race.maxSpeed = maxSpeed;
+    // Случайный фактор ±10% для непредсказуемости результатов
+    const variance = 0.9 + Math.random() * 0.2;
+    race.maxSpeed = maxSpeed * variance;
   }
 }
 

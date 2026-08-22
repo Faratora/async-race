@@ -105,9 +105,9 @@ export const renderGarage = async (): Promise<void> => {
       renderEditForm(fragment);
       renderRaceControls(fragment);
       renderCarCards(fragment);
-      const previousDisabled = state.garage.page <= 1 || state.race.isRacing;
-      const nextDisabled = state.garage.page >= totalPages || state.race.isRacing;
-      fragment.append(createPagination("btn-prev", "btn-next", state.garage.page, totalPages, previousDisabled, nextDisabled));
+      const isPreviousDisabled = state.garage.page <= 1;
+      const isNextDisabled = state.garage.page >= totalPages;
+      fragment.append(createPagination("btn-prev", "btn-next", state.garage.page, totalPages, isPreviousDisabled, isNextDisabled));
     },
     () => updateCarButtonStates(),
   );

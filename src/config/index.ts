@@ -23,7 +23,7 @@ export const CONFIG = {
 
   // Физика гонки
   PHYSICS: {
-    TRACK_LENGTH: 400,
+    TRACK_LENGTH: 1000,
     MIN_SPEED_KMH: 150,
     MAX_SPEED_KMH: 350,
     TIME_DILATION: 1.1,
