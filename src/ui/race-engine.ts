@@ -1,5 +1,3 @@
-import type { CarRace } from "../types/index.ts";
-
 import {
   startRaceAction,
   resetRaceAction,
@@ -13,7 +11,6 @@ import {
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
-import { BREAKDOWN_CONFIG } from "../config/index.ts";
 
 import {
   resetCarVisualState,
@@ -26,7 +23,14 @@ import {
 
 // ============ УПРАВЛЕНИЕ УВЕДОМЛЕНИЯМИ ============
 export const removeAllNotifications = (): void => {
-  document.querySelectorAll(".winner-message, .breakdown-notification, .breakdown-message").forEach(el => el.remove());
+<<<<<<< Updated upstream
+  document.querySelectorAll(".winner-message, .breakdown-notification, .breakdown-message").forEach(element => element.remove());
+=======
+  const elements = document.querySelectorAll(".winner-message, .breakdown-notification, .breakdown-message");
+  for (const element of elements) {
+    element.remove();
+  }
+>>>>>>> Stashed changes
 };
 
 // ============ ОБРАБОТЧИКИ ГОНКИ ============
@@ -48,24 +52,30 @@ export const startRaceHandler = async (): Promise<void> => {
   resetCarVisualState(carIds);
   resetCarPositions(carIds);
 
-  carIds.forEach((id, index) => {
+  for (const [index, id] of carIds.entries()) {
     const result = velocities[index];
     if (result.status === "fulfilled") {
       setCarRaceVelocity(id, result.value);
     } else {
       setCarRaceBroken(id, performance.now());
     }
-  });
+  }
 
+<<<<<<< Updated upstream
   carIds.forEach(id => {
-    if (isCarRaceBroken(id)) {
-      const car = getCarElement(id);
-      if (car instanceof HTMLElement) {
-        car.classList.add("broken");
-        car.classList.add("broken-start_stall");
-      }
+    if (!isCarRaceBroken(id)) {
+    	return;
     }
+
+    const car = getCarElement(id);
+    if (car instanceof HTMLElement) {
+      car.classList.add("broken", "broken-start_stall");
+    }
+
   });
+=======
+  }
+>>>>>>> Stashed changes
 
   updateCarButtonStates();
   animateRace();

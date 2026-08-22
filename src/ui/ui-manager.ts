@@ -55,13 +55,18 @@ export const switchView = (view: ViewName): void => {
 
   state.currentView = view;
 
-  document.querySelectorAll("#nav-tabs .nav-link").forEach((tab) => {
+  const tabs = document.querySelectorAll("#nav-tabs .nav-link");
+  for (const tab of tabs) {
     if (tab instanceof HTMLElement) {
       tab.classList.toggle("active", tab.dataset.view === view);
     }
-  });
+  }
 
-  view === "garage" ? renderGarage() : renderWinners();
+  if (view === "garage") {
+    renderGarage();
+  } else {
+    renderWinners();
+  }
 };
 
 // ============ ОТРИСОВКА ГАРАЖА ============
@@ -91,7 +96,7 @@ export const renderGarage = async (): Promise<void> => {
         state.garage.cars = [];
         state.garage.total = 0;
       }
-      return null;
+      return;
     },
     (_data: unknown, fragment: DocumentFragment) => {
       const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
@@ -100,9 +105,9 @@ export const renderGarage = async (): Promise<void> => {
       renderEditForm(fragment);
       renderRaceControls(fragment);
       renderCarCards(fragment);
-      const prevDisabled = state.garage.page <= 1 || state.race.isRacing;
+      const previousDisabled = state.garage.page <= 1 || state.race.isRacing;
       const nextDisabled = state.garage.page >= totalPages || state.race.isRacing;
-      fragment.appendChild(createPagination("btn-prev", "btn-next", state.garage.page, totalPages, prevDisabled, nextDisabled));
+      fragment.append(createPagination("btn-prev", "btn-next", state.garage.page, totalPages, previousDisabled, nextDisabled));
     },
     () => updateCarButtonStates(),
   );
@@ -177,7 +182,7 @@ export const createCarCard = (car: Car): HTMLElement => {
 
 const createCarCardTop = (car: Car): HTMLElement => {
   const carId = Number(car.id);
-  const { isDriving, isBroken, isFinished } = getCarStates(carId);
+  getCarStates(carId);
   const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
 
   const carImage = element("div", { class: "car-image", style: `background-color: ${car.color}` }, initial);
@@ -206,7 +211,7 @@ const createCarCardBottom = (car: Car): HTMLElement => {
     class: "btn btn-stop-engine btn btn-sm",
     dataAction: "stop",
     dataId: String(car.id),
-    disabled: !(isDriving || isBroken || isFinished) ? undefined : true
+    disabled: (isDriving || isBroken || isFinished) ? true : undefined
   }, "B");
 
   const road = element("div", { class: "car-road", dataId: String(car.id) },
@@ -231,7 +236,9 @@ export const renderCarCards = (container: HTMLElement | DocumentFragment): void 
     return;
   }
 
-  state.garage.cars.forEach(car => container.append(createCarCard(car)));
+  for (const car of state.garage.cars) {
+    container.append(createCarCard(car));
+  }
 };
 
 // ============ ПОБЕДИТЕЛИ ============
@@ -243,9 +250,9 @@ export const renderWinners = async (): Promise<void> => {
       const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
       renderHeader(fragment, `Winners (${state.winners.total})`, state.winners.total, state.winners.page, totalPages);
       renderWinnersTable(fragment);
-      const prevDisabled = state.winners.page <= 1;
-      const nextDisabled = state.winners.page >= totalPages;
-      fragment.appendChild(createPagination("btn-prev-winners", "btn-next-winners", state.winners.page, totalPages, prevDisabled, nextDisabled));
+      const isPreviousDisabled = state.winners.page <= 1;
+      const isNextDisabled = state.winners.page >= totalPages;
+      fragment.append(createPagination("btn-prev-winners", "btn-next-winners", state.winners.page, totalPages, isPreviousDisabled, isNextDisabled));
     },
   );
 };

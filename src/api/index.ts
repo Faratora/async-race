@@ -2,15 +2,21 @@ import { CONFIG } from "../config/index.ts";
 import type { Car, Winner } from "../types/index.ts";
 
 // ============ КОНСТАНТЫ ============
-const REQUEST_TIMEOUT = 10000;
+const REQUEST_TIMEOUT = 10_000;
+const RETRY_COUNT = 3;
+const RETRY_DELAY = 500;
+
 
 // ============ ОБЩАЯ ЛОГИКА ОБРАБОТКИ ОТВЕТОВ ============
-const handleResponseError = (response: Response): Promise<never> =>
-  response.clone().text().then((errorText) => {
-    throw new Error(
-      `HTTP ${response.status} ${response.statusText}: ${errorText}`,
-    );
-  });
+const handleResponseError = async (response: Response): Promise<never> => {
+  let errorText: string;
+  try {
+    errorText = await response.text();
+  } catch {
+    errorText = 'Unable to read error response';
+  }
+  throw new Error(`HTTP ${response.status} ${response.statusText}: ${errorText}`);
+};
 
 async function processResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -55,8 +61,8 @@ async function fetchWithTimeout(
 async function fetchWithRetry<T>(
   url: string,
   options: RequestInit = {},
-  retries = 3,
-  delay = 500,
+  retries = RETRY_COUNT,
+  delay = RETRY_DELAY,
 ): Promise<T> {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {

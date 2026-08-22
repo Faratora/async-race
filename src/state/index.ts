@@ -1,4 +1,6 @@
-import { AppState, CarFormData, SortConfig, Car } from "../types/index.ts";
+import { AppState, CarFormData, Car } from "../types/index.ts";
+import { CARS_PER_PAGE } from "../config/index.ts";
+import { WINNERS_PER_PAGE } from "../config/index.ts";
 import {
   fetchCars,
   fetchWinners,
@@ -50,7 +52,7 @@ export const state: AppState = {
 
 export async function loadGarage(): Promise<void> {
   try {
-    const data = await fetchCars(state.garage.page, 20);
+    const data = await fetchCars(state.garage.page, CARS_PER_PAGE);
     state.garage.cars = data.cars;
     state.garage.total = data.total;
   } catch (error) {
@@ -101,7 +103,7 @@ export async function loadWinners(): Promise<void> {
   try {
     const data = await fetchWinners(
       state.winners.page,
-      20,
+      WINNERS_PER_PAGE,
       state.winners.sortBy,
       state.winners.sortOrder
     );
@@ -204,7 +206,7 @@ export function startRaceSetup(carIds: number[], now: number): void {
 
   state.race.carRaces = {};
 
-  carIds.forEach((id) => {
+  for (const id of carIds) {
     state.race.carRaces[id] = {
       carId: id,
       startTime: now,
@@ -216,7 +218,7 @@ export function startRaceSetup(carIds: number[], now: number): void {
       repairStartTime: undefined,
       isRepairing: false,
     };
-  });
+  }
 }
 
 export function setCarRaceVelocity(carId: number, maxSpeed: number): void {

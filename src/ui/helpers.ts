@@ -7,37 +7,37 @@ type Attributes = Record<string, string | number | boolean | undefined>;
 export const escapeHtml = (text: string): string => {
   const div = document.createElement("div");
   div.textContent = text;
-  return div.innerHTML;
+  return div.getHTML();
 };
 
 // ============ СОЗДАНИЕ ЭЛЕМЕНТОВ ============
 
 export const createInput = (id: string, type: string, value: string, placeholder = "", width = 0): HTMLElement => {
   const inputClass = type === "color" ? "form-control form-control-color" : "form-control";
-  const attrs: Attributes = { id, type, value, class: inputClass };
-  if (placeholder) attrs.placeholder = placeholder;
-  if (width > 0) attrs.style = `width: ${width}px;`;
-  return element("input", attrs);
+  const attributes: Attributes = { id, type, value, class: inputClass };
+  if (placeholder) attributes.placeholder = placeholder;
+  if (width > 0) attributes.style = `width: ${width}px;`;
+  return element("input", attributes);
 };
 
-export const createButton = (id: string, text: string, btnClass: string): HTMLElement =>
-  element("button", { id, class: btnClass }, text);
+export const createButton = (id: string, text: string, buttonClass: string): HTMLElement =>
+  element("button", { id, class: buttonClass }, text);
 
 // ============ ПАГИНАЦИЯ ============
 
 export const createPagination = (
-  prevId: string,
+  previousId: string,
   nextId: string,
   currentPage: number,
   totalPages: number,
-  isPrevDisabled: boolean,
+  isPreviousDisabled: boolean,
   isNextDisabled: boolean
 ): HTMLElement => {
   return element("div", { class: "pagination-controls" },
     element("button", {
       class: "btn btn-secondary",
-      id: prevId,
-      disabled: isPrevDisabled ? true : undefined
+      id: previousId,
+      disabled: isPreviousDisabled ? true : undefined
     }, "Previous"),
     element("span", undefined, `Page ${currentPage} of ${totalPages}`),
     element("button", {
@@ -70,13 +70,12 @@ export const renderHeader = (
 // ============ СБРОС ВИЗУАЛА МАШИНЫ ============
 
 export const resetCarVisualReset = (car: HTMLElement, removeLastPosition = false): void => {
-  car.classList.remove("broken");
-  car.classList.remove("broken-engine_overheating", "broken-transmission_failure", "broken-start_stall", "broken-random_breakdown");
+  car.classList.remove("broken", "broken-engine_overheating", "broken-transmission_failure", "broken-start_stall", "broken-random_breakdown");
   car.style.opacity = "1";
   car.style.scale = "1";
   car.style.rotate = "0deg";
   car.style.transform = "translateX(0px)";
-  if (removeLastPosition) {
+  if (isRemoveLastPosition) {
     delete car.dataset.lastPosition;
   }
 };

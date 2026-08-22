@@ -21,7 +21,6 @@ import { state } from "../state/index.ts";
 
 import { renderGarage, renderWinners, loadGarageCars } from "./ui-manager.ts";
 import { startDriveCar, stopDriveCar, resetCarToStart } from "./animations.ts";
-import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
 import { showGenericNotification } from "./notifications.ts";
 import { resetCarVisualReset } from "./helpers.ts";
@@ -159,30 +158,29 @@ const changePage = (
   onPageChange: () => void,
   delta: number,
 ): void => {
+  if (pageState.isRacing) return;
   const totalPages = Math.ceil(pageState.total / limit) || 1;
   const newPage = pageState.page + delta;
-  if (pageState.isRacing) return;
   if (newPage < 1 || newPage > totalPages) return;
   pageState.page = newPage;
   onPageChange();
 };
 
 const changeGaragePage = (delta: number): void => {
-  changePage(
-    { page: state.garage.page, total: state.garage.total, isRacing: state.race.isRacing },
-    CARS_PER_PAGE,
-    () => void loadGarageCars().then(renderGarage),
-    delta,
-  );
+  const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
+  const newPage = state.garage.page + delta;
+  if (state.race.isRacing) return;
+  if (newPage < 1 || newPage > totalPages) return;
+  state.garage.page = newPage;
+  void loadGarageCars().then(renderGarage);
 };
 
 const changeWinnersPage = (delta: number): void => {
-  changePage(
-    { page: state.winners.page, total: state.winners.total, isRacing: false },
-    WINNERS_PER_PAGE,
-    () => renderWinners(),
-    delta,
-  );
+  const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
+  const newPage = state.winners.page + delta;
+  if (newPage < 1 || newPage > totalPages) return;
+  state.winners.page = newPage;
+  renderWinners();
 };
 
 export const handlePreviousButton = (): void => changeGaragePage(-1);
@@ -195,21 +193,25 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
   if (!action) return;
 
   switch (action) {
-    case "remove":
+    case "remove": {
       handleRemoveCar(id);
       break;
+    }
 
-    case "select":
+    case "select": {
       handleSelectCar(id);
       break;
+    }
 
-    case "start":
+    case "start": {
       void handleStartEngine(id);
       break;
+    }
 
-    case "stop":
+    case "stop": {
       void handleStopEngine(id);
       break;
+    }
   }
 };
 
@@ -279,29 +281,34 @@ const stopRaceAnimation = (): void => {
 };
 
 // ============ ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ============
-let appClickHandler: ((event: MouseEvent) => void) | null = null;
-let navClickHandler: ((event: MouseEvent) => void) | null = null;
+interface Handlers {
+  appClickHandler: ((event: MouseEvent) => void) | undefined;
+  navClickHandler: ((event: MouseEvent) => void) | undefined;
+}
+
+const handlers: Handlers = {
+  appClickHandler: undefined,
+  navClickHandler: undefined,
+};
 
 export const setupEventDelegation = (): (() => void) => {
   const app = document.querySelector("#app");
-
+  handlers.appClickHandler = appClickHandlerInternal;
   if (app instanceof HTMLElement) {
-    appClickHandler = appClickHandlerInternal;
-    app.addEventListener("click", appClickHandler);
+    app.addEventListener("click", handlers.appClickHandler);
   }
-
-  navClickHandler = navClickHandlerInternal;
-  document.addEventListener("click", navClickHandler);
+  handlers.navClickHandler = navClickHandlerInternal;
+  document.addEventListener("click", handlers.navClickHandler);
 
   // Возвращаем функцию очистки
   return () => {
-    if (app instanceof HTMLElement && appClickHandler) {
-      app.removeEventListener("click", appClickHandler);
-      appClickHandler = null;
+    if (app instanceof HTMLElement && handlers.appClickHandler) {
+      app.removeEventListener("click", handlers.appClickHandler);
+      handlers.appClickHandler = undefined;
     }
-    if (navClickHandler) {
-      document.removeEventListener("click", navClickHandler);
-      navClickHandler = null;
+    if (handlers.navClickHandler) {
+      document.removeEventListener("click", handlers.navClickHandler);
+      handlers.navClickHandler = undefined;
     }
   };
 };
@@ -311,12 +318,12 @@ const appClickHandlerInternal = (event: MouseEvent): void => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
 
-  if (handleCarActionClick(target)) return;
-  if (handleButtonClick(target)) return;
+  if (isCarActionClick(target)) return;
+  if (isButtonClick(target)) return;
   handleSortClick(target);
 };
 
-const handleCarActionClick = (target: HTMLElement): boolean => {
+const isCarActionClick = (target: HTMLElement): boolean => {
   const action = target.dataset.action;
   if (action && ["select", "remove", "start", "stop"].includes(action)) {
     const id = Number(target.dataset.id);
@@ -339,7 +346,7 @@ const buttonSelectors: Array<[string, () => void]> = [
   ["#btn-next-winners", handleNextWinnersButton],
 ];
 
-const handleButtonClick = (target: HTMLElement): boolean => {
+const isButtonClick = (target: HTMLElement): boolean => {
   for (const [selector, handler] of buttonSelectors) {
     if (target.closest(selector)) {
       handler();
@@ -390,10 +397,10 @@ const navClickHandlerInternal = async (event: MouseEvent): Promise<void> => {
 
 // ============ ТИП-ГВАРДЫ ============
 export const isViewName = (value: string | null | undefined): value is ViewName =>
-  value === "garage" || value === "winners";
+  ["garage", "winners"].includes(value ?? "");
 
 export const isSortBy = (value: string | null | undefined): value is SortConfig["sortBy"] =>
-  value === "wins" || value === "bestTime" || value === "name";
+  ["wins", "bestTime", "name"].includes(value ?? "");
 
 export const isSortOrder = (value: string | null | undefined): value is SortConfig["sortOrder"] =>
-  value === "asc" || value === "desc";
+  ["asc", "desc"].includes(value ?? "");

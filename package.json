@@ -22,7 +22,11 @@
     "vite": "^6.3.5"
   },
   "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "eslint-plugin-unicorn": "^73.0.0",
+    "express": "^5.1.0",
+    "globals": "^17.11.0"
   }
 }

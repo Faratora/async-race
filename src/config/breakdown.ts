@@ -67,8 +67,8 @@ export const triggerBreakdown = (
   carId: number,
   race: CarRace,
   progress: number,
-  maxSpeed: number
-): BreakdownEvent | null => {
+  maxSpeed: number,
+): BreakdownEvent | undefined => {
   const breakdownType = getBreakdownType(progress, maxSpeed);
 
   if (!race.breakdownHistory) {
@@ -76,7 +76,7 @@ export const triggerBreakdown = (
   }
 
   if (race.breakdownHistory.count >= BREAKDOWN_CONFIG.MAX_BREAKDOWNS) {
-    return null;
+    return undefined;
   }
 
   const event: BreakdownEvent = {

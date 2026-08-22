@@ -58,7 +58,7 @@ export const { TRACK_LENGTH, MIN_SPEED_KMH, MAX_SPEED_KMH, TIME_DILATION } = {
 // Конвертирует км/ч в прогресс трассы за миллисекунду
 // Возвращает долю трассы (0..1), проходимую за 1 мс при данной скорости
 export const speedToProgressPerMs = (maxSpeedKmh: number): number => {
-  if (maxSpeedKmh <= 0 || !isFinite(maxSpeedKmh)) {
+  if (maxSpeedKmh <= 0 || !Number.isFinite(maxSpeedKmh)) {
     console.warn(`Invalid speed: ${maxSpeedKmh} km/h, using default`);
     return 0.01;
   }
@@ -106,9 +106,3 @@ export type {
   BreakdownHistory,
   BreakdownEvent,
 } from "./breakdown.ts";
-
-export {
-  createBreakdownMessage,
-  showBreakdownNotification,
-  showWinnerNotification,
-} from "../ui/notifications.ts";

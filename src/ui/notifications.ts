@@ -66,7 +66,7 @@ export const showWinnerNotification = (
   showNotification({
     className: "winner-message",
     message,
-    duration: 30000,
+    duration: 30_000,
     insertFirst: true,
   });
 
@@ -79,7 +79,7 @@ export const showWinnerNotification = (
     showNotification({
       className: "breakdown-notification",
       message: breakdownMessage,
-      duration: 30000,
+      duration: 30_000,
     });
   }
 };

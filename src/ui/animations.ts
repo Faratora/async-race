@@ -15,10 +15,6 @@ import {
   driveCarAction,
   recordWinnerAction,
   repairCarAction,
-  resetRaceState,
-  clearDriveCar,
-  setDriveCar,
-  stopRaceAnimation,
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
@@ -86,17 +82,8 @@ export const updateCarButtonStates = (): void => {
     startButton.disabled = isDriving || isBroken || isFinished;
     stopButton.disabled = !isDriving && !isBroken && !isFinished;
 
-    if (startButton.disabled) {
-      startButton.setAttribute("disabled", "");
-    } else {
-      startButton.removeAttribute("disabled");
-    }
-
-    if (stopButton.disabled) {
-      stopButton.setAttribute("disabled", "");
-    } else {
-      stopButton.removeAttribute("disabled");
-    }
+    startButton.toggleAttribute("disabled", startButton.disabled);
+    stopButton.toggleAttribute("disabled", stopButton.disabled);
   }
 };
 
@@ -106,30 +93,26 @@ export const updateRaceControls = (): void => {
   if (!startButton) return;
 
   startButton.disabled = state.race.isRacing;
-  if (startButton.disabled) {
-    startButton.setAttribute("disabled", "");
-  } else {
-    startButton.removeAttribute("disabled");
-  }
+  startButton.toggleAttribute("disabled", startButton.disabled);
 };
 
 // ============ СБРОС ПОЗИЦИЙ И СОСТОЯНИЯ ============
 export const resetCarPositions = (carIds: number[]): void => {
-  carIds.forEach(id => {
+  for (const id of carIds) {
     const car = getCarElement(id);
     if (car instanceof HTMLElement) {
       car.style.transform = "translateX(0px)";
     }
-  });
+  }
 };
 
 export const resetCarVisualState = (carIds: number[]): void => {
-  carIds.forEach(id => {
+  for (const id of carIds) {
     const car = getCarElement(id);
     if (car instanceof HTMLElement) {
       resetCarVisualReset(car, true);
     }
-  });
+  }
 };
 
 // ============ АНИМАЦИЯ ============
@@ -185,7 +168,7 @@ const handleRepairProgress = (
 
     const currentTransform = car.style.transform;
     const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-    const currentLeft = match ? parseFloat(match[1]) : 0;
+    const currentLeft = match ? Number() : 0;
     car.dataset.lastPosition = String(currentLeft);
     updateCarButtonStates();
     return;
@@ -263,23 +246,26 @@ const applyBreakdownVisuals = (
   progress: number,
   carId: number,
 ): void => {
-  car.classList.add("broken");
-  car.classList.add(`broken-${breakdownType}`);
+  car.classList.add("broken", `broken-${breakdownType}`);
 
   switch (breakdownType) {
-    case "engine_overheating":
+    case "engine_overheating": {
       car.style.transform = `translateX(${left}px) scale(1.1)`;
       console.log(`Car ${carId} engine overheated at ${Math.round(progress * 100)}%!`);
       break;
-    case "transmission_failure":
+    }
+    case "transmission_failure": {
       car.style.transform = `translateX(${left}px) rotate(5deg)`;
       console.log(`Car ${carId} transmission failed at ${Math.round(progress * 100)}%!`);
       break;
-    case "start_stall":
+    }
+    case "start_stall": {
       console.log(`Car ${carId} stalled at start!`);
       break;
-    default:
+    }
+    default: {
       console.log(`Car ${carId} broke down at ${Math.round(progress * 100)}%!`);
+    }
   }
 };
 
@@ -331,17 +317,22 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
 const collectBrokenCars = (): BrokenCar[] => {
   const brokenCars: BrokenCar[] = [];
   for (const race of Object.values(state.race.carRaces)) {
-    if (race.broken && race.breakdownHistory && race.breakdownHistory.count > 0) {
-      const car = state.garage.cars.find(c => c.id === race.carId);
-      if (car) {
-        const lastType = race.breakdownHistory.types[race.breakdownHistory.types.length - 1];
+    if (!(race.broken && race.breakdownHistory && race.breakdownHistory.count > 0)) {
+    	continue;
+    }
+
+    const car = state.garage.cars.find(c => c.id === race.carId);
+    if (car) {
+      const lastType = race.breakdownHistory.types.at(-1);
+      if (lastType !== undefined) {
         brokenCars.push({
           id: car.id,
           name: car.name,
-          type: lastType,
+          type: lastType as string,
         });
       }
     }
+
   }
   return brokenCars;
 };
@@ -364,15 +355,15 @@ const announceWinner = (
 export const animateRace = (): void => {
   if (!state.race.isRacing) return;
 
-  let allFinished = true;
+  let hasAllFinished = true;
 
-  Object.entries(state.race.carRaces).forEach(([idStr, race]) => {
-    if (race.finished || race.broken) return;
-    allFinished = false;
-    animateCarRace(Number(idStr), race);
-  });
+  for (const [idString, race] of Object.entries(state.race.carRaces)) {
+    if (race.finished || race.broken) continue;
+    hasAllFinished = false;
+    animateCarRace(Number(idString), race);
+  }
 
-  if (allFinished) {
+  if (hasAllFinished) {
     state.race.isRacing = false;
     state.race.animationId = 0;
 
@@ -386,23 +377,21 @@ export const animateRace = (): void => {
 
 // ============ ОБРАБОТКА ИЗМЕНЕНИЯ РАЗМЕРА ============
 export const handleResize = (): void => {
-  Object.entries(state.race.carRaces).forEach(([idStr, race]) => {
+  for (const [idString, race] of Object.entries(state.race.carRaces)) {
     if (!race.finished && !race.broken) {
-      updateCarPosition(Number(idStr), race.startTime, race.maxSpeed);
+      updateCarPosition(Number(idString), race.startTime, race.maxSpeed);
     }
-  });
+  }
 
-  Object.entries(state.race.drivingCars).forEach(([idStr, drive]) => {
-    updateCarPosition(Number(idStr), drive.startTime, drive.maxSpeed);
-  });
+  for (const [idString, drive] of Object.entries(state.race.drivingCars)) {
+    updateCarPosition(Number(idString), drive.startTime, drive.maxSpeed);
+  }
 };
 
 // ============ ДВИЖЕНИЕ АВТОМОБИЛЯ ============
 export const animateDriveCar = (): void => {
-  const entries = Object.entries(state.race.drivingCars);
-
-  entries.forEach(([idStr, drive]) => {
-    const carId = Number(idStr);
+  for (const [idString, drive] of Object.entries(state.race.drivingCars)) {
+    const carId = Number(idString);
     updateCarPosition(carId, drive.startTime, drive.maxSpeed);
 
     const carElement = getCarElement(carId);
@@ -412,12 +401,12 @@ export const animateDriveCar = (): void => {
     if (!(road instanceof HTMLElement)) return;
 
     const trackWidth = getTrackWidth(road);
-    const left = parseFloat(carElement.dataset.lastPosition ?? "0");
+    const left = Number(carElement.dataset.lastPosition ?? "0");
 
     if (left >= trackWidth - CONFIG.UI.FINISH_OFFSET) {
       handleDriveCarFinished(carId, drive);
     }
-  });
+  }
 
   if (Object.keys(state.race.drivingCars).length > 0) {
     state.race.driveAnimationId = requestAnimationFrame(animateDriveCar);
@@ -458,7 +447,7 @@ export const startDriveCar = async (carId: number): Promise<void> => {
 
   const maxSpeed = await getVelocityAction(carId);
 
-  if (state.race.carRaces[carId]) {
+  if (Object.hasOwn(state.race.carRaces, carId)) {
     state.race.carRaces[carId].finished = false;
     state.race.carRaces[carId].broken = false;
   }
@@ -473,7 +462,7 @@ export const startDriveCar = async (carId: number): Promise<void> => {
   updateCarButtonStates();
   void startDrive(carId);
 
-  if (Object.keys(state.race.drivingCars).length === 1) {
+  if (Object.keys(state.race.drivingCars).length > 0) {
     animateDriveCar();
   }
 };
@@ -495,7 +484,7 @@ const stopDriveAnimation = (carId: number): void => {
 export const stopDriveCar = (carId: number): void => {
   delete state.race.drivingCars[carId];
 
-  if (state.race.carRaces[carId]) {
+  if (Object.hasOwn(state.race.carRaces, carId)) {
     state.race.carRaces[carId].finished = true;
   }
 
@@ -514,7 +503,7 @@ export const resetCarToStart = (carId: number): void => {
   }
   state.race.isRacing = false;
 
-  if (state.race.carRaces[carId]) {
+  if (Object.hasOwn(state.race.carRaces, carId)) {
     const race = state.race.carRaces[carId];
     race.broken = false;
     race.finished = false;
@@ -529,7 +518,7 @@ export const resetCarToStart = (carId: number): void => {
       const trackWidth = getTrackWidth(road);
       const currentTransform = car.style.transform;
       const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-      const currentLeft = match ? parseFloat(match[1]) : 0;
+    const currentLeft = match ? Number(match[1]) : 0;
       const duration = Math.max(300, (currentLeft / trackWidth) * 500);
 
       car.style.transition = `transform ${duration}ms ease-out`;

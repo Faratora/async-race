@@ -70,7 +70,7 @@ export interface CarRace {
 
 export interface DrivingCar {
     startTime: number;
-    maxSpeed: number; // максимальная скорость в км/ч
+    maxSpeed: number;
 }
 
 export interface AppState {
