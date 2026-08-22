@@ -11,7 +11,7 @@ const corsOrigin = process.env.NODE_ENV === "production"
   : "http://localhost:5173";
 
 app.use(cors({
-  origin: corsOrigin,
+  origin: corsOrigin as boolean | string | (string | RegExp)[],
   credentials: true,
 }));
 app.use(express.json());

@@ -70,12 +70,17 @@ export const renderHeader = (
 // ============ СБРОС ВИЗУАЛА МАШИНЫ ============
 
 export const resetCarVisualReset = (car: HTMLElement, removeLastPosition = false): void => {
-  car.classList.remove("broken", "broken-engine_overheating", "broken-transmission_failure", "broken-start_stall", "broken-random_breakdown");
+  for (const className of Array.from(car.classList)) {
+    if (className.startsWith("broken-")) {
+      car.classList.remove(className);
+    }
+  }
+  car.classList.remove("broken");
   car.style.opacity = "1";
   car.style.scale = "1";
   car.style.rotate = "0deg";
   car.style.transform = "translateX(0px)";
-  if (isRemoveLastPosition) {
+  if (removeLastPosition) {
     delete car.dataset.lastPosition;
   }
 };

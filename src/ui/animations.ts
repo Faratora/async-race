@@ -168,7 +168,7 @@ const handleRepairProgress = (
 
     const currentTransform = car.style.transform;
     const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-    const currentLeft = match ? Number() : 0;
+    const currentLeft = match ? Number(match[1]) : 0;
     car.dataset.lastPosition = String(currentLeft);
     updateCarButtonStates();
     return;
@@ -328,7 +328,7 @@ const collectBrokenCars = (): BrokenCar[] => {
         brokenCars.push({
           id: car.id,
           name: car.name,
-          type: lastType as string,
+          type: lastType,
         });
       }
     }
@@ -395,7 +395,7 @@ export const animateDriveCar = (): void => {
     updateCarPosition(carId, drive.startTime, drive.maxSpeed);
 
     const carElement = getCarElement(carId);
-    if (!(carElement instanceof HTMLElement)) return;
+    if (!(carElement instanceof HTMLElement)) continue;
 
     const road = carElement.parentElement;
     if (!(road instanceof HTMLElement)) return;

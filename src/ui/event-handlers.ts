@@ -150,22 +150,6 @@ export const handleCancelEditButton = (): void => {
 
 // ============ ОБЩАЯ ЛОГИКА ПАГИНАЦИИ ============
 
-type PageState = { page: number; total: number; isRacing: boolean };
-
-const changePage = (
-  pageState: PageState,
-  limit: number,
-  onPageChange: () => void,
-  delta: number,
-): void => {
-  if (pageState.isRacing) return;
-  const totalPages = Math.ceil(pageState.total / limit) || 1;
-  const newPage = pageState.page + delta;
-  if (newPage < 1 || newPage > totalPages) return;
-  pageState.page = newPage;
-  onPageChange();
-};
-
 const changeGaragePage = (delta: number): void => {
   const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
   const newPage = state.garage.page + delta;

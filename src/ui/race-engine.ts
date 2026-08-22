@@ -23,14 +23,7 @@ import {
 
 // ============ УПРАВЛЕНИЕ УВЕДОМЛЕНИЯМИ ============
 export const removeAllNotifications = (): void => {
-<<<<<<< Updated upstream
   document.querySelectorAll(".winner-message, .breakdown-notification, .breakdown-message").forEach(element => element.remove());
-=======
-  const elements = document.querySelectorAll(".winner-message, .breakdown-notification, .breakdown-message");
-  for (const element of elements) {
-    element.remove();
-  }
->>>>>>> Stashed changes
 };
 
 // ============ ОБРАБОТЧИКИ ГОНКИ ============
@@ -44,41 +37,47 @@ export const startRaceHandler = async (): Promise<void> => {
   startRaceSetup(carIds, performance.now());
   updateRaceControls();
 
-  await startRaceAction(carIds);
-  await Promise.all(carIds.map(id => startEngineAction(id)));
+  try {
+    await startRaceAction(carIds);
+    await Promise.all(carIds.map(id => startEngineAction(id)));
 
-  const velocities = await Promise.allSettled(carIds.map(id => getVelocityAction(id)));
-
-  resetCarVisualState(carIds);
-  resetCarPositions(carIds);
-
-  for (const [index, id] of carIds.entries()) {
-    const result = velocities[index];
-    if (result.status === "fulfilled") {
-      setCarRaceVelocity(id, result.value);
-    } else {
-      setCarRaceBroken(id, performance.now());
+    const currentCarIds = new Set(state.garage.cars.map(c => c.id));
+    if (!carIds.every(id => currentCarIds.has(id))) {
+      throw new Error("Garage changed during race start");
     }
+
+    const velocities = await Promise.allSettled(carIds.map(id => getVelocityAction(id)));
+
+    resetCarVisualState(carIds);
+    resetCarPositions(carIds);
+
+    for (const [index, id] of carIds.entries()) {
+      const result = velocities[index];
+      if (result.status === "fulfilled") {
+        setCarRaceVelocity(id, result.value);
+      } else {
+        setCarRaceBroken(id, performance.now());
+      }
+    }
+
+    carIds.forEach(id => {
+      if (!isCarRaceBroken(id)) {
+        return;
+      }
+
+      const car = getCarElement(id);
+      if (car instanceof HTMLElement) {
+        car.classList.add("broken", "broken-start_stall");
+      }
+    });
+
+    updateCarButtonStates();
+    animateRace();
+  } catch (error) {
+    clearRaceState();
+    updateRaceControls();
+    console.error("Failed to start race:", error);
   }
-
-<<<<<<< Updated upstream
-  carIds.forEach(id => {
-    if (!isCarRaceBroken(id)) {
-    	return;
-    }
-
-    const car = getCarElement(id);
-    if (car instanceof HTMLElement) {
-      car.classList.add("broken", "broken-start_stall");
-    }
-
-  });
-=======
-  }
->>>>>>> Stashed changes
-
-  updateCarButtonStates();
-  animateRace();
 };
 
 export const resetRaceHandler = async (): Promise<void> => {

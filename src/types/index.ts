@@ -51,6 +51,8 @@ export interface RaceState {
     winnerAnnounced: boolean;
 }
 
+import type { BreakdownType } from "../config/index.ts";
+
 export interface CarRace {
     carId: number;
     startTime: number;
@@ -62,7 +64,7 @@ export interface CarRace {
         count: number;
         timestamps: number[];
         positions: number[];
-        types: string[];
+        types: BreakdownType[];
     };
     repairStartTime?: number;
     isRepairing?: boolean;

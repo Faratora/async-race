@@ -53,7 +53,7 @@ export const showBreakdownNotification = (carId: number, type: BreakdownType): v
 export interface BrokenCar {
   id: number;
   name: string;
-  type: string;
+  type: BreakdownType;
 }
 
 export const showWinnerNotification = (

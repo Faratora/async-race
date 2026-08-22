@@ -51,7 +51,7 @@ export const renderWinnersTable = (app: HTMLElement | DocumentFragment): void =>
     const pageWinners = state.winners.winners.slice(startIndex, endIndex);
     pageWinners.forEach((winner, index) => {
       table.append(createWinnerRow(winner, startIndex + index));
-    }
+    });
   }
 
   app.append(table);
