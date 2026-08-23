@@ -26,7 +26,7 @@ export const CONFIG = {
     TRACK_LENGTH: 1000,
     MIN_SPEED_KMH: 150,
     MAX_SPEED_KMH: 350,
-    TIME_DILATION: 1.1,
+    TIME_DILATION: 0.4,
   } as const,
 } as const;
 

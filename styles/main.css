@@ -399,7 +399,7 @@ body {
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 80px 80px 1fr 80px 130px;
+  grid-template-columns: 80px 80px 1fr 80px 180px;
   gap: 8px;
   align-items: center;
   padding: 8px 12px;
