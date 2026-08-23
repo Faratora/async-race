@@ -38,8 +38,13 @@ export const isCarFinished = (id: number): boolean => {
   return !!race && race.finished && !race.broken;
 };
 
-export const getCarElement = (id: number): HTMLElement | null =>
-  document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"] .car`);
+export const getCarElement = (id: number): HTMLElement | null => {
+  const el = document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"] .car`);
+  if (!el) {
+    console.warn(`[race] Car element not found for id=${id}`);
+  }
+  return el;
+};
 
 export const getTrackWidth = (road: HTMLElement): number =>
   road.offsetWidth - CONFIG.UI.TRACK_PADDING;
@@ -118,7 +123,10 @@ export const resetCarVisualState = (carIds: number[]): void => {
 // ============ АНИМАЦИЯ ============
 export const animateCarRace = (carId: number, race: CarRace): void => {
   const car = getCarElement(carId);
-  if (!(car instanceof HTMLElement)) return;
+  if (!(car instanceof HTMLElement)) {
+    console.warn(`[race] animateCarRace: car element not found for car ${carId}`);
+    return;
+  }
 
   if (race.broken) {
     handleBrokenCar(carId, car, race);
@@ -186,7 +194,10 @@ const animateCarMovement = (
   race: CarRace,
 ): void => {
   const road = car.parentElement;
-  if (!(road instanceof HTMLElement)) return;
+  if (!(road instanceof HTMLElement)) {
+    console.warn(`[race] animateCarMovement: parent is not HTMLElement for car ${carId}`);
+    return;
+  }
 
   const trackWidth = getTrackWidth(road);
   const elapsed = performance.now() - race.startTime;
@@ -353,15 +364,23 @@ const announceWinner = (
 };
 
 export const animateRace = (): void => {
-  if (!state.race.isRacing) return;
+  if (!state.race.isRacing) {
+    console.log("[race] isRacing is false, stopping animation");
+    return;
+  }
 
   let hasAllFinished = true;
+  let racingCount = 0;
 
   for (const [idString, race] of Object.entries(state.race.carRaces)) {
+    console.log(`[race] Car ${idString}: finished=${race.finished}, broken=${race.broken}, maxSpeed=${race.maxSpeed}, startTime=${race.startTime}`);
     if (race.finished || race.broken) continue;
     hasAllFinished = false;
+    racingCount++;
     animateCarRace(Number(idString), race);
   }
+
+  console.log(`[race] Racing count: ${racingCount}, hasAllFinished: ${hasAllFinished}`);
 
   if (hasAllFinished) {
     state.race.isRacing = false;
