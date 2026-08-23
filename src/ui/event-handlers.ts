@@ -121,10 +121,9 @@ export const handleUpdateButton = (): void => {
   const name = nameInput.value.trim();
   if (!name) return;
 
-  const colorInput = document.querySelector<HTMLInputElement>("#update-color");
-  const color = colorInput?.value || "#ff0000";
-
+  const color = state.garage.editColor;
   const carId = state.garage.editingCarId;
+
   withSpamGuard("update", () => {
     void updateCarAction(carId, { name, color })
       .then(() => {

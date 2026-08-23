@@ -1,8 +1,6 @@
 import {
-  startRaceAction,
-  resetRaceAction,
   startEngineAction,
-  getVelocityAction,
+  stopEngineAction,
   startRaceSetup,
   setCarRaceVelocity,
   setCarRaceBroken,
@@ -40,10 +38,9 @@ export const startRaceHandler = async (): Promise<void> => {
   updateRaceControls();
 
   try {
-    await startRaceAction(carIds);
-    await startAllEngines(carIds);
+    const engineResults = await startAllEngines(carIds);
     await validateGarageState(carIds);
-    await initializeRaceCars(carIds);
+    await initializeRaceCars(carIds, engineResults);
   } catch (error) {
     clearRaceState();
     updateRaceControls();
@@ -53,8 +50,21 @@ export const startRaceHandler = async (): Promise<void> => {
 
 // ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ============
 
-const startAllEngines = async (carIds: number[]): Promise<void> => {
-  await Promise.all(carIds.map(id => startEngineAction(id)));
+const startAllEngines = async (carIds: number[]): Promise<Map<number, number>> => {
+  const results = await Promise.allSettled(
+    carIds.map(async (id) => {
+      const result = await startEngineAction(id);
+      return { id, velocity: result.velocity };
+    }),
+  );
+
+  const velocities = new Map<number, number>();
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      velocities.set(result.value.id, result.value.velocity);
+    }
+  }
+  return velocities;
 };
 
 const validateGarageState = async (carIds: number[]): Promise<void> => {
@@ -64,16 +74,14 @@ const validateGarageState = async (carIds: number[]): Promise<void> => {
   }
 };
 
-const initializeRaceCars = async (carIds: number[]): Promise<void> => {
-  const velocities = await Promise.allSettled(carIds.map(id => getVelocityAction(id)));
-
+const initializeRaceCars = async (carIds: number[], velocities: Map<number, number>): Promise<void> => {
   resetCarVisualState(carIds);
   resetCarPositions(carIds);
 
-  for (const [index, id] of carIds.entries()) {
-    const result = velocities[index];
-    if (result.status === "fulfilled") {
-      setCarRaceVelocity(id, result.value);
+  for (const id of carIds) {
+    const velocity = velocities.get(id);
+    if (velocity) {
+      setCarRaceVelocity(id, velocity);
     } else {
       setCarRaceBroken(id, performance.now());
       markCarAsBroken(id);
@@ -111,7 +119,7 @@ export const resetRaceHandler = async (): Promise<void> => {
   removeAllNotifications();
 
   if (carIds.length > 0) {
-    await resetRaceAction(carIds);
+    await Promise.allSettled(carIds.map(id => stopEngineAction(id)));
   }
 
   updateCarButtonStates();

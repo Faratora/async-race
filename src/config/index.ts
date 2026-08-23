@@ -1,13 +1,12 @@
 // ============ КОНФИГУРАЦИЯ ============
 export const CONFIG = {
-  // API настройки
+  // API настройки (async-race-api через Vite proxy)
   API: {
     BASE: "/api",
     ENDPOINTS: {
-      CARS: "/cars",
+      GARAGE: "/garage",
+      ENGINE: "/engine",
       WINNERS: "/winners",
-      RACE: "/race",
-      HEALTH: "/health",
     },
   } as const,
 

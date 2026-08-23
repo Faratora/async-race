@@ -10,11 +10,8 @@ import {
   generateCars,
   startEngine,
   stopEngine,
-  repairCar,
   getVelocity,
   driveCar,
-  startRace,
-  resetRace,
   recordWinner,
 } from "../api/index.ts";
 
@@ -50,10 +47,12 @@ export const state: AppState = {
 
 // ============ ГАРАЖ ============
 
+const velocityCache = new Map<number, number>();
+
 export async function loadGarage(): Promise<void> {
   try {
     const data = await fetchCars(state.garage.page, CARS_PER_PAGE);
-    state.garage.cars = data.cars;
+    state.garage.cars = data.cars.map((car) => ({ ...car, maxSpeed: car.maxSpeed ?? 0 }));
     state.garage.total = data.total;
   } catch (error) {
     console.error("Failed to load cars:", error);
@@ -107,7 +106,14 @@ export async function loadWinners(): Promise<void> {
       state.winners.sortBy,
       state.winners.sortOrder
     );
-    state.winners.winners = data.winners;
+    const carMap = new Map(state.garage.cars.map((c) => [c.id, c]));
+    state.winners.winners = data.winners.map((w) => ({
+      ...w,
+      carId: w.id,
+      carName: carMap.get(w.id)?.name ?? `Car ${w.id}`,
+      carColor: carMap.get(w.id)?.color ?? "#ff0000",
+      bestTime: w.time,
+    }));
     state.winners.total = data.total;
   } catch (error) {
     console.error("Failed to load winners:", error);
@@ -129,8 +135,15 @@ export async function recordWinnerAction(data: {
 
 // ============ ГОНКА ============
 
-export async function startEngineAction(carId: number): Promise<void> {
-  await startEngine(carId);
+export async function startEngineAction(carId: number): Promise<{ velocity: number }> {
+  const result = await startEngine(carId);
+  velocityCache.set(carId, result.velocity);
+  if (state.garage.cars.some((c) => c.id === carId)) {
+    state.garage.cars = state.garage.cars.map((c) =>
+      c.id === carId ? { ...c, maxSpeed: result.velocity } : c,
+    );
+  }
+  return { velocity: result.velocity };
 }
 
 export async function stopEngineAction(carId: number): Promise<void> {
@@ -138,15 +151,22 @@ export async function stopEngineAction(carId: number): Promise<void> {
 }
 
 export async function repairCarAction(carId: number): Promise<void> {
-  try {
-    await repairCar(carId);
-  } catch {
-    // ignore repair errors
-  }
+  const result = await startEngineAction(carId);
+  console.log(`[repair] Car ${carId} repaired, new velocity: ${result.velocity}`);
 }
 
 export async function getVelocityAction(carId: number): Promise<number> {
-  return await getVelocity(carId);
+  if (velocityCache.has(carId)) {
+    return velocityCache.get(carId)!;
+  }
+  const result = await getVelocity(carId);
+  velocityCache.set(carId, result);
+  if (state.garage.cars.some((c) => c.id === carId)) {
+    state.garage.cars = state.garage.cars.map((c) =>
+      c.id === carId ? { ...c, maxSpeed: result } : c,
+    );
+  }
+  return result;
 }
 
 export async function driveCarAction(carId: number): Promise<void> {
@@ -162,8 +182,8 @@ export function resetRaceState(carId: number): void {
   }
 }
 
-export function clearDriveCar(carId: number): void {
-  delete state.race.drivingCars[carId];
+export function clearDriveCar(_carId: number): void {
+  delete state.race.drivingCars[_carId];
 }
 
 export function setDriveCar(carId: number, maxSpeed: number): void {
@@ -176,26 +196,6 @@ export function stopRaceAnimation(): void {
     state.race.animationId = 0;
   }
   state.race.isRacing = false;
-}
-
-// ============ ГОНКА (расширенная) ============
-
-export async function startRaceAction(carIds: number[]): Promise<void> {
-  try {
-    await startRace(carIds);
-  } catch (error) {
-    console.error("Failed to start race:", error);
-    throw error;
-  }
-}
-
-export async function resetRaceAction(carIds: number[]): Promise<void> {
-  try {
-    await resetRace(carIds);
-  } catch (error) {
-    console.error("Failed to reset race:", error);
-    throw error;
-  }
 }
 
 // ============ ЗАПУСК ГОНКИ (бизнес-логика) ============

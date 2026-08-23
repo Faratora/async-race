@@ -23,6 +23,21 @@ export const createInput = (id: string, type: string, value: string, placeholder
 export const createButton = (id: string, text: string, buttonClass: string): HTMLElement =>
   element("button", { id, class: buttonClass }, text);
 
+export const createColorPalette = (selectedColor: string, onSelect: (color: string) => void): HTMLElement => {
+  const input = element("input", {
+    type: "color",
+    id: "car-color",
+    class: "form-control form-control-color",
+    value: selectedColor,
+  }) as HTMLInputElement;
+
+  input.addEventListener("input", () => {
+    onSelect(input.value);
+  });
+
+  return input;
+};
+
 // ============ ПАГИНАЦИЯ ============
 
 export const createPagination = (

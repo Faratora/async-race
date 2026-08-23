@@ -11,7 +11,7 @@ import {
 import { state, loadGarage, loadWinners as loadWinnersState } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { CONFIG } from "../config/index.ts";
-import { createInput, createButton, createPagination, renderHeader, escapeHtml } from "./helpers.ts";
+import { createInput, createButton, createPagination, createColorPalette, renderHeader, escapeHtml } from "./helpers.ts";
 
 import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
 import { updateCarButtonStates, isCarRacing, isCarBroken, isCarFinished } from "./animations.ts";
@@ -115,21 +115,19 @@ export const renderGarage = async (): Promise<void> => {
 
 const renderAddCarForm = (container: HTMLElement | DocumentFragment): void => {
   const form = element("div", { class: "add-car-form" });
+  const nameInput = createInput("car-name", "text", escapeHtml(state.garage.createCarName), "Car name", CONFIG.UI.INPUT_NAME_WIDTH) as HTMLInputElement;
+  const colorPalette = createColorPalette(state.garage.selectedColor, (color) => {
+    state.garage.selectedColor = color;
+  });
   form.append(
-    createInput("car-name", "text", escapeHtml(state.garage.createCarName), "Car name", CONFIG.UI.INPUT_NAME_WIDTH),
-    createInput("car-color", "color", state.garage.selectedColor),
+    nameInput,
+    colorPalette,
     createButton("btn-create", "Create", "btn btn-primary"),
     createButton("btn-generate", "Generate 100 Cars", "btn btn-generate"),
   );
 
-  const nameInput = form.querySelector<HTMLInputElement>("#car-name");
-  nameInput?.addEventListener("input", () => {
+  nameInput.addEventListener("input", () => {
     state.garage.createCarName = nameInput.value;
-  });
-
-  const colorInput = form.querySelector<HTMLInputElement>("#car-color");
-  colorInput?.addEventListener("input", () => {
-    state.garage.selectedColor = colorInput.value;
   });
 
   container.append(form);
@@ -139,9 +137,13 @@ const renderEditForm = (container: HTMLElement | DocumentFragment): void => {
   if (state.garage.editingCarId === undefined) return;
 
   const form = element("div", { class: "edit-car-form" });
+  const nameInput = createInput("update-name", "text", escapeHtml(state.garage.editName), "", CONFIG.UI.INPUT_NAME_WIDTH);
+  const colorPalette = createColorPalette(state.garage.editColor, (color) => {
+    state.garage.editColor = color;
+  });
   form.append(
-    createInput("update-name", "text", escapeHtml(state.garage.editName), "", CONFIG.UI.INPUT_NAME_WIDTH),
-    createInput("update-color", "color", state.garage.editColor),
+    nameInput,
+    colorPalette,
     createButton("btn-update", "Update", "btn btn-primary"),
     createButton("btn-cancel-edit", "Cancel", "btn btn-secondary"),
   );

@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "server": "npx tsx server/mock-server.ts",
-    "start": "concurrently \"npm run server\" \"npm run dev\"",
-    "build": "tsc",
-    "preview": "vite preview"
+    "server": "node server/async-race-api/index.js",
+    "client": "npx vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && gh-pages -d dist",
+    "deploy:clean": "gh-pages -d dist --remove"
   },
   "author": "",
   "license": "MIT",
@@ -17,6 +19,7 @@
     "@types/express": "^5.0.3",
     "@types/node": "^22.14.0",
     "concurrently": "^9.1.2",
+    "gh-pages": "^6.3.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"

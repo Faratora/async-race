@@ -6,6 +6,36 @@ const REQUEST_TIMEOUT = 10_000;
 const RETRY_COUNT = 3;
 const RETRY_DELAY = 500;
 
+const CAR_COLORS = [
+  "#ff0000", "#ff8800", "#ffcc00", "#00cc00", "#0088cc",
+  "#0000ff", "#8800cc", "#ff00ff", "#ff4444", "#44ff44",
+  "#4444ff", "#ff88cc", "#00cccc", "#cc8800", "#888888",
+  "#ffffff", "#cc0000", "#006600", "#003366", "#ff4444",
+] as const;
+
+const CAR_NAME_FIRST_PARTS = [
+  "Tesla", "Ford", "BMW", "Audi", "Porsche",
+  "Lamborghini", "Ferrari", "McLaren", "Chevrolet", "Dodge",
+  "Nissan", "Toyota", "Honda", "Mercedes", "Volkswagen",
+  "Jaguar", "Bentley", "Maserati", "Alfa Romeo", "Volvo",
+] as const;
+
+const CAR_NAME_SECOND_PARTS = [
+  "Model S", "Mustang", "M3", "RS6", "911",
+  "Huracan", "F8", "720S", "Camaro", "Challenger",
+  "GT-R", "Supra", "Civic", "AMG", "Golf",
+  "F-Type", "Continental", "Ghibli", "Giulia", "XC90",
+] as const;
+
+const randomCarName = (): string => {
+  const first = CAR_NAME_FIRST_PARTS[Math.floor(Math.random() * CAR_NAME_FIRST_PARTS.length)];
+  const second = CAR_NAME_SECOND_PARTS[Math.floor(Math.random() * CAR_NAME_SECOND_PARTS.length)];
+  return `${first} ${second}`;
+};
+
+const randomCarColor = (): string => {
+  return CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
+};
 
 // ============ ОБЩАЯ ЛОГИКА ОБРАБОТКИ ОТВЕТОВ ============
 const handleResponseError = async (response: Response): Promise<never> => {
@@ -13,7 +43,7 @@ const handleResponseError = async (response: Response): Promise<never> => {
   try {
     errorText = await response.text();
   } catch {
-    errorText = 'Unable to read error response';
+    errorText = "Unable to read error response";
   }
   throw new Error(`HTTP ${response.status} ${response.statusText}: ${errorText}`);
 };
@@ -88,24 +118,26 @@ const shouldRetry = (
   return (response.status === 429 || response.status === 500) && attempt < retries - 1;
 };
 
+// ============ GARAGE ============
+
 export async function fetchCars(
   page: number,
   limit: number,
 ): Promise<{ cars: Car[]; total: number }> {
   const response: Response = await fetchWithTimeout(
-    `${CONFIG.API.BASE}/cars?page=${page}&limit=${limit}`,
+    `${CONFIG.API.BASE}/garage?_page=${page}&_limit=${limit}`,
   );
-  const data: { cars: Car[] } = await processResponse<{ cars: Car[] }>(response);
+  const cars: Car[] = await processResponse<Car[]>(response);
   const totalHeader: string | null = response.headers.get("X-Total-Count");
-  const total: number = totalHeader === null ? data.cars.length : Number(totalHeader);
-  return { cars: data.cars, total };
+  const total: number = totalHeader === null ? cars.length : Number(totalHeader);
+  return { cars, total };
 }
 
 export async function createCar(data: {
   name: string;
   color: string;
 }): Promise<Car> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/garage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -117,7 +149,7 @@ export async function updateCar(
   id: number,
   data: { name: string; color: string },
 ): Promise<Car> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${id}`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/garage/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -126,73 +158,75 @@ export async function updateCar(
 }
 
 export async function deleteCar(id: number): Promise<void> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${id}`, {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/garage/${id}`, {
     method: "DELETE",
   });
-  console.log("[api] deleteCar response status=", response.status);
   await handleVoidResponse(response);
 }
 
 export async function generateCars(count: number): Promise<Car[]> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/bulk`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ count }),
-  });
-  return processResponse<Car[]>(response);
-}
-
-export async function startEngine(carId: number): Promise<void> {
-  await fetchWithRetry<void>(`${CONFIG.API.BASE}/cars/${carId}/start`, {
-    method: "POST",
-  });
-}
-
-export async function stopEngine(carId: number): Promise<void> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${carId}/stop`, {
-    method: "POST",
-  });
-  await handleVoidResponse(response);
-}
-
-export async function repairCar(carId: number): Promise<void> {
-  try {
-    await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${carId}/repair`, {
-      method: "POST",
-    });
-  } catch {
-    // ignore repair errors
+  const generated: Car[] = [];
+  const batchSize = 10;
+  for (let index = 0; index < count; index += batchSize) {
+    const batch = Array.from({ length: Math.min(batchSize, count - index) }, (_, _index) => ({
+      name: randomCarName(),
+      color: randomCarColor(),
+    }));
+    const results = await Promise.allSettled(
+      batch.map((data) => createCar(data)),
+    );
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        generated.push(result.value);
+      }
+    }
   }
+  return generated;
+}
+
+// ============ ENGINE ============
+
+export async function startEngine(carId: number): Promise<{ velocity: number; distance: number }> {
+  const response: Response = await fetchWithRetry(`${CONFIG.API.BASE}/engine?id=${carId}&status=started`, {
+    method: "PATCH",
+  });
+  return processResponse<{ velocity: number; distance: number }>(response);
+}
+
+export async function stopEngine(carId: number): Promise<{ velocity: number; distance: number }> {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/engine?id=${carId}&status=stopped`, {
+    method: "PATCH",
+  });
+  return processResponse<{ velocity: number; distance: number }>(response);
+}
+
+export async function repairCar(carId: number): Promise<{ velocity: number; distance: number }> {
+  // async-race-api не поддерживает ремонт; имитируем перезапуск двигателя
+  return startEngine(carId);
 }
 
 export async function getVelocity(carId: number): Promise<number> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${carId}/velocity`);
-  const data: { maxSpeed: number } =
-    await processResponse<{ maxSpeed: number }>(response);
-  return data.maxSpeed;
+  const response: Response = await fetchWithRetry(`${CONFIG.API.BASE}/engine?id=${carId}&status=started`, {
+    method: "PATCH",
+  });
+  const data: { velocity: number; distance: number } =
+    await processResponse<{ velocity: number; distance: number }>(response);
+  return data.velocity;
 }
 
 export async function driveCar(carId: number): Promise<void> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/cars/${carId}/drive`, {
-    method: "POST",
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/engine?id=${carId}&status=drive`, {
+    method: "PATCH",
   });
   await handleVoidResponse(response);
 }
 
-export async function startRace(carIds: number[]): Promise<void> {
-  await fetchWithRetry<void>(`${CONFIG.API.BASE}/race/start`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ carIds }),
-  });
-}
+// ============ WINNERS ============
 
-export async function resetRace(carIds: number[]): Promise<void> {
-  await fetchWithRetry<void>(`${CONFIG.API.BASE}/race/reset`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ carIds }),
-  });
+interface ApiWinner {
+  id: number;
+  wins: number;
+  time: number;
 }
 
 export async function fetchWinners(
@@ -200,14 +234,14 @@ export async function fetchWinners(
   limit: number,
   sortBy: string,
   sortOrder: string,
-): Promise<{ winners: Winner[]; total: number }> {
+): Promise<{ winners: ApiWinner[]; total: number }> {
   const response: Response = await fetchWithTimeout(
-    `${CONFIG.API.BASE}/winners?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
+    `${CONFIG.API.BASE}/winners?_page=${page}&_limit=${limit}&_sort=${sortBy}&_order=${sortOrder}`,
   );
-  const data: { winners: Winner[] } = await processResponse<{ winners: Winner[] }>(response);
+  const winners: ApiWinner[] = await processResponse<ApiWinner[]>(response);
   const totalHeader: string | null = response.headers.get("X-Total-Count");
-  const total: number = totalHeader === null ? data.winners.length : Number(totalHeader);
-  return { winners: data.winners, total };
+  const total: number = totalHeader === null ? winners.length : Number(totalHeader);
+  return { winners, total };
 }
 
 export async function recordWinner(data: {
@@ -216,10 +250,24 @@ export async function recordWinner(data: {
   carColor: string;
   time: number;
 }): Promise<Winner> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  return processResponse<Winner>(response);
+  try {
+    const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: data.carId, wins: 1, time: data.time }),
+    });
+    const winner = await processResponse<Winner>(response);
+    return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("duplicate id")) {
+      const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wins: 2, time: data.time }),
+      });
+      const winner = await processResponse<Winner>(response);
+      return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time };
+    }
+    throw error;
+  }
 }

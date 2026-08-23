@@ -2,7 +2,7 @@ export interface Car {
     id: number;
     name: string;
     color: string;
-    maxSpeed: number; // максимальная скорость в км/ч
+    maxSpeed?: number;
 }
 
 export interface Winner {
