@@ -34,7 +34,7 @@ export const startRaceHandler = async (): Promise<void> => {
   }
 
   const carIds = state.garage.cars.map(c => c.id);
-  console.log("[race] Starting race with cars:", carIds);
+  console.log("[race] Starting race with cars on current page:", carIds);
 
   if (carIds.length === 0) {
     console.log("[race] No cars, skipping");

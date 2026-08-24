@@ -37,25 +37,27 @@ export const isCarFinished = (id: number): boolean => {
   return !!race && race.finished && !race.broken;
 };
 
-export const getCarElement = (id: number): HTMLElement | null => {
+export const getCarElement = (id: number): HTMLElement | undefined => {
   const element = document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"] .car`);
   if (!(element instanceof HTMLElement)) {
     console.warn(`[race] Car element not found for id=${id}`);
-    return null;
+    return undefined;
   }
   return element;
+};
+
+const getRoad = (car: HTMLElement): HTMLElement | undefined => {
+  const road = car.parentElement;
+  return road instanceof HTMLElement ? road : undefined;
 };
 
 export const getTrackWidth = (road: HTMLElement): number =>
   road.offsetWidth - CONFIG.UI.TRACK_PADDING;
 
 // ============ ОБНОВЛЕНИЕ ПОЗИЦИИ МАШИНЫ ============
-export const updateCarPosition = (carId: number, startTime: number, maxSpeed: number): void => {
-  const car = getCarElement(carId);
-  if (!(car instanceof HTMLElement)) return;
-
-  const road = car.parentElement;
-  if (!(road instanceof HTMLElement)) return;
+export const updateCarPosition = (car: HTMLElement, startTime: number, maxSpeed: number): void => {
+  const road = getRoad(car);
+  if (!road) return;
 
   const trackWidth = getTrackWidth(road);
   const elapsed = performance.now() - startTime;
@@ -81,11 +83,10 @@ export const updateCarButtonStates = (): void => {
 
     const isDriving = state.race.drivingCars[carId] !== undefined ||
       (state.race.isRacing && isCarRacing(carId));
-    const isBroken = isCarBroken(carId);
     const isFinished = isCarFinished(carId);
 
-    startButton.disabled = isDriving || isBroken || isFinished;
-    stopButton.disabled = !isDriving && !isBroken && !isFinished;
+    startButton.disabled = isDriving || isFinished;
+    stopButton.disabled = !isDriving;
 
     startButton.toggleAttribute("disabled", startButton.disabled);
     stopButton.toggleAttribute("disabled", stopButton.disabled);
@@ -105,7 +106,7 @@ export const updateRaceControls = (): void => {
 export const resetCarPositions = (carIds: number[]): void => {
   for (const id of carIds) {
     const car = getCarElement(id);
-    if (car instanceof HTMLElement) {
+    if (car) {
       car.style.transform = "translateX(0px)";
     }
   }
@@ -114,7 +115,7 @@ export const resetCarPositions = (carIds: number[]): void => {
 export const resetCarVisualState = (carIds: number[]): void => {
   for (const id of carIds) {
     const car = getCarElement(id);
-    if (car instanceof HTMLElement) {
+    if (car) {
       resetCarVisualReset(car, true);
     }
   }
@@ -123,7 +124,7 @@ export const resetCarVisualState = (carIds: number[]): void => {
 // ============ АНИМАЦИЯ ============
 export const animateCarRace = (carId: number, race: CarRace): void => {
   const car = getCarElement(carId);
-  if (!(car instanceof HTMLElement)) {
+  if (!car) {
     console.warn(`[race] animateCarRace: car element not found for car ${carId}`);
     return;
   }
@@ -193,8 +194,8 @@ const animateCarMovement = (
   car: HTMLElement,
   race: CarRace,
 ): void => {
-  const road = car.parentElement;
-  if (!(road instanceof HTMLElement)) {
+  const road = getRoad(car);
+  if (!road) {
     console.warn(`[race] animateCarMovement: parent is not HTMLElement for car ${carId}`);
     return;
   }
@@ -388,13 +389,14 @@ export const animateRace = (): void => {
 // ============ ОБРАБОТКА ИЗМЕНЕНИЯ РАЗМЕРА ============
 export const handleResize = (): void => {
   for (const [idString, race] of Object.entries(state.race.carRaces)) {
-    if (!race.finished && !race.broken) {
-      updateCarPosition(Number(idString), race.startTime, race.maxSpeed);
-    }
+    if (race.finished || race.broken) continue;
+    const car = getCarElement(Number(idString));
+    if (car) updateCarPosition(car, race.startTime, race.maxSpeed);
   }
 
   for (const [idString, drive] of Object.entries(state.race.drivingCars)) {
-    updateCarPosition(Number(idString), drive.startTime, drive.maxSpeed);
+    const car = getCarElement(Number(idString));
+    if (car) updateCarPosition(car, drive.startTime, drive.maxSpeed);
   }
 };
 
@@ -406,24 +408,24 @@ export const animateDriveCar = (): void => {
     const carId = Number(idString);
     console.log("[animateDriveCar] animating car", carId, "maxSpeed:", drive.maxSpeed, "startTime:", drive.startTime);
     
-    updateCarPosition(carId, drive.startTime, drive.maxSpeed);
-
     const carElement = getCarElement(carId);
-    if (!(carElement instanceof HTMLElement)) {
+    if (!carElement) {
       console.warn("[animateDriveCar] carElement not found for car", carId);
       continue;
     }
 
-    const road = carElement.parentElement;
-    if (!(road instanceof HTMLElement)) {
+    updateCarPosition(carElement, drive.startTime, drive.maxSpeed);
+    console.log("[animateDriveCar] car", carId, "position:", carElement.dataset.lastPosition);
+
+    const road = getRoad(carElement);
+    if (!road) {
       console.warn("[animateDriveCar] road not HTMLElement for car", carId);
       continue;
     }
 
     const trackWidth = getTrackWidth(road);
     const left = Number(carElement.dataset.lastPosition ?? "0");
-
-    console.log("[animateDriveCar] car", carId, "left:", left, "trackWidth:", trackWidth, "finish:", trackWidth - CONFIG.UI.FINISH_OFFSET);
+    console.log("[animateDriveCar] car", carId, "left:", left, "trackWidth:", trackWidth);
 
     if (left >= trackWidth - CONFIG.UI.FINISH_OFFSET) {
       handleDriveCarFinished(carId, drive);
@@ -464,7 +466,6 @@ const createDefaultFinishedRace = (carId: number, drive: DrivingCar): CarRace =>
 
 export const startDriveCar = async (carId: number): Promise<void> => {
   console.log("[startDriveCar] called for car", carId);
-
   const maxSpeed = await getVelocityAction(carId);
   console.log("[startDriveCar] car", carId, "maxSpeed:", maxSpeed);
 
@@ -474,28 +475,38 @@ export const startDriveCar = async (carId: number): Promise<void> => {
   }
 
   state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed };
-  console.log("[startDriveCar] added car", carId, "to drivingCars");
+  console.log("[startDriveCar] added car", carId, "to drivingCars, count:", Object.keys(state.race.drivingCars).length);
 
   const carElement = getCarElement(carId);
-  if (carElement instanceof HTMLElement) {
+  if (carElement) {
     carElement.style.transform = "translateX(0px)";
   }
 
   updateCarButtonStates();
+  console.log("[startDriveCar] calling startDrive");
   await startDrive(carId);
+  console.log("[startDriveCar] startDrive done, drivingCars count:", Object.keys(state.race.drivingCars).length);
 
-  console.log("[startDriveCar] drivingCars keys:", Object.keys(state.race.drivingCars));
   if (Object.keys(state.race.drivingCars).length > 0) {
+    console.log("[startDriveCar] starting animateDriveCar");
     animateDriveCar();
   } else {
-    console.warn("[startDriveCar] drivingCars is empty, animateDriveCar not called");
+    console.warn("[startDriveCar] drivingCars is empty, animateDriveCar NOT called");
   }
 };
 
 // ============ ЗАПУСК ДВИЖЕНИЯ ============
 const startDrive = async (carId: number): Promise<void> => {
-  // driveCarAction не нужен для анимации — он вызывается только при финише
-  // Убрали вызов driveCarAction, чтобы не сбрасывать анимацию при ошибке сервера
+  try {
+    await driveCarAction(carId);
+  } catch (error: unknown) {
+    // 500 ошибка — остановить анимацию на месте
+    // 429 и другие ошибки — не блокируем анимацию
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("500") || message.includes("Drive failed with 500")) {
+      stopDriveAnimation(carId);
+    }
+  }
 };
 
 const stopDriveAnimation = (carId: number): void => {
@@ -511,7 +522,7 @@ export const stopDriveCar = (carId: number): void => {
   }
 
   const carElement = getCarElement(carId);
-  if (carElement instanceof HTMLElement) {
+  if (carElement) {
     carElement.style.transform = "translateX(0px)";
   }
 
@@ -533,23 +544,23 @@ export const resetCarToStart = (carId: number): void => {
   }
 
   const car = getCarElement(carId);
-  if (car instanceof HTMLElement) {
-    car.classList.remove("broken");
-    const road = car.parentElement;
-    if (road instanceof HTMLElement) {
-      const trackWidth = getTrackWidth(road);
-      const currentTransform = car.style.transform;
-      const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-    const currentLeft = match ? Number(match[1]) : 0;
-      const duration = Math.max(300, (currentLeft / trackWidth) * 500);
+  if (!car) return;
 
-      car.style.transition = `transform ${duration}ms ease-out`;
-      car.style.transform = "translateX(0px)";
-      setTimeout(() => {
-        car.style.transition = "";
-      }, duration);
-    }
-  }
+  car.classList.remove("broken");
+  const road = getRoad(car);
+  if (!road) return;
+
+  const trackWidth = getTrackWidth(road);
+  const currentTransform = car.style.transform;
+  const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
+  const currentLeft = match ? Number(match[1]) : 0;
+  const duration = Math.max(300, (currentLeft / trackWidth) * 500);
+
+  car.style.transition = `transform ${duration}ms ease-out`;
+  car.style.transform = "translateX(0px)";
+  setTimeout(() => {
+    car.style.transition = "";
+  }, duration);
 
   updateCarButtonStates();
 };

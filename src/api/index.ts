@@ -2,11 +2,11 @@ import { CONFIG } from "../config/index.ts";
 import type { Car, Winner } from "../types/index.ts";
 
 // ============ КОНСТАНТЫ ============
-const REQUEST_TIMEOUT = 3_000;
+const REQUEST_TIMEOUT = 3000;
 const RETRY_COUNT = 3;
 const RETRY_DELAY = 500;
 
-const CAR_COLORS = [
+export const CAR_COLORS = [
   "#ff0000", "#ff8800", "#ffcc00", "#00cc00", "#0088cc",
   "#0000ff", "#8800cc", "#ff00ff", "#ff4444", "#44ff44",
   "#4444ff", "#ff88cc", "#00cccc", "#cc8800", "#888888",
@@ -227,9 +227,24 @@ export async function getVelocity(carId: number): Promise<number> {
 }
 
 export async function driveCar(carId: number): Promise<void> {
-  await fetchWithRetry<void>(`${CONFIG.API.BASE}/engine?id=${carId}&status=drive`, {
-    method: "PATCH",
-  });
+  console.log("[driveCar] called for car", carId);
+  try {
+    const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/engine?id=${carId}&status=drive`, {
+      method: "PATCH",
+    });
+    console.log("[driveCar] response for car", carId, "status:", response.status, "ok:", response.ok);
+    if (response.ok) return;
+    if (response.status === 500) {
+      throw new Error("Drive failed with 500");
+    }
+    // 429 и другие ошибки — не блокируем анимацию
+  } catch (error: unknown) {
+    console.log("[driveCar] error for car", carId, "error:", error);
+    // Если это не 500 — игнорируем
+    if (error instanceof Error && error.message.includes("500")) {
+      throw error;
+    }
+  }
 }
 
 // ============ WINNERS ============
@@ -238,6 +253,8 @@ interface ApiWinner {
   id: number;
   wins: number;
   time: number;
+  carName?: string;
+  carColor?: string;
 }
 
 export async function fetchWinners(
@@ -265,20 +282,26 @@ export async function recordWinner(data: {
     const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: data.carId, wins: 1, time: data.time }),
+      body: JSON.stringify({ id: data.carId, wins: 1, time: data.time, carName: data.carName, carColor: data.carColor }),
     });
     const winner = await processResponse<Winner>(response);
     return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time };
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("duplicate id")) {
-      const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wins: 2, time: data.time }),
-      });
-      const winner = await processResponse<Winner>(response);
-      return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time };
-    }
-    throw error;
+  } catch {
+    // duplicate id — машина уже в таблице, нужно инкрементировать wins и обновить bestTime
+    const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
+      method: "GET",
+    });
+    const existing = await processResponse<{ id: number; wins: number; time: number; carName?: string; carColor?: string }>(response);
+
+    const newWins = existing.wins + 1;
+    const newBestTime = Math.min(existing.time, data.time);
+
+    const updateResponse: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: data.carId, wins: newWins, time: newBestTime, carName: data.carName, carColor: data.carColor }),
+    });
+    const winner = await processResponse<Winner>(updateResponse);
+    return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: newBestTime };
   }
 }

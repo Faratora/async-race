@@ -253,8 +253,11 @@ const handleStopEngine = (id: number): void => {
     } else if (isFinished) {
       resetCarToStart(id);
     } else {
-      await stopEngineAction(id);
-      stopDriveCar(id);
+      try {
+        await stopEngineAction(id);
+      } finally {
+        stopDriveCar(id);
+      }
     }
   });
 };
@@ -329,9 +332,12 @@ const appClickHandlerInternal = (event: MouseEvent): void => {
 
 const isCarActionClick = (target: HTMLElement): boolean => {
   const action = target.dataset.action;
+  const idStr = target.dataset.id;
+  console.log("[isCarActionClick] target:", target, "action:", action, "id:", idStr);
   if (action && ["select", "remove", "start", "stop"].includes(action)) {
-    const id = Number(target.dataset.id);
+    const id = Number(idStr);
     if (!Number.isNaN(id)) {
+      console.log("[isCarActionClick] calling handleCarAction:", action, id);
       handleCarAction(action, id);
     }
     return true;

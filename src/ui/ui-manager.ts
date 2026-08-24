@@ -115,7 +115,7 @@ export const renderGarage = async (): Promise<void> => {
 
 const renderAddCarForm = (container: HTMLElement | DocumentFragment): void => {
   const form = element("div", { class: "add-car-form" });
-  const nameInput = createInput("car-name", "text", escapeHtml(state.garage.createCarName), "Car name", CONFIG.UI.INPUT_NAME_WIDTH) as HTMLInputElement;
+  const nameInput: HTMLInputElement = createInput("car-name", "text", escapeHtml(state.garage.createCarName), "Car name", CONFIG.UI.INPUT_NAME_WIDTH);
   const colorPalette = createColorPalette(state.garage.selectedColor, (color) => {
     state.garage.selectedColor = color;
   });

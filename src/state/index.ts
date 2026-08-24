@@ -106,12 +106,12 @@ export async function loadWinners(): Promise<void> {
       state.winners.sortBy,
       state.winners.sortOrder
     );
-    const carMap = new Map(state.garage.cars.map((c) => [c.id, c]));
     state.winners.winners = data.winners.map((w) => ({
-      ...w,
+      id: w.id,
       carId: w.id,
-      carName: carMap.get(w.id)?.name ?? `Car ${w.id}`,
-      carColor: carMap.get(w.id)?.color ?? "#ff0000",
+      carName: w.carName ?? `Car ${w.id}`,
+      carColor: w.carColor ?? "#ff0000",
+      wins: w.wins,
       bestTime: w.time,
     }));
     state.winners.total = data.total;
@@ -136,7 +136,9 @@ export async function recordWinnerAction(data: {
 // ============ ГОНКА ============
 
 export async function startEngineAction(carId: number): Promise<{ velocity: number }> {
+  console.log("[startEngineAction] called for car", carId);
   const result = await startEngine(carId);
+  console.log("[startEngineAction] result for car", carId, "velocity:", result.velocity);
   velocityCache.set(carId, result.velocity);
   if (state.garage.cars.some((c) => c.id === carId)) {
     state.garage.cars = state.garage.cars.map((c) =>
@@ -156,10 +158,14 @@ export async function repairCarAction(carId: number): Promise<void> {
 }
 
 export async function getVelocityAction(carId: number): Promise<number> {
+  console.log("[getVelocityAction] called for car", carId, "cache:", velocityCache.has(carId));
   if (velocityCache.has(carId)) {
-    return velocityCache.get(carId)!;
+    const cached = velocityCache.get(carId);
+    console.log("[getVelocityAction] returning cached velocity for car", carId, ":", cached);
+    return cached!;
   }
   const result = await getVelocity(carId);
+  console.log("[getVelocityAction] got velocity for car", carId, ":", result);
   velocityCache.set(carId, result);
   if (state.garage.cars.some((c) => c.id === carId)) {
     state.garage.cars = state.garage.cars.map((c) =>

@@ -12,7 +12,7 @@ export const escapeHtml = (text: string): string => {
 
 // ============ СОЗДАНИЕ ЭЛЕМЕНТОВ ============
 
-export const createInput = (id: string, type: string, value: string, placeholder = "", width = 0): HTMLElement => {
+export const createInput = (id: string, type: string, value: string, placeholder = "", width = 0): HTMLInputElement => {
   const inputClass = type === "color" ? "form-control form-control-color" : "form-control";
   const attributes: Attributes = { id, type, value, class: inputClass };
   if (placeholder) attributes.placeholder = placeholder;
@@ -23,13 +23,13 @@ export const createInput = (id: string, type: string, value: string, placeholder
 export const createButton = (id: string, text: string, buttonClass: string): HTMLElement =>
   element("button", { id, class: buttonClass }, text);
 
-export const createColorPalette = (selectedColor: string, onSelect: (color: string) => void): HTMLElement => {
-  const input = element("input", {
+export const createColorPalette = (selectedColor: string, onSelect: (color: string) => void): HTMLInputElement => {
+  const input: HTMLInputElement = element("input", {
     type: "color",
     id: "car-color",
     class: "form-control form-control-color",
     value: selectedColor,
-  }) as HTMLInputElement;
+  });
 
   input.addEventListener("input", () => {
     onSelect(input.value);
