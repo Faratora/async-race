@@ -2,7 +2,7 @@ import { CONFIG } from "../config/index.ts";
 import type { Car, Winner } from "../types/index.ts";
 
 // ============ КОНСТАНТЫ ============
-const REQUEST_TIMEOUT = 10_000;
+const REQUEST_TIMEOUT = 3_000;
 const RETRY_COUNT = 3;
 const RETRY_DELAY = 500;
 
@@ -45,7 +45,9 @@ const handleResponseError = async (response: Response): Promise<never> => {
   } catch {
     errorText = "Unable to read error response";
   }
-  throw new Error(`HTTP ${response.status} ${response.statusText}: ${errorText}`);
+  const status = response.status ?? "unknown";
+  const statusText = response.statusText ?? "unknown";
+  throw new Error(`HTTP ${status} ${statusText}: ${errorText}`);
 };
 
 async function processResponse<T>(response: Response): Promise<T> {
@@ -54,7 +56,7 @@ async function processResponse<T>(response: Response): Promise<T> {
   }
   const text: string = await response.text();
   if (!text) {
-    throw new Error("Empty response body");
+    return undefined as unknown as T;
   }
   return JSON.parse(text);
 }
@@ -78,6 +80,18 @@ async function fetchWithTimeout(
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
+
+    // Дополнительная проверка: если response.ok === false и статус некорректен — выводим диагностическую информацию
+    if (!response.ok && (response.status === undefined || response.status === 0)) {
+      console.error(`[fetchWithTimeout] Non-OK response with invalid status for ${url}:`, {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        type: response.type,
+        url: response.url,
+      });
+    }
+
     return response;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -187,10 +201,9 @@ export async function generateCars(count: number): Promise<Car[]> {
 // ============ ENGINE ============
 
 export async function startEngine(carId: number): Promise<{ velocity: number; distance: number }> {
-  const response: Response = await fetchWithRetry(`${CONFIG.API.BASE}/engine?id=${carId}&status=started`, {
+  return fetchWithRetry<{ velocity: number; distance: number }>(`${CONFIG.API.BASE}/engine?id=${carId}&status=started`, {
     method: "PATCH",
   });
-  return processResponse<{ velocity: number; distance: number }>(response);
 }
 
 export async function stopEngine(carId: number): Promise<{ velocity: number; distance: number }> {
@@ -206,19 +219,17 @@ export async function repairCar(carId: number): Promise<{ velocity: number; dist
 }
 
 export async function getVelocity(carId: number): Promise<number> {
-  const response: Response = await fetchWithRetry(`${CONFIG.API.BASE}/engine?id=${carId}&status=started`, {
-    method: "PATCH",
-  });
   const data: { velocity: number; distance: number } =
-    await processResponse<{ velocity: number; distance: number }>(response);
+    await fetchWithRetry<{ velocity: number; distance: number }>(`${CONFIG.API.BASE}/engine?id=${carId}&status=started`, {
+      method: "PATCH",
+    });
   return data.velocity;
 }
 
 export async function driveCar(carId: number): Promise<void> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/engine?id=${carId}&status=drive`, {
+  await fetchWithRetry<void>(`${CONFIG.API.BASE}/engine?id=${carId}&status=drive`, {
     method: "PATCH",
   });
-  await handleVoidResponse(response);
 }
 
 // ============ WINNERS ============

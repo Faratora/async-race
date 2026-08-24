@@ -235,9 +235,12 @@ const handleSelectCar = (id: number): void => {
 };
 
 const handleStartEngine = (id: number): void => {
+  console.log("[handleStartEngine] called for car", id);
   void withPendingAction(id, async () => {
+    console.log("[handleStartEngine] calling startEngineAction for", id);
     await startEngineAction(id);
-    startDriveCar(id);
+    console.log("[handleStartEngine] startEngineAction done, calling startDriveCar");
+    await startDriveCar(id);
   });
 };
 

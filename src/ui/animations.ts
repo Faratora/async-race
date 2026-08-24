@@ -14,7 +14,6 @@ import {
   getVelocityAction,
   driveCarAction,
   recordWinnerAction,
-  repairCarAction,
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
@@ -39,11 +38,12 @@ export const isCarFinished = (id: number): boolean => {
 };
 
 export const getCarElement = (id: number): HTMLElement | null => {
-  const el = document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"] .car`);
-  if (!el) {
+  const element = document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"] .car`);
+  if (!(element instanceof HTMLElement)) {
     console.warn(`[race] Car element not found for id=${id}`);
+    return null;
   }
-  return el;
+  return element;
 };
 
 export const getTrackWidth = (road: HTMLElement): number =>
@@ -364,28 +364,19 @@ const announceWinner = (
 };
 
 export const animateRace = (): void => {
-  if (!state.race.isRacing) {
-    console.log("[race] isRacing is false, stopping animation");
-    return;
-  }
+  if (!state.race.isRacing) return;
 
   let hasAllFinished = true;
-  let racingCount = 0;
 
   for (const [idString, race] of Object.entries(state.race.carRaces)) {
-    console.log(`[race] Car ${idString}: finished=${race.finished}, broken=${race.broken}, maxSpeed=${race.maxSpeed}, startTime=${race.startTime}`);
     if (race.finished || race.broken) continue;
     hasAllFinished = false;
-    racingCount++;
     animateCarRace(Number(idString), race);
   }
-
-  console.log(`[race] Racing count: ${racingCount}, hasAllFinished: ${hasAllFinished}`);
 
   if (hasAllFinished) {
     state.race.isRacing = false;
     state.race.animationId = 0;
-
     updateCarButtonStates();
     updateRaceControls();
     return;
@@ -409,18 +400,30 @@ export const handleResize = (): void => {
 
 // ============ ДВИЖЕНИЕ АВТОМОБИЛЯ ============
 export const animateDriveCar = (): void => {
+  console.log("[animateDriveCar] called, drivingCars:", Object.keys(state.race.drivingCars));
+  
   for (const [idString, drive] of Object.entries(state.race.drivingCars)) {
     const carId = Number(idString);
+    console.log("[animateDriveCar] animating car", carId, "maxSpeed:", drive.maxSpeed, "startTime:", drive.startTime);
+    
     updateCarPosition(carId, drive.startTime, drive.maxSpeed);
 
     const carElement = getCarElement(carId);
-    if (!(carElement instanceof HTMLElement)) continue;
+    if (!(carElement instanceof HTMLElement)) {
+      console.warn("[animateDriveCar] carElement not found for car", carId);
+      continue;
+    }
 
     const road = carElement.parentElement;
-    if (!(road instanceof HTMLElement)) return;
+    if (!(road instanceof HTMLElement)) {
+      console.warn("[animateDriveCar] road not HTMLElement for car", carId);
+      continue;
+    }
 
     const trackWidth = getTrackWidth(road);
     const left = Number(carElement.dataset.lastPosition ?? "0");
+
+    console.log("[animateDriveCar] car", carId, "left:", left, "trackWidth:", trackWidth, "finish:", trackWidth - CONFIG.UI.FINISH_OFFSET);
 
     if (left >= trackWidth - CONFIG.UI.FINISH_OFFSET) {
       handleDriveCarFinished(carId, drive);
@@ -429,6 +432,8 @@ export const animateDriveCar = (): void => {
 
   if (Object.keys(state.race.drivingCars).length > 0) {
     state.race.driveAnimationId = requestAnimationFrame(animateDriveCar);
+  } else {
+    console.log("[animateDriveCar] no more driving cars, stopping");
   }
 };
 
@@ -458,13 +463,10 @@ const createDefaultFinishedRace = (carId: number, drive: DrivingCar): CarRace =>
 });
 
 export const startDriveCar = async (carId: number): Promise<void> => {
-  try {
-    await repairCarAction(carId);
-  } catch {
-    // ignore repair errors
-  }
+  console.log("[startDriveCar] called for car", carId);
 
   const maxSpeed = await getVelocityAction(carId);
+  console.log("[startDriveCar] car", carId, "maxSpeed:", maxSpeed);
 
   if (Object.hasOwn(state.race.carRaces, carId)) {
     state.race.carRaces[carId].finished = false;
@@ -472,6 +474,7 @@ export const startDriveCar = async (carId: number): Promise<void> => {
   }
 
   state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed };
+  console.log("[startDriveCar] added car", carId, "to drivingCars");
 
   const carElement = getCarElement(carId);
   if (carElement instanceof HTMLElement) {
@@ -479,20 +482,20 @@ export const startDriveCar = async (carId: number): Promise<void> => {
   }
 
   updateCarButtonStates();
-  void startDrive(carId);
+  await startDrive(carId);
 
+  console.log("[startDriveCar] drivingCars keys:", Object.keys(state.race.drivingCars));
   if (Object.keys(state.race.drivingCars).length > 0) {
     animateDriveCar();
+  } else {
+    console.warn("[startDriveCar] drivingCars is empty, animateDriveCar not called");
   }
 };
 
 // ============ ЗАПУСК ДВИЖЕНИЯ ============
 const startDrive = async (carId: number): Promise<void> => {
-  try {
-    await driveCarAction(carId);
-  } catch {
-    stopDriveAnimation(carId);
-  }
+  // driveCarAction не нужен для анимации — он вызывается только при финише
+  // Убрали вызов driveCarAction, чтобы не сбрасывать анимацию при ошибке сервера
 };
 
 const stopDriveAnimation = (carId: number): void => {

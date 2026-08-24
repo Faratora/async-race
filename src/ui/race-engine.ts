@@ -67,7 +67,7 @@ const startAllEngines = async (carIds: number[]): Promise<Map<number, number>> =
       try {
         const result = await startEngineAction(id);
         return { id, velocity: result.velocity };
-      } catch (error) {
+      } catch {
         console.warn(`[race] startEngine API failed for car ${id}, using fallback velocity`);
         // Fallback: генерируем скорость локально если API не отвечает
         const fallbackVelocity = 150 + Math.random() * 200; // 150-350 km/h
