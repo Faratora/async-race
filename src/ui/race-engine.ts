@@ -29,27 +29,21 @@ export const removeAllNotifications = (): void => {
 // ============ ОБРАБОТЧИКИ ГОНКИ ============
 export const startRaceHandler = async (): Promise<void> => {
   if (state.race.isRacing) {
-    console.log("[race] Already racing, skipping");
     return;
   }
 
   const carIds = state.garage.cars.map(c => c.id);
-  console.log("[race] Starting race with cars on current page:", carIds);
 
   if (carIds.length === 0) {
-    console.log("[race] No cars, skipping");
     return;
   }
 
   removeAllNotifications();
   startRaceSetup(carIds, performance.now());
   updateRaceControls();
-  console.log("[race] isRacing after setup:", state.race.isRacing);
-  console.log("[race] carRaces keys:", Object.keys(state.race.carRaces));
 
   try {
     const engineResults = await startAllEngines(carIds);
-    console.log("[race] Engine results:", engineResults);
     await validateGarageState(carIds);
     await initializeRaceCars(carIds, engineResults);
   } catch (error) {
@@ -68,9 +62,7 @@ const startAllEngines = async (carIds: number[]): Promise<Map<number, number>> =
         const result = await startEngineAction(id);
         return { id, velocity: result.velocity };
       } catch {
-        console.warn(`[race] startEngine API failed for car ${id}, using fallback velocity`);
-        // Fallback: генерируем скорость локально если API не отвечает
-        const fallbackVelocity = 150 + Math.random() * 200; // 150-350 km/h
+        const fallbackVelocity = 150 + Math.random() * 200;
         return { id, velocity: fallbackVelocity };
       }
     }),

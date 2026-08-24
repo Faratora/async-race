@@ -52,7 +52,6 @@ const withPendingAction = async <T>(
   onError?: (error: unknown) => void,
 ): Promise<T | void> => {
   if (isActionPending(id)) {
-    console.warn(`Action already pending for car ${id}`);
     return;
   }
 
@@ -235,11 +234,8 @@ const handleSelectCar = (id: number): void => {
 };
 
 const handleStartEngine = (id: number): void => {
-  console.log("[handleStartEngine] called for car", id);
   void withPendingAction(id, async () => {
-    console.log("[handleStartEngine] calling startEngineAction for", id);
     await startEngineAction(id);
-    console.log("[handleStartEngine] startEngineAction done, calling startDriveCar");
     await startDriveCar(id);
   });
 };
@@ -332,12 +328,10 @@ const appClickHandlerInternal = (event: MouseEvent): void => {
 
 const isCarActionClick = (target: HTMLElement): boolean => {
   const action = target.dataset.action;
-  const idStr = target.dataset.id;
-  console.log("[isCarActionClick] target:", target, "action:", action, "id:", idStr);
+  const idString = target.dataset.id;
   if (action && ["select", "remove", "start", "stop"].includes(action)) {
-    const id = Number(idStr);
+    const id = Number(idString);
     if (!Number.isNaN(id)) {
-      console.log("[isCarActionClick] calling handleCarAction:", action, id);
       handleCarAction(action, id);
     }
     return true;

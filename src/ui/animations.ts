@@ -40,7 +40,6 @@ export const isCarFinished = (id: number): boolean => {
 export const getCarElement = (id: number): HTMLElement | undefined => {
   const element = document.querySelector(`.car-road[data-id="${CSS.escape(String(id))}"] .car`);
   if (!(element instanceof HTMLElement)) {
-    console.warn(`[race] Car element not found for id=${id}`);
     return undefined;
   }
   return element;
@@ -125,7 +124,6 @@ export const resetCarVisualState = (carIds: number[]): void => {
 export const animateCarRace = (carId: number, race: CarRace): void => {
   const car = getCarElement(carId);
   if (!car) {
-    console.warn(`[race] animateCarRace: car element not found for car ${carId}`);
     return;
   }
 
@@ -150,7 +148,6 @@ const handleBrokenCar = (
     return;
   }
 
-  console.log(`Car ${carId} is out of the race!`);
   updateCarButtonStates();
 };
 
@@ -162,7 +159,6 @@ const handleRepairProgress = (
   if (race.repairStartTime === undefined) {
     race.repairStartTime = performance.now();
     race.isRepairing = true;
-    console.log(`Starting repair for car ${carId}...`);
     updateCarButtonStates();
     return;
   }
@@ -173,7 +169,6 @@ const handleRepairProgress = (
     race.isRepairing = false;
     race.repairStartTime = undefined;
     car.classList.remove("broken");
-    console.log(`Car ${carId} repaired!`);
 
     const currentTransform = car.style.transform;
     const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
@@ -196,7 +191,6 @@ const animateCarMovement = (
 ): void => {
   const road = getRoad(car);
   if (!road) {
-    console.warn(`[race] animateCarMovement: parent is not HTMLElement for car ${carId}`);
     return;
   }
 
@@ -255,28 +249,25 @@ const applyBreakdownVisuals = (
   car: HTMLElement,
   breakdownType: string,
   left: number,
-  progress: number,
-  carId: number,
+  _progress: number,
+  _carId: number,
 ): void => {
   car.classList.add("broken", `broken-${breakdownType}`);
 
   switch (breakdownType) {
     case "engine_overheating": {
       car.style.transform = `translateX(${left}px) scale(1.1)`;
-      console.log(`Car ${carId} engine overheated at ${Math.round(progress * 100)}%!`);
       break;
     }
     case "transmission_failure": {
       car.style.transform = `translateX(${left}px) rotate(5deg)`;
-      console.log(`Car ${carId} transmission failed at ${Math.round(progress * 100)}%!`);
       break;
     }
     case "start_stall": {
-      console.log(`Car ${carId} stalled at start!`);
       break;
     }
     default: {
-      console.log(`Car ${carId} broke down at ${Math.round(progress * 100)}%!`);
+      break;
     }
   }
 };
@@ -402,30 +393,23 @@ export const handleResize = (): void => {
 
 // ============ ДВИЖЕНИЕ АВТОМОБИЛЯ ============
 export const animateDriveCar = (): void => {
-  console.log("[animateDriveCar] called, drivingCars:", Object.keys(state.race.drivingCars));
-  
   for (const [idString, drive] of Object.entries(state.race.drivingCars)) {
     const carId = Number(idString);
-    console.log("[animateDriveCar] animating car", carId, "maxSpeed:", drive.maxSpeed, "startTime:", drive.startTime);
-    
+
     const carElement = getCarElement(carId);
     if (!carElement) {
-      console.warn("[animateDriveCar] carElement not found for car", carId);
       continue;
     }
 
     updateCarPosition(carElement, drive.startTime, drive.maxSpeed);
-    console.log("[animateDriveCar] car", carId, "position:", carElement.dataset.lastPosition);
 
     const road = getRoad(carElement);
     if (!road) {
-      console.warn("[animateDriveCar] road not HTMLElement for car", carId);
       continue;
     }
 
     const trackWidth = getTrackWidth(road);
     const left = Number(carElement.dataset.lastPosition ?? "0");
-    console.log("[animateDriveCar] car", carId, "left:", left, "trackWidth:", trackWidth);
 
     if (left >= trackWidth - CONFIG.UI.FINISH_OFFSET) {
       handleDriveCarFinished(carId, drive);
@@ -434,8 +418,6 @@ export const animateDriveCar = (): void => {
 
   if (Object.keys(state.race.drivingCars).length > 0) {
     state.race.driveAnimationId = requestAnimationFrame(animateDriveCar);
-  } else {
-    console.log("[animateDriveCar] no more driving cars, stopping");
   }
 };
 
@@ -465,9 +447,7 @@ const createDefaultFinishedRace = (carId: number, drive: DrivingCar): CarRace =>
 });
 
 export const startDriveCar = async (carId: number): Promise<void> => {
-  console.log("[startDriveCar] called for car", carId);
   const maxSpeed = await getVelocityAction(carId);
-  console.log("[startDriveCar] car", carId, "maxSpeed:", maxSpeed);
 
   if (Object.hasOwn(state.race.carRaces, carId)) {
     state.race.carRaces[carId].finished = false;
@@ -475,7 +455,6 @@ export const startDriveCar = async (carId: number): Promise<void> => {
   }
 
   state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed };
-  console.log("[startDriveCar] added car", carId, "to drivingCars, count:", Object.keys(state.race.drivingCars).length);
 
   const carElement = getCarElement(carId);
   if (carElement) {
@@ -483,16 +462,12 @@ export const startDriveCar = async (carId: number): Promise<void> => {
   }
 
   updateCarButtonStates();
-  console.log("[startDriveCar] calling startDrive");
-  await startDrive(carId);
-  console.log("[startDriveCar] startDrive done, drivingCars count:", Object.keys(state.race.drivingCars).length);
 
   if (Object.keys(state.race.drivingCars).length > 0) {
-    console.log("[startDriveCar] starting animateDriveCar");
     animateDriveCar();
-  } else {
-    console.warn("[startDriveCar] drivingCars is empty, animateDriveCar NOT called");
   }
+
+  void startDrive(carId);
 };
 
 // ============ ЗАПУСК ДВИЖЕНИЯ ============
