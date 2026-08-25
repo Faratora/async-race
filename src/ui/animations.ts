@@ -11,8 +11,6 @@ import { showBreakdownNotification, showWinnerNotification, type BrokenCar } fro
 import type { Car, CarRace, DrivingCar } from "../types/index.ts";
 
 import {
-  getVelocityAction,
-  driveCarAction,
   recordWinnerAction,
 } from "../state/index.ts";
 
@@ -82,10 +80,11 @@ export const updateCarButtonStates = (): void => {
 
     const isDriving = state.race.drivingCars[carId] !== undefined ||
       (state.race.isRacing && isCarRacing(carId));
+    const isBroken = isCarBroken(carId);
     const isFinished = isCarFinished(carId);
 
-    startButton.disabled = isDriving || isFinished;
-    stopButton.disabled = !isDriving || isFinished;
+    startButton.disabled = isDriving || isBroken || isFinished;
+    stopButton.disabled = !isDriving && !isBroken && !isFinished;
 
     startButton.toggleAttribute("disabled", startButton.disabled);
     stopButton.toggleAttribute("disabled", stopButton.disabled);
@@ -446,14 +445,12 @@ const createDefaultFinishedRace = (carId: number, drive: DrivingCar): CarRace =>
 });
 
 export const startDriveCar = async (carId: number): Promise<void> => {
-  const maxSpeed = await getVelocityAction(carId);
-
   if (Object.hasOwn(state.race.carRaces, carId)) {
     state.race.carRaces[carId].finished = false;
     state.race.carRaces[carId].broken = false;
   }
 
-  state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed };
+  state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed: 250 };
 
   const carElement = getCarElement(carId);
   if (carElement) {
@@ -465,27 +462,6 @@ export const startDriveCar = async (carId: number): Promise<void> => {
   if (Object.keys(state.race.drivingCars).length > 0) {
     animateDriveCar();
   }
-
-  void startDrive(carId);
-};
-
-// ============ ЗАПУСК ДВИЖЕНИЯ ============
-const startDrive = async (carId: number): Promise<void> => {
-  try {
-    await driveCarAction(carId);
-  } catch (error: unknown) {
-    // 500 ошибка — остановить анимацию на месте
-    // 429 и другие ошибки — не блокируем анимацию
-    const message = error instanceof Error ? error.message : "";
-    if (message.includes("500") || message.includes("Drive failed with 500")) {
-      stopDriveAnimation(carId);
-    }
-  }
-};
-
-const stopDriveAnimation = (carId: number): void => {
-  delete state.race.drivingCars[carId];
-  updateCarButtonStates();
 };
 
 export const stopDriveCar = (carId: number): void => {

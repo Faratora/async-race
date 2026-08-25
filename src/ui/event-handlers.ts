@@ -235,8 +235,8 @@ const handleSelectCar = (id: number): void => {
 
 const handleStartEngine = (id: number): void => {
   void withPendingAction(id, async () => {
+    startDriveCar(id);
     await startEngineAction(id);
-    await startDriveCar(id);
   }).catch(error => console.error(`Failed to start engine for car ${id}:`, error));
 };
 
