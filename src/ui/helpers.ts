@@ -5,9 +5,18 @@ type Attributes = Record<string, string | number | boolean | undefined>;
 // ============ УТИЛИТЫ ============
 
 export const escapeHtml = (text: string): string => {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+  const map: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  };
+  let result = text;
+  for (const [char, replacement] of Object.entries(map)) {
+    result = result.split(char).join(replacement);
+  }
+  return result;
 };
 
 // ============ СОЗДАНИЕ ЭЛЕМЕНТОВ ============

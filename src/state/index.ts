@@ -158,7 +158,10 @@ export async function repairCarAction(carId: number): Promise<void> {
 export async function getVelocityAction(carId: number): Promise<number> {
   if (velocityCache.has(carId)) {
     const cached = velocityCache.get(carId);
-    return cached!;
+    if (cached === undefined) {
+      throw new Error(`Velocity not found for car ${carId}`);
+    }
+    return cached;
   }
   const result = await getVelocity(carId);
   velocityCache.set(carId, result);

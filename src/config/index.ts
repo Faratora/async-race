@@ -15,7 +15,6 @@ export const CONFIG = {
     TRACK_PADDING: 65,
     FINISH_OFFSET: 75,
     INPUT_NAME_WIDTH: 200,
-    DEFAULT_COLOR: "#ff0000",
     CARS_PER_PAGE: 7,
     WINNERS_PER_PAGE: 10,
   } as const,
@@ -37,19 +36,20 @@ export const API_BASE = CONFIG.API.BASE;
 export const TRACK_PADDING = CONFIG.UI.TRACK_PADDING;
 export const FINISH_OFFSET = CONFIG.UI.FINISH_OFFSET;
 export const INPUT_NAME_WIDTH = CONFIG.UI.INPUT_NAME_WIDTH;
-export const DEFAULT_COLOR = CONFIG.UI.DEFAULT_COLOR;
 
 export const TRACK_LENGTH = CONFIG.PHYSICS.TRACK_LENGTH;
 export const MIN_SPEED_KMH = CONFIG.PHYSICS.MIN_SPEED_KMH;
 export const MAX_SPEED_KMH = CONFIG.PHYSICS.MAX_SPEED_KMH;
 export const TIME_DILATION = CONFIG.PHYSICS.TIME_DILATION;
 
+const FALLBACK_SPEED_PROGRESS = 0.01;
+
 // Конвертирует км/ч в прогресс трассы за миллисекунду
 // Возвращает долю трассы (0..1), проходимую за 1 мс при данной скорости
 export const speedToProgressPerMs = (maxSpeedKmh: number): number => {
   if (maxSpeedKmh <= 0 || !Number.isFinite(maxSpeedKmh)) {
     console.warn(`Invalid speed: ${maxSpeedKmh} km/h, using default`);
-    return 0.01;
+    return FALLBACK_SPEED_PROGRESS;
   }
 
   // км/ч → м/с (1 км/ч = 1/3.6 м/с)

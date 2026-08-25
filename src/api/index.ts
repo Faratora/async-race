@@ -5,13 +5,20 @@ import type { Car, Winner } from "../types/index.ts";
 const REQUEST_TIMEOUT = 3000;
 const RETRY_COUNT = 3;
 const RETRY_DELAY = 500;
+const HEX_COLOR_LENGTH = 6;
+const HEX_ALPHABET_SIZE = 16;
+const GENERATE_BATCH_SIZE = 10;
+const HTTP_STATUS_TOO_MANY_REQUESTS = 429;
+const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
 
-export const CAR_COLORS = [
-  "#ff0000", "#ff8800", "#ffcc00", "#00cc00", "#0088cc",
-  "#0000ff", "#8800cc", "#ff00ff", "#ff4444", "#44ff44",
-  "#4444ff", "#ff88cc", "#00cccc", "#cc8800", "#888888",
-  "#ffffff", "#cc0000", "#006600", "#003366", "#ff4444",
-] as const;
+const randomCarColor = (): string => {
+  const letters = "0123456789ABCDEF";
+  let color = "#";
+  for (let index = 0; index < HEX_COLOR_LENGTH; index++) {
+    color += letters[Math.floor(Math.random() * HEX_ALPHABET_SIZE)];
+  }
+  return color;
+};
 
 const CAR_NAME_FIRST_PARTS = [
   "Tesla", "Ford", "BMW", "Audi", "Porsche",
@@ -31,10 +38,6 @@ const randomCarName = (): string => {
   const first = CAR_NAME_FIRST_PARTS[Math.floor(Math.random() * CAR_NAME_FIRST_PARTS.length)];
   const second = CAR_NAME_SECOND_PARTS[Math.floor(Math.random() * CAR_NAME_SECOND_PARTS.length)];
   return `${first} ${second}`;
-};
-
-const randomCarColor = (): string => {
-  return CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
 };
 
 // ============ ОБЩАЯ ЛОГИКА ОБРАБОТКИ ОТВЕТОВ ============
@@ -129,7 +132,7 @@ const shouldRetry = (
   attempt: number,
   retries: number,
 ): boolean => {
-  return (response.status === 429 || response.status === 500) && attempt < retries - 1;
+  return (response.status === HTTP_STATUS_TOO_MANY_REQUESTS || response.status === HTTP_STATUS_INTERNAL_SERVER_ERROR) && attempt < retries - 1;
 };
 
 // ============ GARAGE ============
@@ -180,7 +183,7 @@ export async function deleteCar(id: number): Promise<void> {
 
 export async function generateCars(count: number): Promise<Car[]> {
   const generated: Car[] = [];
-  const batchSize = 10;
+  const batchSize = GENERATE_BATCH_SIZE;
   for (let index = 0; index < count; index += batchSize) {
     const batch = Array.from({ length: Math.min(batchSize, count - index) }, (_, _index) => ({
       name: randomCarName(),

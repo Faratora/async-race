@@ -13,7 +13,6 @@ import {
   animateRace,
   updateCarButtonStates,
   updateRaceControls,
-  getCarElement,
 } from "./animations.ts";
 
 // ============ УПРАВЛЕНИЕ УВЕДОМЛЕНИЯМИ ============
