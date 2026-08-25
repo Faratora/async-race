@@ -22,10 +22,10 @@ export const CONFIG = {
 
   // Физика гонки
   PHYSICS: {
-    TRACK_LENGTH: 1000,
-    MIN_SPEED_KMH: 150,
-    MAX_SPEED_KMH: 350,
-    TIME_DILATION: 0.3,
+    TRACK_LENGTH: 2000,
+    MIN_SPEED_KMH: 200,
+    MAX_SPEED_KMH: 500,
+    TIME_DILATION: 0.07,
   } as const,
 } as const;
 
@@ -63,22 +63,13 @@ export const speedToProgressPerMs = (maxSpeedKmh: number): number => {
 };
 
 export const BREAKDOWN_CONFIG = {
-  // Базовая вероятность поломки за 1 мс (0.01%)
-  BASE_CHANCE: 0.0001,
-  // Множитель вероятности в зависимости от пройденного расстояния
-  // При 100% дистанции: chance * (1 + DISTANCE_MULTIPLIER)
-  DISTANCE_MULTIPLIER: 1,
-  // Порог высокой скорости (км/ч), выше которой увеличивается шанс поломки
+  BASE_CHANCE: 0.001,
+  DISTANCE_MULTIPLIER: 3,
   HIGH_SPEED_THRESHOLD: 250,
-  // Дополнительная вероятность при высокой скорости
-  HIGH_SPEED_BONUS: 0.0004,
-  // Минимальное время после старта до первой поломки (сек)
+  HIGH_SPEED_BONUS: 0.002,
   MIN_TIME_BEFORE_BREAKDOWN: 0.5,
-  // Вероятность ремонта за кадр (0.5% при 60fps = ~30% в секунду)
   REPAIR_CHANCE_PER_FRAME: 0.005,
-  // Время ремонта (сек)
   REPAIR_TIME: 2,
-  // Максимальное количество поломок
   MAX_BREAKDOWNS: 2,
 };
 

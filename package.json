@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "server": "node server/async-race-api/index.js",
+    "server": "node async-race-api/index.js",
     "client": "npx vite",
     "build": "vite build",
     "preview": "vite preview",

@@ -7,7 +7,7 @@ type Attributes = Record<string, string | number | boolean | undefined>;
 export const escapeHtml = (text: string): string => {
   const div = document.createElement("div");
   div.textContent = text;
-  return div.getHTML();
+  return div.innerHTML;
 };
 
 // ============ СОЗДАНИЕ ЭЛЕМЕНТОВ ============

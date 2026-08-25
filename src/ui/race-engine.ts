@@ -1,9 +1,7 @@
 import {
-  startEngineAction,
   stopEngineAction,
   startRaceSetup,
   setCarRaceVelocity,
-  setCarRaceBroken,
   clearRaceState,
 } from "../state/index.ts";
 
@@ -26,6 +24,27 @@ export const removeAllNotifications = (): void => {
   }
 };
 
+// ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ============
+
+const initializeRaceCars = (carIds: number[], velocities: Map<number, number>): void => {
+  resetCarVisualState(carIds);
+  resetCarPositions(carIds);
+
+  for (const id of carIds) {
+    const velocity = velocities.get(id);
+    if (velocity) {
+      setCarRaceVelocity(id, velocity);
+    } else {
+      // Fallback: разброс 200–400 км/ч
+      const fallbackVelocity = 200 + Math.random() * 200;
+      setCarRaceVelocity(id, fallbackVelocity);
+    }
+  }
+
+  updateCarButtonStates();
+  animateRace();
+};
+
 // ============ ОБРАБОТЧИКИ ГОНКИ ============
 export const startRaceHandler = async (): Promise<void> => {
   if (state.race.isRacing) {
@@ -42,71 +61,8 @@ export const startRaceHandler = async (): Promise<void> => {
   startRaceSetup(carIds, performance.now());
   updateRaceControls();
 
-  try {
-    const engineResults = await startAllEngines(carIds);
-    await validateGarageState(carIds);
-    await initializeRaceCars(carIds, engineResults);
-  } catch (error) {
-    clearRaceState();
-    updateRaceControls();
-    console.error("Failed to start race:", error);
-  }
-};
-
-// ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ============
-
-const startAllEngines = async (carIds: number[]): Promise<Map<number, number>> => {
-  const results = await Promise.allSettled(
-    carIds.map(async (id) => {
-      try {
-        const result = await startEngineAction(id);
-        return { id, velocity: result.velocity };
-      } catch {
-        const fallbackVelocity = 150 + Math.random() * 200;
-        return { id, velocity: fallbackVelocity };
-      }
-    }),
-  );
-
-  const velocities = new Map<number, number>();
-  for (const result of results) {
-    if (result.status === "fulfilled") {
-      velocities.set(result.value.id, result.value.velocity);
-    }
-  }
-  return velocities;
-};
-
-const validateGarageState = async (carIds: number[]): Promise<void> => {
-  const currentCarIds = new Set(state.garage.cars.map(c => c.id));
-  if (carIds.some(id => !currentCarIds.has(id))) {
-    throw new Error("Garage changed during race start");
-  }
-};
-
-const initializeRaceCars = async (carIds: number[], velocities: Map<number, number>): Promise<void> => {
-  resetCarVisualState(carIds);
-  resetCarPositions(carIds);
-
-  for (const id of carIds) {
-    const velocity = velocities.get(id);
-    if (velocity) {
-      setCarRaceVelocity(id, velocity);
-    } else {
-      setCarRaceBroken(id, performance.now());
-      markCarAsBroken(id);
-    }
-  }
-
-  updateCarButtonStates();
-  animateRace();
-};
-
-const markCarAsBroken = (carId: number): void => {
-  const car = getCarElement(carId);
-  if (car instanceof HTMLElement) {
-    car.classList.add("broken", "broken-start_stall");
-  }
+  // Запускаем гонку мгновенно — без ожидания API
+  initializeRaceCars(carIds, new Map());
 };
 
 export const resetRaceHandler = async (): Promise<void> => {

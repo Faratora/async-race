@@ -85,7 +85,7 @@ export const updateCarButtonStates = (): void => {
     const isFinished = isCarFinished(carId);
 
     startButton.disabled = isDriving || isFinished;
-    stopButton.disabled = !isDriving;
+    stopButton.disabled = !isDriving || isFinished;
 
     startButton.toggleAttribute("disabled", startButton.disabled);
     stopButton.toggleAttribute("disabled", stopButton.disabled);
@@ -297,7 +297,6 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
   race.finished = true;
   race.time = (elapsed * CONFIG.PHYSICS.TIME_DILATION) / 1000;
 
-  void driveCarAction(carId).catch(error => console.error("Failed to drive car:", error));
   updateCarButtonStates();
 
   const stopButton = document.querySelector<HTMLButtonElement>(`.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`);
