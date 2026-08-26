@@ -81,9 +81,9 @@ export const resetRaceHandler = async (): Promise<void> => {
 
   removeAllNotifications();
 
-  if (carIds.length > 0) {
-    await Promise.allSettled(carIds.map(id => stopEngineAction(id)));
-  }
-
   updateCarButtonStates();
+
+  if (carIds.length > 0) {
+    void Promise.allSettled(carIds.map(id => stopEngineAction(id)));
+  }
 };
