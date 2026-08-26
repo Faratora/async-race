@@ -36,6 +36,7 @@ export interface GarageState {
 
 export interface WinnersState {
     winners: Winner[];
+    allWinners: Winner[];
     page: number;
     total: number;
     sortBy: SortConfig['sortBy'];

@@ -16,13 +16,14 @@ import {
   startEngineAction,
   stopEngineAction,
   loadWinners,
+  loadAllWinners,
   stopRaceAnimation as stopRaceAction,
   findCarById,
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
 
-import { renderGarage, renderWinners, loadGarageCars } from "./ui-manager.ts";
+import { renderGarage, renderWinners, loadGarageCars, sortWinners } from "./ui-manager.ts";
 import { startDriveCar, stopDriveCar, stopDriveCarInPlace, resetCarToStart, updateDriveCarSpeed } from "./animations.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
 import { driveCarAction } from "../state/index.ts";
@@ -165,7 +166,7 @@ const changeWinnersPage = (delta: number): void => {
   const newPage = state.winners.page + delta;
   if (newPage < 1 || newPage > totalPages) return;
   state.winners.page = newPage;
-  void loadWinners().then(() => renderWinners());
+  renderWinners();
 };
 
 export const handlePreviousButton = (): void => changeGaragePage(-1);
@@ -204,7 +205,8 @@ const handleRemoveCar = (id: number): void => {
   void deleteCarAction(id)
     .then(() => {
       state.winners.winners = state.winners.winners.filter(w => w.carId !== id);
-      state.winners.total = state.winners.winners.length;
+      state.winners.allWinners = state.winners.allWinners.filter(w => w.carId !== id);
+      state.winners.total = Math.max(0, state.winners.total - 1);
 
       const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
       if (state.winners.page > totalPages) {
@@ -214,7 +216,6 @@ const handleRemoveCar = (id: number): void => {
       return loadGarageCars();
     })
     .then(async () => {
-      // Проверяем что страница не вышла за границы после удаления
       const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
       if (state.garage.page > totalPages) {
         state.garage.page = Math.max(1, totalPages);
@@ -242,7 +243,9 @@ const handleStartEngine = (id: number): void => {
     try {
       await startEngineAction(id);
     } catch (error) {
+      stopDriveCarInPlace(id);
       console.error(`Failed to start engine for car ${id}:`, error);
+      return;
     }
     try {
       await driveCarAction(id);
@@ -372,7 +375,10 @@ const handleSortClick = (target: HTMLElement): void => {
   if (isSortOrder(sortOrder)) {
     state.winners.sortOrder = sortOrder;
     state.winners.page = 1;
-    renderWinners();
+    void loadAllWinners().then(() => {
+      sortWinners();
+      renderWinners();
+    });
   }
 };
 
@@ -384,7 +390,10 @@ const handleSortByChange = (sortBy: SortConfig["sortBy"]): void => {
     state.winners.sortOrder = "desc";
   }
   state.winners.page = 1;
-  renderWinners();
+  void loadAllWinners().then(() => {
+    sortWinners();
+    renderWinners();
+  });
 };
 
 const navClickHandlerInternal = async (event: MouseEvent): Promise<void> => {

@@ -1,5 +1,16 @@
-import { BREAKDOWN_CONFIG } from "./index.ts";
-import { CarRace } from "../types/index.ts";
+import type { CarRace } from "../types/index.ts";
+
+// ============ КОНФИГУРАЦИЯ ПОЛОМОК ============
+const BREAKDOWN_CONFIG = {
+  BASE_CHANCE: 0.001,
+  DISTANCE_MULTIPLIER: 3,
+  HIGH_SPEED_THRESHOLD: 250,
+  HIGH_SPEED_BONUS: 0.002,
+  MIN_TIME_BEFORE_BREAKDOWN: 0.5,
+  REPAIR_CHANCE_PER_FRAME: 0.005,
+  REPAIR_TIME: 2,
+  MAX_BREAKDOWNS: 2,
+};
 
 // ============ ТИПЫ ============
 export type BreakdownType =

@@ -320,8 +320,8 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
 const collectBrokenCars = (): BrokenCar[] => {
   const brokenCars: BrokenCar[] = [];
   for (const race of Object.values(state.race.carRaces)) {
-    if (!(race.broken && race.breakdownHistory && race.breakdownHistory.count > 0)) {
-    	continue;
+    if (!race.broken || !race.breakdownHistory || race.breakdownHistory.count === 0) {
+      continue;
     }
 
     const car = findCarById(race.carId);
@@ -429,20 +429,22 @@ const handleDriveCarFinished = (carId: number, drive: DrivingCar): void => {
 
 const handleDriveCarComplete = (carId: number, drive: DrivingCar): void => {
   const existing = state.race.carRaces[carId];
+  const elapsed = (performance.now() - drive.startTime) * CONFIG.PHYSICS.TIME_DILATION / 1000;
   if (existing) {
     existing.finished = true;
+    existing.time = elapsed;
   } else {
-    state.race.carRaces[carId] = createDefaultFinishedRace(carId, drive);
+    state.race.carRaces[carId] = createDefaultFinishedRace(carId, drive, elapsed);
   }
 };
 
-const createDefaultFinishedRace = (carId: number, drive: DrivingCar): CarRace => ({
+const createDefaultFinishedRace = (carId: number, drive: DrivingCar, elapsed: number): CarRace => ({
   carId,
   startTime: drive.startTime,
   maxSpeed: drive.maxSpeed,
   finished: true,
   broken: false,
-  time: undefined,
+  time: elapsed,
   breakdownHistory: { count: 0, timestamps: [], positions: [], types: [] },
 });
 
@@ -557,7 +559,16 @@ export const resetCarToStart = (carId: number): void => {
 };
 
 // ============ ИНИЦИАЛИЗАЦИЯ ============
+let resizeObserver: ResizeObserver | null = null;
+
 export const init = (): void => {
-  const resizeObserver = new ResizeObserver(handleResize);
+  resizeObserver = new ResizeObserver(handleResize);
   resizeObserver.observe(document.body);
+};
+
+export const destroy = (): void => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
 };

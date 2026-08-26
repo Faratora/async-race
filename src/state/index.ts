@@ -28,13 +28,14 @@ export const state: AppState = {
     editColor: "#ff0000",
     createCarName: "",
   },
-  winners: {
+winners: {
     winners: [],
+    allWinners: [],
     page: 1,
     total: 0,
     sortBy: "wins",
     sortOrder: "desc",
-  },
+},
   race: {
     isRacing: false,
     carRaces: {},
@@ -117,6 +118,28 @@ export async function loadWinners(): Promise<void> {
     state.winners.total = data.total;
   } catch (error) {
     console.error("Failed to load winners:", error);
+  }
+}
+
+export async function loadAllWinners(): Promise<void> {
+  try {
+    const data = await fetchWinners(
+      1,
+      1000,
+      state.winners.sortBy,
+      state.winners.sortOrder
+    );
+    state.winners.allWinners = data.winners.map((w) => ({
+      id: w.id,
+      carId: w.id,
+      carName: w.carName ?? `Car ${w.id}`,
+      carColor: w.carColor ?? "#ff0000",
+      wins: w.wins,
+      bestTime: w.time,
+    }));
+    state.winners.total = data.total;
+  } catch (error) {
+    console.error("Failed to load all winners:", error);
   }
 }
 

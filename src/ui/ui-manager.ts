@@ -8,7 +8,7 @@ import {
   WINNERS_PER_PAGE,
 } from "../config/index.ts";
 
-import { state, loadGarage, loadWinners as loadWinnersState } from "../state/index.ts";
+import { state, loadGarage, loadWinners as loadWinnersState, loadAllWinners } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { CONFIG } from "../config/index.ts";
 import { createInput, createButton, createPagination, createColorPalette, renderHeader, escapeHtml } from "./helpers.ts";
@@ -246,12 +246,16 @@ export const renderCarCards = (container: HTMLElement | DocumentFragment): void 
 // ============ ПОБЕДИТЕЛИ ============
 
 export const renderWinners = async (): Promise<void> => {
-  await loadWinners();
+  if (state.winners.allWinners.length === 0) {
+    await loadAllWinners();
+  }
+  sortWinners();
+  paginateWinners();
 
   const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
   if (state.winners.page > totalPages) {
     state.winners.page = 1;
-    await loadWinners();
+    paginateWinners();
   }
 
   await renderView(
@@ -265,4 +269,25 @@ export const renderWinners = async (): Promise<void> => {
       fragment.append(createPagination("btn-prev-winners", "btn-next-winners", state.winners.page, totalPages, isPreviousDisabled, isNextDisabled));
     },
   );
+};
+
+const paginateWinners = (): void => {
+  const start = (state.winners.page - 1) * WINNERS_PER_PAGE;
+  const end = start + WINNERS_PER_PAGE;
+  state.winners.winners = state.winners.allWinners.slice(start, end);
+};
+
+export const sortWinners = (): void => {
+  const { sortBy, sortOrder } = state.winners;
+  state.winners.allWinners.sort((a, b) => {
+    let cmp = 0;
+    if (sortBy === "name") {
+      cmp = a.carName.localeCompare(b.carName);
+    } else if (sortBy === "wins") {
+      cmp = a.wins - b.wins;
+    } else if (sortBy === "bestTime") {
+      cmp = a.bestTime - b.bestTime;
+    }
+    return sortOrder === "asc" ? cmp : -cmp;
+  });
 };
