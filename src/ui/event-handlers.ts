@@ -240,13 +240,14 @@ const handleStartEngine = (id: number): void => {
   void withPendingAction(id, async () => {
     startDriveCar(id, 250);
     try {
-      const { velocity } = await startEngineAction(id);
-      updateDriveCarSpeed(id, velocity);
-      await driveCarAction(id);
+      await startEngineAction(id);
     } catch (error) {
-      // 500 — остановка на месте
-      stopDriveCarInPlace(id);
-      console.error(`Drive failed for car ${id}:`, error);
+      console.error(`Failed to start engine for car ${id}:`, error);
+    }
+    try {
+      await driveCarAction(id);
+    } catch {
+      // ignore 500 — let car reach finish
     }
   }).catch(error => console.error(`Failed to start engine for car ${id}:`, error));
 };
