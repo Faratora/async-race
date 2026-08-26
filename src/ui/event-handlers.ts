@@ -16,13 +16,16 @@ import {
   startEngineAction,
   stopEngineAction,
   loadWinners,
+  stopRaceAnimation as stopRaceAction,
+  findCarById,
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
 
 import { renderGarage, renderWinners, loadGarageCars } from "./ui-manager.ts";
-import { startDriveCar, stopDriveCar, resetCarToStart } from "./animations.ts";
+import { startDriveCar, stopDriveCar, stopDriveCarInPlace, resetCarToStart, updateDriveCarSpeed } from "./animations.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
+import { driveCarAction } from "../state/index.ts";
 import { showGenericNotification } from "./notifications.ts";
 import { resetCarVisualReset } from "./helpers.ts";
 
@@ -180,7 +183,7 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
       break;
     }
 
-    case "select": {
+    case "update": {
       handleSelectCar(id);
       break;
     }
@@ -225,7 +228,7 @@ const handleRemoveCar = (id: number): void => {
 };
 
 const handleSelectCar = (id: number): void => {
-  const car = state.garage.cars.find(c => c.id === id);
+  const car = findCarById(id);
   if (!car) return;
   state.garage.editingCarId = id;
   state.garage.editName = car.name;
@@ -235,8 +238,16 @@ const handleSelectCar = (id: number): void => {
 
 const handleStartEngine = (id: number): void => {
   void withPendingAction(id, async () => {
-    startDriveCar(id);
-    await startEngineAction(id);
+    startDriveCar(id, 250);
+    try {
+      const { velocity } = await startEngineAction(id);
+      updateDriveCarSpeed(id, velocity);
+      await driveCarAction(id);
+    } catch (error) {
+      // 500 — остановка на месте
+      stopDriveCarInPlace(id);
+      console.error(`Drive failed for car ${id}:`, error);
+    }
   }).catch(error => console.error(`Failed to start engine for car ${id}:`, error));
 };
 
@@ -249,11 +260,8 @@ const handleStopEngine = (id: number): void => {
     } else if (isFinished) {
       resetCarToStart(id);
     } else {
-      try {
-        await stopEngineAction(id);
-      } finally {
-        stopDriveCar(id);
-      }
+      await stopEngineAction(id);
+      stopDriveCar(id);
     }
   });
 };
@@ -271,16 +279,8 @@ const handleRepairCar = (id: number): void => {
   if (car instanceof HTMLElement) {
     resetCarVisualReset(car);
   }
-  stopRaceAnimation();
+  stopRaceAction();
   updateCarButtonStates();
-};
-
-const stopRaceAnimation = (): void => {
-  if (state.race.animationId) {
-    cancelAnimationFrame(state.race.animationId);
-    state.race.animationId = 0;
-  }
-  state.race.isRacing = false;
 };
 
 // ============ ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ============
@@ -329,7 +329,7 @@ const appClickHandlerInternal = (event: MouseEvent): void => {
 const isCarActionClick = (target: HTMLElement): boolean => {
   const action = target.dataset.action;
   const idString = target.dataset.id;
-  if (action && ["select", "remove", "start", "stop"].includes(action)) {
+  if (action && ["update", "remove", "start", "stop"].includes(action)) {
     const id = Number(idString);
     if (!Number.isNaN(id)) {
       handleCarAction(action, id);

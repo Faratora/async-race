@@ -12,6 +12,8 @@ import type { Car, CarRace, DrivingCar } from "../types/index.ts";
 
 import {
   recordWinnerAction,
+  findCarById,
+  stopRaceAnimation,
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
@@ -306,7 +308,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
 
   if (!state.race.winnerAnnounced) {
     state.race.winnerAnnounced = true;
-    const car = state.garage.cars.find(c => c.id === carId);
+    const car = findCarById(carId);
     if (car) {
       const brokenCars = collectBrokenCars();
       announceWinner(car, race.time, brokenCars);
@@ -322,7 +324,7 @@ const collectBrokenCars = (): BrokenCar[] => {
     	continue;
     }
 
-    const car = state.garage.cars.find(c => c.id === race.carId);
+    const car = findCarById(race.carId);
     if (car) {
       const lastType = race.breakdownHistory.types.at(-1);
       if (lastType !== undefined) {
@@ -444,13 +446,13 @@ const createDefaultFinishedRace = (carId: number, drive: DrivingCar): CarRace =>
   breakdownHistory: { count: 0, timestamps: [], positions: [], types: [] },
 });
 
-export const startDriveCar = async (carId: number): Promise<void> => {
+export const startDriveCar = async (carId: number, maxSpeed: number = 250): Promise<void> => {
   if (Object.hasOwn(state.race.carRaces, carId)) {
     state.race.carRaces[carId].finished = false;
     state.race.carRaces[carId].broken = false;
   }
 
-  state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed: 250 };
+  state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed };
 
   const carElement = getCarElement(carId);
   if (carElement) {
@@ -464,6 +466,40 @@ export const startDriveCar = async (carId: number): Promise<void> => {
   }
 };
 
+export const updateDriveCarSpeed = (carId: number, newSpeed: number): void => {
+  const drive = state.race.drivingCars[carId];
+  if (!drive) return;
+
+  const carElement = getCarElement(carId);
+  if (!carElement) {
+    drive.maxSpeed = newSpeed;
+    return;
+  }
+
+  const currentTransform = carElement.style.transform;
+  const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
+  const currentLeft = match ? Number(match[1]) : 0;
+
+  const road = getRoad(carElement);
+  if (!road) {
+    drive.maxSpeed = newSpeed;
+    return;
+  }
+
+  const trackWidth = getTrackWidth(road);
+  const effectiveSpeed = newSpeed / CONFIG.PHYSICS.TIME_DILATION;
+  const progressPerMs = speedToProgressPerMs(effectiveSpeed);
+
+  drive.maxSpeed = newSpeed;
+  drive.startTime = performance.now() - (currentLeft / (progressPerMs * trackWidth));
+};
+
+export const stopDriveCarInPlace = (carId: number): void => {
+  delete state.race.drivingCars[carId];
+
+  updateCarButtonStates();
+};
+
 export const stopDriveCar = (carId: number): void => {
   delete state.race.drivingCars[carId];
 
@@ -473,18 +509,23 @@ export const stopDriveCar = (carId: number): void => {
 
   const carElement = getCarElement(carId);
   if (carElement) {
+    const currentTransform = carElement.style.transform;
+    const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
+    const currentLeft = match ? Number(match[1]) : 0;
+    const duration = Math.max(300, (currentLeft / 1000) * 500);
+
+    carElement.style.transition = `transform ${duration}ms ease-out`;
     carElement.style.transform = "translateX(0px)";
+    setTimeout(() => {
+      carElement.style.transition = "";
+    }, duration);
   }
 
   updateCarButtonStates();
 };
 
 export const resetCarToStart = (carId: number): void => {
-  if (state.race.animationId) {
-    cancelAnimationFrame(state.race.animationId);
-    state.race.animationId = 0;
-  }
-  state.race.isRacing = false;
+  stopRaceAnimation();
 
   if (Object.hasOwn(state.race.carRaces, carId)) {
     const race = state.race.carRaces[carId];

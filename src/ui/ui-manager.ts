@@ -191,7 +191,7 @@ const createCarCardTop = (car: Car): HTMLElement => {
   const carName = element("div", { class: "car-name", dataAction: "select", dataId: String(car.id) }, escapeHtml(car.name));
   const carInfo = element("div", { class: "car-info" }, carName);
   const actions = element("div", { class: "car-actions" },
-    element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "select", dataId: String(car.id) }, "Select"),
+    element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "update", dataId: String(car.id) }, "Select"),
     element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove")
   );
 
@@ -213,7 +213,7 @@ const createCarCardBottom = (car: Car): HTMLElement => {
     class: "btn btn-stop-engine btn btn-sm",
     dataAction: "stop",
     dataId: String(car.id),
-    disabled: (isDriving || isBroken || isFinished) ? true : undefined
+    disabled: isDriving || isBroken || isFinished ? undefined : true
   }, "B");
 
   const road = element("div", { class: "car-road", dataId: String(car.id) },

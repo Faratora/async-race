@@ -376,6 +376,10 @@ body {
     left: 40px;
   }
 
+  .car-road {
+    overflow: visible;
+  }
+
   .car-road-finish {
     right: 40px;
   }
@@ -394,6 +398,30 @@ body {
   .car-name {
     font-size: 13px;
   }
+
+  .car-start-stop {
+    top: 2px;
+    left: 2px;
+  }
+}
+
+.car {
+  will-change: transform;
+  z-index: 2;
+  pointer-events: none;
+  background-color: #e94560;
+  width: 70px;
+  height: 36px;
+  transition: none;
+  position: absolute;
+  bottom: 2px;
+  left: 75px;
+  -webkit-mask: url('/img/car.svg') 50% / contain no-repeat;
+  mask: url('/img/car.svg') 50% / contain no-repeat;
+}
+
+.car.smooth-transition {
+  transition: transform 0.3s ease-out;
 }
 
 .table-header,

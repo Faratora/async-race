@@ -59,7 +59,7 @@ async function processResponse<T>(response: Response): Promise<T> {
   }
   const text: string = await response.text();
   if (!text) {
-    return undefined as unknown as T;
+    throw new Error("Empty response body");
   }
   return JSON.parse(text);
 }

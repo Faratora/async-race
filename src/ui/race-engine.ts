@@ -3,6 +3,7 @@ import {
   startRaceSetup,
   setCarRaceVelocity,
   clearRaceState,
+  stopRaceAnimation,
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
@@ -65,10 +66,7 @@ export const startRaceHandler = async (): Promise<void> => {
 };
 
 export const resetRaceHandler = async (): Promise<void> => {
-  if (state.race.animationId) {
-    cancelAnimationFrame(state.race.animationId);
-    state.race.animationId = 0;
-  }
+  stopRaceAnimation();
   if (state.race.driveAnimationId) {
     cancelAnimationFrame(state.race.driveAnimationId);
     state.race.driveAnimationId = 0;

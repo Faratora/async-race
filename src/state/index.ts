@@ -202,6 +202,10 @@ export function stopRaceAnimation(): void {
   state.race.isRacing = false;
 }
 
+export function findCarById(id: number): Car | undefined {
+  return state.garage.cars.find(c => c.id === id);
+}
+
 // ============ ЗАПУСК ГОНКИ (бизнес-логика) ============
 
 export function startRaceSetup(carIds: number[], now: number): void {
