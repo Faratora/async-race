@@ -23,7 +23,7 @@ import {
 import { state } from "../state/index.ts";
 
 import { renderGarage, renderWinners, loadGarageCars, sortWinners } from "./ui-manager.ts";
-import { startDriveCar, stopDriveCar, resetCarToStart } from "./animations.ts";
+import { startDriveCar, stopDriveCar, stopDriveCarInPlace, resetCarToStart } from "./animations.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
 import { driveCarAction } from "../state/index.ts";
 import { showGenericNotification } from "./notifications.ts";
@@ -267,7 +267,7 @@ const handleStartEngine = (id: number): void => {
     try {
       await driveCarAction(id);
     } catch {
-      // ignore 500 — let car reach finish
+      stopDriveCarInPlace(id);
     }
   }).catch(error => console.error(`Failed to start engine for car ${id}:`, error));
 };

@@ -28,6 +28,7 @@ export const CONFIG = {
     MIN_SPEED_KMH: 200,
     MAX_SPEED_KMH: 500,
     TIME_DILATION: 0.07,
+    TIME_MULTIPLIER: 100,
   } as const,
 } as const;
 

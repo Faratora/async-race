@@ -294,7 +294,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
   if (race.broken) return;
 
   race.finished = true;
-  race.time = (elapsed * CONFIG.PHYSICS.TIME_DILATION) / 1000;
+  race.time = (elapsed * CONFIG.PHYSICS.TIME_DILATION * CONFIG.PHYSICS.TIME_MULTIPLIER) / 1000;
 
   updateCarButtonStates();
 
