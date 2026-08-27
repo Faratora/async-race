@@ -48,8 +48,8 @@ const handleResponseError = async (response: Response): Promise<never> => {
   } catch {
     errorText = "Unable to read error response";
   }
-  const status = response.status ?? "unknown";
-  const statusText = response.statusText ?? "unknown";
+  const status = response.status;
+  const statusText = response.statusText.trim() || "unknown";
   throw new Error(`HTTP ${status} ${statusText}: ${errorText}`);
 };
 
@@ -231,23 +231,23 @@ export async function getVelocity(carId: number): Promise<number> {
 
 export async function driveCar(carId: number): Promise<void> {
   console.log("[driveCar] called for car", carId);
+  let response: Response;
   try {
-    const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/engine?id=${carId}&status=drive`, {
+    response = await fetchWithTimeout(`${CONFIG.API.BASE}/engine?id=${carId}&status=drive`, {
       method: "PATCH",
     });
-    console.log("[driveCar] response for car", carId, "status:", response.status, "ok:", response.ok);
-    if (response.ok) return;
-    if (response.status === 500) {
-      throw new Error("Drive failed with 500");
-    }
-    // 429 и другие ошибки — не блокируем анимацию
   } catch (error: unknown) {
-    console.log("[driveCar] error for car", carId, "error:", error);
-    // Если это не 500 — игнорируем
-    if (error instanceof Error && error.message.includes("500")) {
-      throw error;
-    }
+    console.log("[driveCar] network error for car", carId, "error:", error);
+    // Сетевые/таймаут-ошибки — не блокируем анимацию
+    return;
   }
+
+  console.log("[driveCar] response for car", carId, "status:", response.status, "ok:", response.ok);
+  if (response.ok) return;
+  if (response.status === 500) {
+    throw new Error("Drive failed with 500");
+  }
+  // 429 и другие ошибки — не блокируем анимацию
 }
 
 // ============ WINNERS ============
