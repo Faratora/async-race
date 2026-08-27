@@ -240,7 +240,7 @@ const handleCarBreakdown = (
   race.breakdownHistory.types.push(breakdownType);
 
   applyBreakdownVisuals(car, breakdownType, left, progress, carId);
-  showBreakdownNotification(carId, breakdownType);
+  showBreakdownNotification(breakdownType);
   updateCarButtonStates();
   updateCarButtonsOnBreakdown(carId);
 };

@@ -37,14 +37,14 @@ export const showGenericNotification = (message: string): void => {
 };
 
 // ============ ПОЛОМКА ============
-export const createBreakdownMessage = (carId: number, type: BreakdownType): string => {
-  return `${getBreakdownMessage(type)} (Car ${carId})`;
+export const createBreakdownMessage = (type: BreakdownType): string => {
+  return `${getBreakdownMessage(type)}`;
 };
 
-export const showBreakdownNotification = (carId: number, type: BreakdownType): void => {
+export const showBreakdownNotification = (type: BreakdownType): void => {
   showNotification({
     className: "breakdown-notification",
-    message: createBreakdownMessage(carId, type),
+    message: createBreakdownMessage(type),
     duration: 3000,
   });
 };
@@ -72,7 +72,7 @@ export const showWinnerNotification = (
 
   if (brokenCars.length > 0) {
     const brokenList = brokenCars
-      .map(car => `${car.name} (Car ${car.id})`)
+      .map(car => car.name)
       .join(", ");
     const breakdownMessage = `💥 Broken: ${brokenList}`;
 
