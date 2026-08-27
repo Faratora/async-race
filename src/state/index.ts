@@ -1,4 +1,4 @@
-import { AppState, CarFormData, Car } from "../types/index.ts";
+import { AppState, CarFormData, Car, CarRace } from "../types/index.ts";
 import { CARS_PER_PAGE } from "../config/index.ts";
 import { WINNERS_PER_PAGE } from "../config/index.ts";
 import {
@@ -99,7 +99,7 @@ export async function generateCarsAction(count: number): Promise<void> {
 
 // ============ ПОБЕДИТЕЛИ ============
 
-export async function loadWinners(): Promise<void> {
+export async function loadWinnersPage(): Promise<void> {
   try {
     const data = await fetchWinners(
       state.winners.page,
@@ -227,6 +227,10 @@ export function stopRaceAnimation(): void {
 
 export function findCarById(id: number): Car | undefined {
   return state.garage.cars.find(c => c.id === id);
+}
+
+export function getCarRace(id: number): CarRace | undefined {
+  return state.race.carRaces[id];
 }
 
 // ============ ЗАПУСК ГОНКИ (бизнес-логика) ============

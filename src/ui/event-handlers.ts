@@ -23,7 +23,7 @@ import {
 import { state } from "../state/index.ts";
 
 import { renderGarage, renderWinners, loadGarageCars, sortWinners } from "./ui-manager.ts";
-import { startDriveCar, stopDriveCar, stopDriveCarInPlace, resetCarToStart } from "./animations.ts";
+import { startDriveCar, stopDriveCar, resetCarToStart } from "./animations.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
 import { driveCarAction } from "../state/index.ts";
 import { showGenericNotification } from "./notifications.ts";
@@ -152,21 +152,40 @@ export const handleCancelEditButton = (): void => {
 
 // ============ ОБЩАЯ ЛОГИКА ПАГИНАЦИИ ============
 
-const changeGaragePage = (delta: number): void => {
-  const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
-  const newPage = state.garage.page + delta;
+const changePage = (
+  delta: number,
+  currentPage: number,
+  total: number,
+  perPage: number,
+  setPage: (page: number) => void,
+  render: () => void,
+): void => {
+  const totalPages = Math.ceil(total / perPage) || 1;
+  const newPage = currentPage + delta;
   if (newPage < 1 || newPage > totalPages) return;
-  state.garage.page = newPage;
-  void loadGarageCars().then(renderGarage);
+  setPage(newPage);
+  render();
 };
 
-const changeWinnersPage = (delta: number): void => {
-  const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
-  const newPage = state.winners.page + delta;
-  if (newPage < 1 || newPage > totalPages) return;
-  state.winners.page = newPage;
-  renderWinners();
-};
+const changeGaragePage = (delta: number): void =>
+  changePage(
+    delta,
+    state.garage.page,
+    state.garage.total,
+    CARS_PER_PAGE,
+    (page) => { state.garage.page = page; },
+    () => { void loadGarageCars().then(renderGarage); },
+  );
+
+const changeWinnersPage = (delta: number): void =>
+  changePage(
+    delta,
+    state.winners.page,
+    state.winners.total,
+    WINNERS_PER_PAGE,
+    (page) => { state.winners.page = page; },
+    () => { void renderWinners(); },
+  );
 
 export const handlePreviousButton = (): void => changeGaragePage(-1);
 export const handleNextButton = (): void => changeGaragePage(1);
@@ -238,14 +257,13 @@ const handleSelectCar = (id: number): void => {
 
 const handleStartEngine = (id: number): void => {
   void withPendingAction(id, async () => {
-    startDriveCar(id, 250);
     try {
       await startEngineAction(id);
     } catch (error) {
-      stopDriveCarInPlace(id);
       console.error(`Failed to start engine for car ${id}:`, error);
       return;
     }
+    startDriveCar(id, 250);
     try {
       await driveCarAction(id);
     } catch {

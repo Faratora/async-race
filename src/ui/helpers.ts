@@ -29,8 +29,13 @@ export const createInput = (id: string, type: string, value: string, placeholder
   return element("input", attributes);
 };
 
-export const createButton = (id: string, text: string, buttonClass: string): HTMLElement =>
-  element("button", { id, class: buttonClass }, text);
+export const createButton = (
+  id: string,
+  text: string,
+  buttonClass: string,
+  attributes: Attributes = {},
+): HTMLElement =>
+  element("button", { id, class: buttonClass, ...attributes }, text);
 
 export const createColorPalette = (selectedColor: string, onSelect: (color: string) => void): HTMLInputElement => {
   const input: HTMLInputElement = element("input", {
@@ -58,17 +63,9 @@ export const createPagination = (
   isNextDisabled: boolean
 ): HTMLElement => {
   return element("div", { class: "pagination-controls" },
-    element("button", {
-      class: "btn btn-secondary",
-      id: previousId,
-      disabled: isPreviousDisabled ? true : undefined
-    }, "Previous"),
+    createButton(previousId, "Previous", "btn btn-secondary", { disabled: isPreviousDisabled ? true : undefined }),
     element("span", undefined, `Page ${currentPage} of ${totalPages}`),
-    element("button", {
-      class: "btn btn-secondary",
-      id: nextId,
-      disabled: isNextDisabled ? true : undefined
-    }, "Next")
+    createButton(nextId, "Next", "btn btn-secondary", { disabled: isNextDisabled ? true : undefined })
   );
 };
 

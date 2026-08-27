@@ -8,7 +8,7 @@ import {
   WINNERS_PER_PAGE,
 } from "../config/index.ts";
 
-import { state, loadGarage, loadWinners as loadWinnersState, loadAllWinners } from "../state/index.ts";
+import { state, loadGarage, loadWinnersPage as loadWinnersState, loadAllWinners } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { CONFIG } from "../config/index.ts";
 import { createInput, createButton, createPagination, createColorPalette, renderHeader, escapeHtml } from "./helpers.ts";
@@ -191,8 +191,8 @@ const createCarCardTop = (car: Car): HTMLElement => {
   const carName = element("div", { class: "car-name", dataAction: "select", dataId: String(car.id) }, escapeHtml(car.name));
   const carInfo = element("div", { class: "car-info" }, carName);
   const actions = element("div", { class: "car-actions" },
-    element("button", { class: "btn btn-outline-info btn btn-sm", dataAction: "update", dataId: String(car.id) }, "Select"),
-    element("button", { class: "btn btn-outline-danger btn btn-sm", dataAction: "remove", dataId: String(car.id) }, "Remove")
+    createButton(`select-${car.id}`, "Select", "btn btn-outline-info btn btn-sm", { dataAction: "update", dataId: String(car.id) }),
+    createButton(`remove-${car.id}`, "Remove", "btn btn-outline-danger btn btn-sm", { dataAction: "remove", dataId: String(car.id) })
   );
 
   return element("div", { class: "car-card-top" }, actions, carImage, carInfo);
@@ -202,19 +202,17 @@ const createCarCardBottom = (car: Car): HTMLElement => {
   const carId = Number(car.id);
   const { isDriving, isBroken, isFinished } = getCarStates(carId);
 
-  const startButton = element("button", {
-    class: "btn btn-start-engine btn btn-sm",
+  const startButton = createButton(`start-${car.id}`, "A", "btn btn-start-engine btn btn-sm", {
     dataAction: "start",
     dataId: String(car.id),
-    disabled: isDriving || isBroken || isFinished ? true : undefined
-  }, "A");
+    disabled: isDriving || isBroken || isFinished ? true : undefined,
+  });
 
-  const stopButton = element("button", {
-    class: "btn btn-stop-engine btn btn-sm",
+  const stopButton = createButton(`stop-${car.id}`, "B", "btn btn-stop-engine btn btn-sm", {
     dataAction: "stop",
     dataId: String(car.id),
-    disabled: isDriving || isBroken || isFinished ? undefined : true
-  }, "B");
+    disabled: isDriving || isBroken || isFinished ? undefined : true,
+  });
 
   const road = element("div", { class: "car-road", dataId: String(car.id) },
     element("div", { class: "car-road-line" }),

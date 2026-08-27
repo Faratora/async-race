@@ -13,6 +13,7 @@ import type { Car, CarRace, DrivingCar } from "../types/index.ts";
 import {
   recordWinnerAction,
   findCarById,
+  getCarRace,
   stopRaceAnimation,
 } from "../state/index.ts";
 
@@ -20,8 +21,6 @@ import { state } from "../state/index.ts";
 import { resetCarVisualReset } from "./helpers.ts";
 
 // ============ УТИЛИТЫ ============
-export const getCarRace = (id: number): CarRace | undefined => state.race.carRaces[id];
-
 export const isCarRacing = (id: number): boolean => {
   const race = getCarRace(id);
   return !!race && !race.finished && !race.broken;

@@ -1,4 +1,7 @@
 // ============ КОНФИГУРАЦИЯ ============
+export const CARS_PER_PAGE = 7;
+export const WINNERS_PER_PAGE = 10;
+
 export const CONFIG = {
   // API настройки (async-race-api через Vite proxy)
   API: {
@@ -15,8 +18,8 @@ export const CONFIG = {
     TRACK_PADDING: 65,
     FINISH_OFFSET: 75,
     INPUT_NAME_WIDTH: 200,
-    CARS_PER_PAGE: 7,
-    WINNERS_PER_PAGE: 10,
+    CARS_PER_PAGE,
+    WINNERS_PER_PAGE,
   } as const,
 
   // Физика гонки
@@ -29,8 +32,6 @@ export const CONFIG = {
 } as const;
 
 // ============ ОБРАТНАЯ СОВМЕСТИМОСТЬ ============
-export const CARS_PER_PAGE = CONFIG.UI.CARS_PER_PAGE;
-export const WINNERS_PER_PAGE = CONFIG.UI.WINNERS_PER_PAGE;
 export const API_BASE = CONFIG.API.BASE;
 
 export const TRACK_PADDING = CONFIG.UI.TRACK_PADDING;
