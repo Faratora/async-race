@@ -62,16 +62,7 @@ export const speedToProgressPerMs = (maxSpeedKmh: number): number => {
   return metersPerMillisecond / CONFIG.PHYSICS.TRACK_LENGTH;
 };
 
-export const BREAKDOWN_CONFIG = {
-  BASE_CHANCE: 0.001,
-  DISTANCE_MULTIPLIER: 3,
-  HIGH_SPEED_THRESHOLD: 250,
-  HIGH_SPEED_BONUS: 0.002,
-  MIN_TIME_BEFORE_BREAKDOWN: 0.5,
-  REPAIR_CHANCE_PER_FRAME: 0.005,
-  REPAIR_TIME: 2,
-  MAX_BREAKDOWNS: 2,
-};
+export { BREAKDOWN_CONFIG } from "./breakdown.ts";
 
 export {
   getBreakdownChance,

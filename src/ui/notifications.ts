@@ -72,7 +72,7 @@ export const showWinnerNotification = (
 
   if (brokenCars.length > 0) {
     const brokenList = brokenCars
-      .map(car => car.name)
+      .map(car => `${car.name} (Car ${car.id})`)
       .join(", ");
     const breakdownMessage = `💥 Broken: ${brokenList}`;
 

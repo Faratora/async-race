@@ -1,7 +1,7 @@
 import type { CarRace } from "../types/index.ts";
 
 // ============ КОНФИГУРАЦИЯ ПОЛОМОК ============
-const BREAKDOWN_CONFIG = {
+export const BREAKDOWN_CONFIG = {
   BASE_CHANCE: 0.001,
   DISTANCE_MULTIPLIER: 3,
   HIGH_SPEED_THRESHOLD: 250,
