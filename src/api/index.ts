@@ -217,7 +217,6 @@ export async function stopEngine(carId: number): Promise<{ velocity: number; dis
 }
 
 export async function repairCar(carId: number): Promise<{ velocity: number; distance: number }> {
-  // async-race-api не поддерживает ремонт; имитируем перезапуск двигателя
   return startEngine(carId);
 }
 
@@ -238,7 +237,7 @@ export async function driveCar(carId: number): Promise<void> {
     });
   } catch (error: unknown) {
     console.log("[driveCar] network error for car", carId, "error:", error);
-    // Сетевые/таймаут-ошибки — не блокируем анимацию
+    
     return;
   }
 
@@ -290,7 +289,6 @@ export async function recordWinner(data: {
     const winner = await processResponse<Winner>(response);
     return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time };
   } catch {
-    // duplicate id — машина уже в таблице, нужно инкрементировать wins и обновить bestTime
     const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
       method: "GET",
     });
