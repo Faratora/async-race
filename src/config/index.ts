@@ -68,7 +68,6 @@ export { BREAKDOWN_CONFIG } from "./breakdown.ts";
 export {
   getBreakdownChance,
   getBreakdownType,
-  getBreakdownMessage,
   triggerBreakdown,
   resetBreakdown,
 } from "./breakdown.ts";

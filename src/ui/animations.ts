@@ -6,7 +6,7 @@ import {
   speedToProgressPerMs,
 } from "../config/index.ts";
 
-import { showBreakdownNotification, showWinnerNotification, type BrokenCar } from "./notifications.ts";
+import { showWinnerNotification, type BrokenCar } from "./notifications.ts";
 
 import type { Car, CarRace, DrivingCar } from "../types/index.ts";
 
@@ -239,7 +239,6 @@ const handleCarBreakdown = (
   race.breakdownHistory.types.push(breakdownType);
 
   applyBreakdownVisuals(car, breakdownType, left, progress, carId);
-  showBreakdownNotification(breakdownType);
   updateCarButtonStates();
   updateCarButtonsOnBreakdown(carId);
 };

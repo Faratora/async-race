@@ -1,5 +1,4 @@
 import type { BreakdownType } from "../config/index.ts";
-import { getBreakdownMessage } from "../config/index.ts";
 import { formatTime } from "../types/index.ts";
 
 // ============ ОБЩАЯ ЛОГИКА УВЕДОМЛЕНИЙ ============
@@ -36,19 +35,6 @@ export const showGenericNotification = (message: string): void => {
   });
 };
 
-// ============ ПОЛОМКА ============
-export const createBreakdownMessage = (type: BreakdownType): string => {
-  return `${getBreakdownMessage(type)}`;
-};
-
-export const showBreakdownNotification = (type: BreakdownType): void => {
-  showNotification({
-    className: "breakdown-notification",
-    message: createBreakdownMessage(type),
-    duration: 3000,
-  });
-};
-
 // ============ ПОБЕДИТЕЛЬ ============
 export interface BrokenCar {
   id: number;
@@ -72,7 +58,7 @@ export const showWinnerNotification = (
 
   if (brokenCars.length > 0) {
     const brokenList = brokenCars
-      .map(car => `${car.name} (Car ${car.id})`)
+      .map(car => `${car.name} (Car ${car.id - 1})`)
       .join(", ");
     const breakdownMessage = `💥 Broken: ${brokenList}`;
 

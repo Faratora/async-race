@@ -33,14 +33,6 @@ export interface BreakdownEvent {
   timestamp: number;
 }
 
-// ============ КОНСТАНТЫ ============
-const BREAKDOWN_MESSAGES: Record<BreakdownType, string> = {
-  engine_overheating: "Engine overheating!",
-  transmission_failure: "Transmission failure!",
-  start_stall: "Stalled at start!",
-  random_breakdown: "Random breakdown!",
-};
-
 // ============ РАСЧЁТ ШАНСА ПОЛОМКИ ============
 export const getBreakdownChance = (
   progress: number,
@@ -66,11 +58,6 @@ export const getBreakdownType = (progress: number, maxSpeed: number): BreakdownT
   if (maxSpeed > BREAKDOWN_CONFIG.HIGH_SPEED_THRESHOLD) return "transmission_failure";
   if (progress < 0.3) return "start_stall";
   return "random_breakdown";
-};
-
-// ============ СООБЩЕНИЕ О ПОЛОМКЕ ============
-export const getBreakdownMessage = (type: BreakdownType): string => {
-  return BREAKDOWN_MESSAGES[type];
 };
 
 // ============ ОБРАБОТКА ПОЛОМКИ ============
