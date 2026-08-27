@@ -8,6 +8,7 @@
     "server": "node async-race-api/index.js",
     "client": "npx vite",
     "build": "vite build",
+    "lint": "eslint .",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist",
     "deploy:clean": "gh-pages -d dist --remove"

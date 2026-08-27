@@ -558,17 +558,16 @@ export const resetCarToStart = (carId: number): void => {
   updateCarButtonStates();
 };
 
-// ============ ИНИЦИАЛИЗАЦИЯ ============
-let resizeObserver: ResizeObserver | null = null;
+// ============ ИНИЦИААЛИЗАЦИЯ ============
+const observers: { resize?: ResizeObserver } = {};
 
 export const init = (): void => {
-  resizeObserver = new ResizeObserver(handleResize);
-  resizeObserver.observe(document.body);
+  observers.resize = new ResizeObserver(handleResize);
+  observers.resize.observe(document.body);
 };
 
 export const destroy = (): void => {
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-    resizeObserver = null;
-  }
+  if (!observers.resize) return;
+  observers.resize.disconnect();
+  observers.resize = undefined;
 };

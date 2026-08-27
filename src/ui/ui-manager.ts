@@ -281,12 +281,19 @@ export const sortWinners = (): void => {
   const { sortBy, sortOrder } = state.winners;
   state.winners.allWinners.sort((a, b) => {
     let cmp = 0;
-    if (sortBy === "name") {
-      cmp = a.carName.localeCompare(b.carName);
-    } else if (sortBy === "wins") {
-      cmp = a.wins - b.wins;
-    } else if (sortBy === "bestTime") {
-      cmp = a.bestTime - b.bestTime;
+    switch (sortBy) {
+      case "name": {
+        cmp = a.carName.localeCompare(b.carName);
+        break;
+      }
+      case "wins": {
+        cmp = a.wins - b.wins;
+        break;
+      }
+      case "bestTime": {
+        cmp = a.bestTime - b.bestTime;
+        break;
+      }
     }
     return sortOrder === "asc" ? cmp : -cmp;
   });

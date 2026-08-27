@@ -15,7 +15,6 @@ import {
   generateCarsAction,
   startEngineAction,
   stopEngineAction,
-  loadWinners,
   loadAllWinners,
   stopRaceAnimation as stopRaceAction,
   findCarById,
@@ -24,7 +23,7 @@ import {
 import { state } from "../state/index.ts";
 
 import { renderGarage, renderWinners, loadGarageCars, sortWinners } from "./ui-manager.ts";
-import { startDriveCar, stopDriveCar, stopDriveCarInPlace, resetCarToStart, updateDriveCarSpeed } from "./animations.ts";
+import { startDriveCar, stopDriveCar, stopDriveCarInPlace, resetCarToStart } from "./animations.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
 import { driveCarAction } from "../state/index.ts";
 import { showGenericNotification } from "./notifications.ts";
