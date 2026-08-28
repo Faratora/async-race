@@ -1,4 +1,4 @@
-import { AppState, CarFormData, Car, CarRace } from "../types/index.ts";
+import { AppState, CarFormData, Car, CarRace, Winner } from "../types/index.ts";
 import { CARS_PER_PAGE } from "../config/index.ts";
 import { WINNERS_PER_PAGE } from "../config/index.ts";
 import {
@@ -112,7 +112,7 @@ export async function loadWinnersPage(): Promise<void> {
       carId: w.id,
       carName: w.carName ?? `Car ${w.id}`,
       carColor: w.carColor ?? "#ff0000",
-      wins: w.wins,
+      wins: w.wins ?? 0,
       bestTime: w.time,
     }));
     state.winners.total = data.total;
@@ -129,15 +129,30 @@ export async function loadAllWinners(): Promise<void> {
       state.winners.sortBy,
       state.winners.sortOrder
     );
-    state.winners.allWinners = data.winners.map((w) => ({
-      id: w.id,
-      carId: w.id,
-      carName: w.carName ?? `Car ${w.id}`,
-      carColor: w.carColor ?? "#ff0000",
-      wins: w.wins,
-      bestTime: w.time,
-    }));
-    state.winners.total = data.total;
+    
+    const aggregated = new Map<number, Winner>();
+    for (const w of data.winners) {
+      const carId = w.id;
+      const existing = aggregated.get(carId);
+      const winner: Winner = {
+        id: w.id,
+        carId,
+        carName: w.carName ?? `Car ${carId}`,
+        carColor: w.carColor ?? "#ff0000",
+        wins: w.wins ?? 0,
+        bestTime: w.time,
+      };
+      if (existing) {
+        existing.wins += winner.wins;
+        if (winner.bestTime !== undefined && (existing.bestTime === undefined || winner.bestTime < existing.bestTime)) {
+          existing.bestTime = winner.bestTime;
+        }
+      } else {
+        aggregated.set(carId, winner);
+      }
+    }
+    state.winners.allWinners = [...aggregated.values()];
+    state.winners.total = aggregated.size;
   } catch (error) {
     console.error("Failed to load all winners:", error);
   }

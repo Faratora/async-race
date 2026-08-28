@@ -42,6 +42,35 @@ const state = { velocity: {}, blocked: {} };
 
 server.use(middlewares);
 
+// ============ AGGREGATE WINNERS BY CAR ID ============
+server.post('/winners', (req, res) => {
+    const { id, time, carName, carColor } = req.body;
+    if (id == null) {
+        return res.status(400).send('Missing "id" in request body');
+    }
+
+    const existing = db.winners.find(w => w.id === id);
+    if (existing) {
+        existing.wins += 1;
+        if (time != null && (existing.time == null || time < existing.time)) {
+            existing.time = time;
+        }
+        if (carName) existing.carName = carName;
+        if (carColor) existing.carColor = carColor;
+        return res.status(200).json(existing);
+    }
+
+    const newWinner = {
+        id,
+        wins: 1,
+        time: time ?? null,
+        carName: carName ?? null,
+        carColor: carColor ?? null,
+    };
+    db.winners.push(newWinner);
+    return res.status(201).json(newWinner);
+});
+
 const STATUS = {
     STARTED: 'started',
     STOPPED: 'stopped',

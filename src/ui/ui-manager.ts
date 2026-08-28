@@ -244,9 +244,7 @@ export const renderCarCards = (container: HTMLElement | DocumentFragment): void 
 // ============ ПОБЕДИТЕЛИ ============
 
 export const renderWinners = async (): Promise<void> => {
-  if (state.winners.allWinners.length === 0) {
-    await loadAllWinners();
-  }
+  await loadAllWinners();
   sortWinners();
   paginateWinners();
 

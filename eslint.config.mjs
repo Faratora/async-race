@@ -27,6 +27,7 @@ export default [
       ...tseslint.configs.recommended.rules,
       ...unicorn.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'unicorn/prefer-iterator-to-array': 'off',
     },
   },
 ];
