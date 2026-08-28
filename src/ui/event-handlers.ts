@@ -22,7 +22,7 @@ import {
 
 import { state } from "../state/index.ts";
 
-import { renderGarage, renderWinners, loadGarageCars, sortWinners } from "./ui-manager.ts";
+import { renderGarage, renderWinners, loadGarageCars, sortWinners, switchView } from "./ui-manager.ts";
 import { startDriveCar, stopDriveCar, stopDriveCarInPlace, resetCarToStart } from "./animations.ts";
 import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
 import { driveCarAction } from "../state/index.ts";
@@ -420,7 +420,6 @@ const navClickHandlerInternal = async (event: MouseEvent): Promise<void> => {
   if (target.closest("#nav-tabs .nav-link")) {
     const view = target.dataset.view;
     if (view && isViewName(view)) {
-      const { switchView } = await import("./ui-manager.ts");
       switchView(view);
     }
   }
