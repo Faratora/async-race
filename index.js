@@ -42,6 +42,22 @@ const state = { velocity: {}, blocked: {} };
 
 server.use(middlewares);
 
+// ============ CORS ============
+server.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', '*');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
+
+// ============ CORS ============
+server.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', '*');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
+
 // ============ AGGREGATE WINNERS BY CAR ID ============
 server.post('/winners', (req, res) => {
     const { id, time, carName, carColor } = req.body;

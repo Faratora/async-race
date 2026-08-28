@@ -2,10 +2,12 @@
 export const CARS_PER_PAGE = 7;
 export const WINNERS_PER_PAGE = 10;
 
+export const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
+
 export const CONFIG = {
-  // API настройки (async-race-api через Vite proxy)
+  // API настройки (async-race-api через Vite proxy или VITE_API_BASE)
   API: {
-    BASE: "/api",
+    BASE: API_BASE,
     ENDPOINTS: {
       GARAGE: "/garage",
       ENGINE: "/engine",
@@ -33,7 +35,6 @@ export const CONFIG = {
 } as const;
 
 // ============ ОБРАТНАЯ СОВМЕСТИМОСТЬ ============
-export const API_BASE = CONFIG.API.BASE;
 
 export const TRACK_PADDING = CONFIG.UI.TRACK_PADDING;
 export const FINISH_OFFSET = CONFIG.UI.FINISH_OFFSET;
