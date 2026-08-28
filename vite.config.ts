@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import path from 'node:path';
 
 export default defineConfig({
-  base: '/faratora-JSSB2026Q2/async-race/',
+  base: '/async-race/',
   build: {
     outDir: 'dist',
     rollupOptions: {
