@@ -306,6 +306,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
 
   if (!state.race.winnerAnnounced) {
     state.race.winnerAnnounced = true;
+    state.race.winnerCarId = carId;
     const car = findCarById(carId);
     if (car) {
       const brokenCars = collectBrokenCars();
@@ -369,6 +370,24 @@ export const animateRace = (): void => {
     state.race.animationId = 0;
     updateCarButtonStates();
     updateRaceControls();
+
+    const winnerCarId = state.race.winnerCarId;
+    for (const [idString, race] of Object.entries(state.race.carRaces)) {
+      if (!race.finished && !race.broken) continue;
+      const carId = Number(idString);
+      if (winnerCarId !== undefined && carId === winnerCarId) continue;
+
+      const car = findCarById(carId);
+      if (car) {
+        void recordWinnerAction({
+          carId: car.id,
+          carName: car.name,
+          carColor: car.color,
+          time: race.finished ? race.time ?? null : null,
+        });
+      }
+    }
+
     return;
   }
 

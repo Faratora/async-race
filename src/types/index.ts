@@ -11,7 +11,7 @@ export interface Winner {
     carName: string;
     carColor: string;
     wins: number;
-    bestTime: number;
+    bestTime: number | null;
 }
 
 export type EngineState = 'idle' | 'starting' | 'driving' | 'stopping';
@@ -50,6 +50,7 @@ export interface RaceState {
     drivingCars: Record<number, DrivingCar>;
     driveAnimationId: number;
     winnerAnnounced: boolean;
+    winnerCarId?: number;
 }
 
 import type { BreakdownType } from "../config/index.ts";
@@ -100,11 +101,14 @@ export interface RaceResult {
 /**
  * Форматирует время в секундах в строку MM:SS.ms
  */
-export const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    if (mins > 0) {
-        return `${mins}:${secs.toFixed(2).padStart(5, '0')}`;
-    }
-    return secs.toFixed(2);
+export const formatTime = (seconds: number | null | undefined): string => {
+  if (seconds == null) {
+    return "—";
+  }
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (mins > 0) {
+    return `${mins}:${secs.toFixed(2).padStart(5, '0')}`;
+  }
+  return secs.toFixed(2);
 };

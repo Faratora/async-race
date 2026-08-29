@@ -287,7 +287,7 @@ export const sortWinners = (): void => {
         break;
       }
       case "bestTime": {
-        cmp = a.bestTime - b.bestTime;
+        cmp = (a.bestTime ?? Infinity) - (b.bestTime ?? Infinity);
         break;
       }
     }

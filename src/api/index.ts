@@ -261,7 +261,7 @@ export async function driveCar(carId: number): Promise<void> {
 interface ApiWinner {
   id: number;
   wins: number;
-  time: number;
+  time: number | null;
   carName?: string;
   carColor?: string;
 }
@@ -285,7 +285,7 @@ export async function recordWinner(data: {
   carId: number;
   carName: string;
   carColor: string;
-  time: number;
+  time: number | null | undefined;
 }): Promise<Winner> {
   try {
     const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners`, {
@@ -294,22 +294,22 @@ export async function recordWinner(data: {
       body: JSON.stringify({ id: data.carId, wins: 1, time: data.time, carName: data.carName, carColor: data.carColor }),
     });
     const winner = await processResponse<Winner>(response);
-    return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time };
+    return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time ?? null };
   } catch {
     const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
       method: "GET",
     });
-    const existing = await processResponse<{ id: number; wins: number; time: number; carName?: string; carColor?: string }>(response);
+    const existing = await processResponse<{ id: number; wins: number; time: number | null; carName?: string; carColor?: string }>(response);
 
     const newWins = existing.wins + 1;
-    const newBestTime = Math.min(existing.time, data.time);
-
-    const updateResponse: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
+    const newBestTime = data.time != null && existing.time != null
+      ? Math.min(existing.time, data.time)
+      : (existing.time ?? data.time ?? null);
+    const winner = await processResponse<Winner>(await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: data.carId, wins: newWins, time: newBestTime, carName: data.carName, carColor: data.carColor }),
-    });
-    const winner = await processResponse<Winner>(updateResponse);
+    }));
     return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: newBestTime };
   }
 }

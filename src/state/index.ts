@@ -154,7 +154,7 @@ export async function loadAllWinners(): Promise<void> {
       };
       if (existing) {
         existing.wins += winner.wins;
-        if (winner.bestTime !== undefined && (existing.bestTime === undefined || winner.bestTime < existing.bestTime)) {
+        if (winner.bestTime != null && (existing.bestTime == null || winner.bestTime < existing.bestTime)) {
           existing.bestTime = winner.bestTime;
         }
       } else {
@@ -172,7 +172,7 @@ export async function recordWinnerAction(data: {
   carId: number;
   carName: string;
   carColor: string;
-  time: number;
+  time: number | null | undefined;
 }): Promise<void> {
   try {
     await recordWinner(data);
@@ -263,6 +263,7 @@ export function getCarRace(id: number): CarRace | undefined {
 export function startRaceSetup(carIds: number[], now: number): void {
   state.race.isRacing = true;
   state.race.winnerAnnounced = false;
+  state.race.winnerCarId = undefined;
 
   state.race.carRaces = {};
 
@@ -311,5 +312,6 @@ export function clearRaceState(): void {
   state.race.carRaces = {};
   state.race.drivingCars = {};
   state.race.winnerAnnounced = false;
+  state.race.winnerCarId = undefined;
   state.race.isRacing = false;
 }
