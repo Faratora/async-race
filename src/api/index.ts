@@ -181,14 +181,15 @@ export async function updateCar(
 }
 
 export async function deleteCar(id: number): Promise<void> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/garage/${id}`, {
-    method: "DELETE",
-  });
-  await handleVoidResponse(response);
+  await deleteResource("garage", id);
 }
 
 export async function deleteWinner(id: number): Promise<void> {
-  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${id}`, {
+  await deleteResource("winners", id);
+}
+
+async function deleteResource(resource: string, id: number): Promise<void> {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/${resource}/${id}`, {
     method: "DELETE",
   });
   await handleVoidResponse(response);
