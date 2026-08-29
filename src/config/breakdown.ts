@@ -7,9 +7,7 @@ export const BREAKDOWN_CONFIG = {
   HIGH_SPEED_THRESHOLD: 250,
   HIGH_SPEED_BONUS: 0.002,
   MIN_TIME_BEFORE_BREAKDOWN: 0.5,
-  REPAIR_CHANCE_PER_FRAME: 0.005,
-  REPAIR_TIME: 2,
-  MAX_BREAKDOWNS: 2,
+  
 };
 
 // ============ ТИПЫ ============

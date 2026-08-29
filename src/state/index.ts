@@ -44,6 +44,7 @@ winners: {
     drivingCars: {},
     driveAnimationId: 0,
     winnerAnnounced: false,
+    winnerRecorded: false,
   },
 };
 
@@ -312,6 +313,6 @@ export function clearRaceState(): void {
   state.race.carRaces = {};
   state.race.drivingCars = {};
   state.race.winnerAnnounced = false;
-  state.race.winnerCarId = undefined;
+  state.race.winnerRecorded = false;
   state.race.isRacing = false;
 }

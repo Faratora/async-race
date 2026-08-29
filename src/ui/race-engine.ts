@@ -58,6 +58,7 @@ export const startRaceHandler = async (): Promise<void> => {
   }
 
   removeAllNotifications();
+  state.race.winnerRecorded = false;
   startRaceSetup(carIds, performance.now());
   updateRaceControls();
 
@@ -73,6 +74,7 @@ export const resetRaceHandler = async (): Promise<void> => {
   }
 
   clearRaceState();
+  state.race.winnerRecorded = false;
   updateRaceControls();
 
   const carIds = state.garage.cars.map(c => c.id);

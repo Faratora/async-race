@@ -275,20 +275,7 @@ const handleStartEngine = (id: number): void => {
   }).catch(error => console.error(`Failed to start engine for car ${id}:`, error));
 };
 
-const handleStopEngine = (id: number): void => {
-  void withPendingAction(id, async () => {
-    const isBroken = isCarBroken(id);
-    const isFinished = isCarFinished(id);
-    if (isBroken) {
-      handleRepairCar(id);
-    } else if (isFinished) {
-      resetCarToStart(id);
-    } else {
-      await stopEngineAction(id);
-      stopDriveCar(id);
-    }
-  });
-};
+
 
 const handleRepairCar = (id: number): void => {
   const race = state.race.carRaces[id];

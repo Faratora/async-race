@@ -142,44 +142,6 @@ const handleBrokenCar = (
   race: CarRace,
 ): void => {
   car.classList.add("broken");
-
-  if (race.breakdownHistory && race.breakdownHistory.count < BREAKDOWN_CONFIG.MAX_BREAKDOWNS) {
-    handleRepairProgress(carId, car, race);
-    return;
-  }
-
-  updateCarButtonStates();
-};
-
-const handleRepairProgress = (
-  carId: number,
-  car: HTMLElement,
-  race: CarRace,
-): void => {
-  if (race.repairStartTime === undefined) {
-    race.repairStartTime = performance.now();
-    race.isRepairing = true;
-    updateCarButtonStates();
-    return;
-  }
-
-  const repairElapsed = (performance.now() - race.repairStartTime) / 1000;
-  if (repairElapsed >= BREAKDOWN_CONFIG.REPAIR_TIME) {
-    race.broken = false;
-    race.isRepairing = false;
-    race.repairStartTime = undefined;
-    car.classList.remove("broken");
-
-    const currentTransform = car.style.transform;
-    const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-    const currentLeft = match ? Number(match[1]) : 0;
-    car.dataset.lastPosition = String(currentLeft);
-    updateCarButtonStates();
-    return;
-  }
-
-  const repairProgress = repairElapsed / BREAKDOWN_CONFIG.REPAIR_TIME;
-  car.style.opacity = String(0.3 + repairProgress * 0.7);
   updateCarButtonStates();
 };
 
@@ -371,20 +333,24 @@ export const animateRace = (): void => {
     updateCarButtonStates();
     updateRaceControls();
 
-    const winnerCarId = state.race.winnerCarId;
-    for (const [idString, race] of Object.entries(state.race.carRaces)) {
-      if (!race.finished && !race.broken) continue;
-      const carId = Number(idString);
-      if (winnerCarId !== undefined && carId === winnerCarId) continue;
+    if (!state.race.winnerRecorded) {
+      state.race.winnerRecorded = true;
 
-      const car = findCarById(carId);
-      if (car) {
-        void recordWinnerAction({
-          carId: car.id,
-          carName: car.name,
-          carColor: car.color,
-          time: race.finished ? race.time ?? null : null,
-        });
+      const winnerCarId = state.race.winnerCarId;
+      for (const [idString, race] of Object.entries(state.race.carRaces)) {
+        if (!race.finished && !race.broken) continue;
+        const carId = Number(idString);
+        if (winnerCarId !== undefined && carId === winnerCarId) continue;
+
+        const car = findCarById(carId);
+        if (car) {
+          void recordWinnerAction({
+            carId: car.id,
+            carName: car.name,
+            carColor: car.color,
+            time: race.finished ? race.time ?? null : null,
+          });
+        }
       }
     }
 
