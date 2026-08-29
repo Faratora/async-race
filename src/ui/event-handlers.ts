@@ -12,6 +12,7 @@ import {
   createCarAction,
   updateCarAction,
   deleteCarAction,
+  deleteWinnerAction,
   generateCarsAction,
   startEngineAction,
   stopEngineAction,
@@ -221,16 +222,17 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
 
 const handleRemoveCar = (id: number): void => {
   void deleteCarAction(id)
+    .then(() => deleteWinnerAction(id))
     .then(() => {
       state.winners.winners = state.winners.winners.filter(w => w.carId !== id);
       state.winners.allWinners = state.winners.allWinners.filter(w => w.carId !== id);
       state.winners.total = Math.max(0, state.winners.total - 1);
-
+    })
+    .then(async () => {
       const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
       if (state.winners.page > totalPages) {
         state.winners.page = Math.max(1, totalPages);
       }
-
       return loadGarageCars();
     })
     .then(async () => {

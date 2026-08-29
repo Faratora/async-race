@@ -7,6 +7,7 @@ import {
   createCar,
   updateCar,
   deleteCar,
+  deleteWinner,
   generateCars,
   startEngine,
   stopEngine,
@@ -84,6 +85,15 @@ export async function deleteCarAction(id: number): Promise<void> {
     await deleteCar(id);
   } catch (error) {
     console.error("Failed to delete car:", error);
+    throw error;
+  }
+}
+
+export async function deleteWinnerAction(id: number): Promise<void> {
+  try {
+    await deleteWinner(id);
+  } catch (error) {
+    console.error("Failed to delete winner:", error);
     throw error;
   }
 }

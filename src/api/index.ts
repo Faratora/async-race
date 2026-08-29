@@ -181,6 +181,13 @@ export async function deleteCar(id: number): Promise<void> {
   await handleVoidResponse(response);
 }
 
+export async function deleteWinner(id: number): Promise<void> {
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${id}`, {
+    method: "DELETE",
+  });
+  await handleVoidResponse(response);
+}
+
 export async function generateCars(count: number): Promise<Car[]> {
   const generated: Car[] = [];
   const batchSize = GENERATE_BATCH_SIZE;
