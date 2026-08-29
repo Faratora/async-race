@@ -15,20 +15,17 @@ import {
   deleteWinnerAction,
   generateCarsAction,
   startEngineAction,
-  stopEngineAction,
   loadAllWinners,
-  stopRaceAnimation as stopRaceAction,
   findCarById,
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
 
 import { renderGarage, renderWinners, loadGarageCars, sortWinners, switchView } from "./ui-manager.ts";
-import { startDriveCar, stopDriveCar, stopDriveCarInPlace, resetCarToStart } from "./animations.ts";
-import { isCarBroken, isCarFinished, getCarElement, updateCarButtonStates } from "./animations.ts";
+import { startDriveCar, stopDriveCarInPlace, resetCarToStart } from "./animations.ts";
+import { isCarBroken, isCarFinished } from "./animations.ts";
 import { driveCarAction } from "../state/index.ts";
 import { showGenericNotification } from "./notifications.ts";
-import { resetCarVisualReset } from "./helpers.ts";
 
 // ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ГАРАЖА ============
 const reloadGarage = (): void => {
@@ -281,25 +278,6 @@ const handleStopEngine = (id: number): void => {
   } else {
     stopDriveCarInPlace(id);
   }
-};
-
-// ============ ОБРАБОТЧИКИ КНОПОК ============
-
-const handleRepairCar = (id: number): void => {
-  const race = state.race.carRaces[id];
-  if (race) {
-    race.broken = false;
-    race.isRepairing = false;
-    race.repairStartTime = undefined;
-    race.finished = false;
-    race.time = undefined;
-  }
-  const car = getCarElement(id);
-  if (car instanceof HTMLElement) {
-    resetCarVisualReset(car);
-  }
-  stopRaceAction();
-  updateCarButtonStates();
 };
 
 // ============ ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ============

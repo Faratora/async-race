@@ -137,7 +137,7 @@ export const animateCarRace = (carId: number, race: CarRace): void => {
 const handleBrokenCar = (
   carId: number,
   car: HTMLElement,
-  race: CarRace,
+  _race: CarRace,
 ): void => {
   car.classList.add("broken");
   updateCarButtonStates();
@@ -319,6 +319,41 @@ const announceWinner = (
   showWinnerNotification(car.name, time, brokenCars);
 };
 
+// ============ ЗАПИСЬ ОСТАЛЬНЫХ ФИНИШЕРАВОВ ============
+const recordRemainingFinishers = (
+  winnerCarId: number | undefined,
+): void => {
+  for (const [idString, race] of Object.entries(state.race.carRaces)) {
+    if (!race.finished && !race.broken) continue;
+    const carId = Number(idString);
+    if (winnerCarId !== undefined && carId === winnerCarId) continue;
+
+    const car = findCarById(carId);
+    if (car) {
+      void recordWinnerAction({
+        carId: car.id,
+        carName: car.name,
+        carColor: car.color,
+        time: race.finished ? race.time ?? null : null,
+      });
+    }
+  }
+};
+
+// ============ ОБЪЯВЛЕНИЕ ПОБЕДИТЕЛЯ ============
+const announceWinnerForFinishedRace = (winnerCarId: number | undefined): void => {
+  if (winnerCarId === undefined) return;
+
+  const winnerCar = findCarById(winnerCarId);
+  if (!winnerCar) return;
+
+  const race = state.race.carRaces[winnerCarId];
+  const time = race?.time ?? 0;
+  const brokenCars = collectBrokenCars();
+  announceWinner(winnerCar, time, brokenCars);
+  recordRemainingFinishers(winnerCarId);
+};
+
 export const animateRace = (): void => {
   if (!state.race.isRacing) return;
 
@@ -338,33 +373,7 @@ export const animateRace = (): void => {
 
     if (!state.race.winnerRecorded) {
       state.race.winnerRecorded = true;
-
-      // Объявляем победителя со списком всех сломанных машин
-      const winnerCarId = state.race.winnerCarId;
-      const winnerCar = winnerCarId !== undefined ? findCarById(winnerCarId) : undefined;
-      if (winnerCar && winnerCarId !== undefined) {
-        const race = state.race.carRaces[winnerCarId];
-        const time = race?.time ?? 0;
-        const brokenCars = collectBrokenCars();
-        announceWinner(winnerCar, time, brokenCars);
-      }
-
-      // Записываем остальные финишировавшие машины
-      for (const [idString, race] of Object.entries(state.race.carRaces)) {
-        if (!race.finished && !race.broken) continue;
-        const carId = Number(idString);
-        if (winnerCarId !== undefined && carId === winnerCarId) continue;
-
-        const car = findCarById(carId);
-        if (car) {
-          void recordWinnerAction({
-            carId: car.id,
-            carName: car.name,
-            carColor: car.color,
-            time: race.finished ? race.time ?? null : null,
-          });
-        }
-      }
+      announceWinnerForFinishedRace(state.race.winnerCarId);
     }
 
     return;
