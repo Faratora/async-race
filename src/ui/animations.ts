@@ -255,23 +255,30 @@ const applyBreakdownVisuals = (
   }
 };
 
-// ============ ОБНОВЛЕНИЕ КНОПОК ПРИ ПОЛОМКЕ ============
-const updateCarButtonsOnBreakdown = (carId: number): void => {
-  const stopButton = document.querySelector<HTMLButtonElement>(
+// ============ УТИЛИТЫ УПРАВЛЕНИЯ КНОПКАМИ ============
+
+const setStopButtonEnabled = (carId: number, isEnabled: boolean): void => {
+  const button = document.querySelector<HTMLButtonElement>(
     `.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`,
   );
-  if (stopButton) {
-    stopButton.disabled = false;
-    stopButton.removeAttribute("disabled");
-  }
+  if (!button) return;
+  button.disabled = !isEnabled;
+  if (isEnabled) button.removeAttribute("disabled");
+};
 
-  const startButton = document.querySelector<HTMLButtonElement>(
+const setStartButtonEnabled = (carId: number, isEnabled: boolean): void => {
+  const button = document.querySelector<HTMLButtonElement>(
     `.btn-start-engine[data-id="${CSS.escape(String(carId))}"]`,
   );
-  if (startButton) {
-    startButton.disabled = true;
-    startButton.setAttribute("disabled", "");
-  }
+  if (!button) return;
+  button.disabled = !isEnabled;
+  if (!isEnabled) button.setAttribute("disabled", "");
+};
+
+// ============ ОБНОВЛЕНИЕ КНОПОК ПРИ ПОЛОМКЕ ============
+const updateCarButtonsOnBreakdown = (carId: number): void => {
+  setStopButtonEnabled(carId, true);
+  setStartButtonEnabled(carId, false);
 };
 
 export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): void => {
@@ -281,12 +288,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
   race.time = (elapsed * CONFIG.PHYSICS.TIME_DILATION * CONFIG.PHYSICS.TIME_MULTIPLIER) / 1000;
 
   updateCarButtonStates();
-
-  const stopButton = document.querySelector<HTMLButtonElement>(`.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`);
-  if (stopButton) {
-    stopButton.disabled = false;
-    stopButton.removeAttribute("disabled");
-  }
+  setStopButtonEnabled(carId, true);
 
   if (!state.race.winnerAnnounced) {
     state.race.winnerAnnounced = true;
