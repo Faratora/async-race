@@ -9,7 +9,6 @@ import {
 import { state } from "../state/index.ts";
 
 import {
-  resetCarVisualState,
   resetCarPositions,
   animateRace,
   updateCarButtonStates,
@@ -27,7 +26,6 @@ export const removeAllNotifications = (): void => {
 // ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ============
 
 const initializeRaceCars = (carIds: number[], velocities: Map<number, number>): void => {
-  resetCarVisualState(carIds);
   resetCarPositions(carIds);
 
   for (const id of carIds) {
@@ -78,7 +76,6 @@ export const resetRaceHandler = async (): Promise<void> => {
   updateRaceControls();
 
   const carIds = state.garage.cars.map(c => c.id);
-  resetCarVisualState(carIds);
   resetCarPositions(carIds);
 
   removeAllNotifications();

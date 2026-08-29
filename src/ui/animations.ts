@@ -122,15 +122,6 @@ export const resetCarPositions = (carIds: number[]): void => {
   for (const id of carIds) {
     const car = getCarElement(id);
     if (car) {
-      car.style.transform = "translateX(0px)";
-    }
-  }
-};
-
-export const resetCarVisualState = (carIds: number[]): void => {
-  for (const id of carIds) {
-    const car = getCarElement(id);
-    if (car) {
       resetCarVisualReset(car, true);
     }
   }
