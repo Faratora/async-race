@@ -210,10 +210,13 @@ export async function generateCars(count: number): Promise<Car[]> {
 
 // ============ ENGINE ============
 
-export async function startEngine(carId: number): Promise<{ velocity: number; distance: number }> {
-  return fetchWithRetry<{ velocity: number; distance: number }>(`${CONFIG.API.BASE}/engine?id=${carId}&status=started`, {
+const fetchEngineState = (carId: number): Promise<{ velocity: number; distance: number }> =>
+  fetchWithRetry<{ velocity: number; distance: number }>(`${CONFIG.API.BASE}/engine?id=${carId}&status=started`, {
     method: "PATCH",
   });
+
+export async function startEngine(carId: number): Promise<{ velocity: number; distance: number }> {
+  return fetchEngineState(carId);
 }
 
 export async function stopEngine(carId: number): Promise<{ velocity: number; distance: number }> {
@@ -228,11 +231,8 @@ export async function repairCar(carId: number): Promise<{ velocity: number; dist
 }
 
 export async function getVelocity(carId: number): Promise<number> {
-  const data: { velocity: number; distance: number } =
-    await fetchWithRetry<{ velocity: number; distance: number }>(`${CONFIG.API.BASE}/engine?id=${carId}&status=started`, {
-      method: "PATCH",
-    });
-  return data.velocity;
+  const { velocity } = await fetchEngineState(carId);
+  return velocity;
 }
 
 export async function driveCar(carId: number): Promise<void> {
