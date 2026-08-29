@@ -49,6 +49,20 @@ winners: {
   },
 };
 
+// ============ УТИЛИТЫ ============
+
+const withErrorLogging = async <T>(
+  action: () => Promise<T>,
+  label: string,
+): Promise<T> => {
+  try {
+    return await action();
+  } catch (error) {
+    console.error(`Failed to ${label}:`, error);
+    throw error;
+  }
+};
+
 // ============ ГАРАЖ ============
 
 const velocityCache = new Map<number, number>();
@@ -74,39 +88,19 @@ export async function createCarAction(data: CarFormData): Promise<Car | undefine
 }
 
 export async function updateCarAction(id: number, data: CarFormData): Promise<void> {
-  try {
-    await updateCar(id, data);
-  } catch (error) {
-    console.error("Failed to update car:", error);
-    throw error;
-  }
+  await withErrorLogging(() => updateCar(id, data), "update car");
 }
 
 export async function deleteCarAction(id: number): Promise<void> {
-  try {
-    await deleteCar(id);
-  } catch (error) {
-    console.error("Failed to delete car:", error);
-    throw error;
-  }
+  await withErrorLogging(() => deleteCar(id), "delete car");
 }
 
 export async function deleteWinnerAction(id: number): Promise<void> {
-  try {
-    await deleteWinner(id);
-  } catch (error) {
-    console.error("Failed to delete winner:", error);
-    throw error;
-  }
+  await withErrorLogging(() => deleteWinner(id), "delete winner");
 }
 
 export async function generateCarsAction(count: number): Promise<void> {
-  try {
-    await generateCars(count);
-  } catch (error) {
-    console.error("Failed to generate cars:", error);
-    throw error;
-  }
+  await withErrorLogging(() => generateCars(count), "generate cars");
 }
 
 // ============ ПОБЕДИТЕЛИ ============
