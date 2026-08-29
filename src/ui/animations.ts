@@ -497,6 +497,18 @@ export const updateDriveCarSpeed = (carId: number, newSpeed: number): void => {
 export const stopDriveCarInPlace = (carId: number): void => {
   delete state.race.drivingCars[carId];
 
+  // Фиксируем текущую позицию машины
+  const carElement = getCarElement(carId);
+  if (carElement) {
+    carElement.style.transition = "none";
+    const currentTransform = carElement.style.transform;
+    const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
+    if (match) {
+      carElement.style.transform = `translateX(${match[1]}px)`;
+      carElement.dataset.lastPosition = match[1];
+    }
+  }
+
   updateCarButtonStates();
 };
 
