@@ -200,11 +200,6 @@ export async function stopEngineAction(carId: number): Promise<void> {
   await stopEngine(carId);
 }
 
-export async function repairCarAction(carId: number): Promise<void> {
-  const result = await startEngineAction(carId);
-  console.log(`[repair] Car ${carId} repaired, new velocity: ${result.velocity}`);
-}
-
 export async function getVelocityAction(carId: number): Promise<number> {
   if (velocityCache.has(carId)) {
     const cached = velocityCache.get(carId);
