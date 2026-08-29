@@ -19,8 +19,6 @@ import {
 
 import { state } from "../state/index.ts";
 import { resetCarVisualReset } from "./helpers.ts";
-
-// ============ УТИЛИТЫ ============
 export const isCarRacing = (id: number): boolean => {
   const race = getCarRace(id);
   return !!race && !race.finished && !race.broken;
@@ -174,6 +172,15 @@ const animateCarMovement = (
 
   const breakdownChance = getBreakdownChance(progress, race.maxSpeed, elapsedSeconds);
 
+  // Ограничиваем общее количество поломок в гонке
+  if (state.race.totalBreakdowns >= BREAKDOWN_CONFIG.MAX_BREAKDOWNS_PER_RACE) {
+    // Лимит поломок достигнут — больше не ломаем машины
+    if (left >= trackWidth - CONFIG.UI.FINISH_OFFSET) {
+      handleCarFinish(carId, race, elapsed);
+    }
+    return;
+  }
+
   if (Math.random() < breakdownChance) {
     handleCarBreakdown(carId, car, race, progress, left);
     return;
@@ -196,6 +203,7 @@ const handleCarBreakdown = (
 
   race.broken = true;
   race.breakdownHistory.count++;
+  state.race.totalBreakdowns++;
   race.breakdownHistory.timestamps.push(performance.now());
   race.breakdownHistory.positions.push(progress);
   race.breakdownHistory.types.push(breakdownType);
@@ -269,11 +277,6 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
   if (!state.race.winnerAnnounced) {
     state.race.winnerAnnounced = true;
     state.race.winnerCarId = carId;
-    const car = findCarById(carId);
-    if (car) {
-      const brokenCars = collectBrokenCars();
-      announceWinner(car, race.time, brokenCars);
-    }
   }
 };
 
@@ -281,7 +284,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
 const collectBrokenCars = (): BrokenCar[] => {
   const brokenCars: BrokenCar[] = [];
   for (const race of Object.values(state.race.carRaces)) {
-    if (!race.broken || !race.breakdownHistory || race.breakdownHistory.count === 0) {
+    if (race.breakdownHistory.count === 0 || !race.broken) {
       continue;
     }
 
@@ -336,7 +339,17 @@ export const animateRace = (): void => {
     if (!state.race.winnerRecorded) {
       state.race.winnerRecorded = true;
 
+      // Объявляем победителя со списком всех сломанных машин
       const winnerCarId = state.race.winnerCarId;
+      const winnerCar = winnerCarId !== undefined ? findCarById(winnerCarId) : undefined;
+      if (winnerCar && winnerCarId !== undefined) {
+        const race = state.race.carRaces[winnerCarId];
+        const time = race?.time ?? 0;
+        const brokenCars = collectBrokenCars();
+        announceWinner(winnerCar, time, brokenCars);
+      }
+
+      // Записываем остальные финишировавшие машины
       for (const [idString, race] of Object.entries(state.race.carRaces)) {
         if (!race.finished && !race.broken) continue;
         const carId = Number(idString);
@@ -434,7 +447,6 @@ const createDefaultFinishedRace = (carId: number, drive: DrivingCar, elapsed: nu
 export const startDriveCar = async (carId: number, maxSpeed: number = 250): Promise<void> => {
   if (Object.hasOwn(state.race.carRaces, carId)) {
     state.race.carRaces[carId].finished = false;
-    state.race.carRaces[carId].broken = false;
   }
 
   state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed };
@@ -535,6 +547,12 @@ export const resetCarToStart = (carId: number): void => {
   if (!car) return;
 
   car.classList.remove("broken");
+  for (const className of car.classList) {
+    if (className.startsWith("broken-")) {
+      car.classList.remove(className);
+    }
+  }
+
   const road = getRoad(car);
   if (!road) return;
 

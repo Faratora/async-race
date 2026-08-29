@@ -7,7 +7,7 @@ export const BREAKDOWN_CONFIG = {
   HIGH_SPEED_THRESHOLD: 250,
   HIGH_SPEED_BONUS: 0.002,
   MIN_TIME_BEFORE_BREAKDOWN: 0.5,
-  
+  MAX_BREAKDOWNS_PER_RACE: 2,
 };
 
 // ============ ТИПЫ ============
@@ -71,7 +71,7 @@ export const triggerBreakdown = (
     race.breakdownHistory = { count: 0, timestamps: [], positions: [], types: [] };
   }
 
-  if (race.breakdownHistory.count >= BREAKDOWN_CONFIG.MAX_BREAKDOWNS) {
+  if (race.breakdownHistory.count >= BREAKDOWN_CONFIG.MAX_BREAKDOWNS_PER_RACE) {
     return undefined;
   }
 

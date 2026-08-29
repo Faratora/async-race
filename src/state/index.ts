@@ -45,6 +45,7 @@ winners: {
     driveAnimationId: 0,
     winnerAnnounced: false,
     winnerRecorded: false,
+    totalBreakdowns: 0,
   },
 };
 
@@ -229,7 +230,6 @@ export async function driveCarAction(carId: number): Promise<void> {
 export function resetRaceState(carId: number): void {
   const race = state.race.carRaces[carId];
   if (race) {
-    race.broken = false;
     race.finished = false;
     race.time = undefined;
   }
@@ -265,6 +265,7 @@ export function startRaceSetup(carIds: number[], now: number): void {
   state.race.isRacing = true;
   state.race.winnerAnnounced = false;
   state.race.winnerCarId = undefined;
+  state.race.totalBreakdowns = 0;
 
   state.race.carRaces = {};
 
@@ -315,4 +316,5 @@ export function clearRaceState(): void {
   state.race.winnerAnnounced = false;
   state.race.winnerRecorded = false;
   state.race.isRacing = false;
+  state.race.totalBreakdowns = 0;
 }

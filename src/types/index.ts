@@ -52,6 +52,7 @@ export interface RaceState {
     winnerAnnounced: boolean;
     winnerCarId?: number;
     winnerRecorded: boolean;
+    totalBreakdowns: number;
 }
 
 import type { BreakdownType } from "../config/index.ts";

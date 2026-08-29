@@ -275,7 +275,15 @@ const handleStartEngine = (id: number): void => {
   }).catch(error => console.error(`Failed to start engine for car ${id}:`, error));
 };
 
+const handleStopEngine = (id: number): void => {
+  if (isCarBroken(id) || isCarFinished(id)) {
+    resetCarToStart(id);
+  } else {
+    stopDriveCarInPlace(id);
+  }
+};
 
+// ============ ОБРАБОТЧИКИ КНОПОК ============
 
 const handleRepairCar = (id: number): void => {
   const race = state.race.carRaces[id];
