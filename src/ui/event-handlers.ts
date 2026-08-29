@@ -4,6 +4,11 @@ import {
 } from "../types/index.ts";
 
 import {
+  CARS_PER_PAGE,
+  WINNERS_PER_PAGE,
+} from "../config/index.ts";
+
+import {
   createCarAction,
   updateCarAction,
   deleteCarAction,
@@ -145,15 +150,9 @@ export const handleCancelEditButton = (): void => {
 
 // ============ ОБЩАЯ ЛОГИКА ПАГИНАЦИИ ============
 
-interface PageSection {
-  page: number;
-  total: number;
-  setPage: (page: number) => void;
-  perPage: number;
-  reload: () => Promise<void>;
-}
-
-const adjustPage = (section: PageSection): void => {
+const adjustPage = <T extends { page: number; total: number }>(
+  section: T & { perPage: number; setPage: (page: number) => void },
+): void => {
   const totalPages = Math.ceil(section.total / section.perPage) || 1;
   if (section.page > totalPages) {
     section.setPage(Math.max(1, totalPages));
@@ -162,21 +161,38 @@ const adjustPage = (section: PageSection): void => {
 
 const changePage = (
   delta: number,
-  section: PageSection,
+  currentPage: number,
+  total: number,
+  perPage: number,
+  setPage: (page: number) => void,
   render: () => void,
 ): void => {
-  const totalPages = Math.ceil(section.total / section.perPage) || 1;
-  const newPage = section.page + delta;
+  const totalPages = Math.ceil(total / perPage) || 1;
+  const newPage = currentPage + delta;
   if (newPage < 1 || newPage > totalPages) return;
-  section.setPage(newPage);
-  void section.reload().then(render);
+  setPage(newPage);
+  render();
 };
 
 const changeGaragePage = (delta: number): void =>
-  changePage(delta, state.garage, () => void loadGarageCars().then(renderGarage));
+  changePage(
+    delta,
+    state.garage.page,
+    state.garage.total,
+    CARS_PER_PAGE,
+    (page) => { state.garage.page = page; },
+    () => { void loadGarageCars().then(renderGarage); },
+  );
 
 const changeWinnersPage = (delta: number): void =>
-  changePage(delta, state.winners, () => void renderWinners());
+  changePage(
+    delta,
+    state.winners.page,
+    state.winners.total,
+    WINNERS_PER_PAGE,
+    (page) => { state.winners.page = page; },
+    () => { void renderWinners(); },
+  );
 
 export const handlePreviousButton = (): void => changeGaragePage(-1);
 export const handleNextButton = (): void => changeGaragePage(1);
