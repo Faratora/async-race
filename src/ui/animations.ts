@@ -50,16 +50,34 @@ const getRoad = (car: HTMLElement): HTMLElement | undefined => {
 export const getTrackWidth = (road: HTMLElement): number =>
   road.offsetWidth - CONFIG.UI.TRACK_PADDING;
 
-// ============ ОБНОВЛЕНИЕ ПОЗИЦИИ МАШИНЫ ============
-export const updateCarPosition = (car: HTMLElement, startTime: number, maxSpeed: number): void => {
-  const road = getRoad(car);
-  if (!road) return;
+// ============ УТИЛИТЫ РАСЧЁТА ПОЗИЦИИ ============
 
+interface CarPosition {
+  left: number;
+  progress: number;
+  trackWidth: number;
+}
+
+const calculateCarPosition = (
+  road: HTMLElement,
+  startTime: number,
+  maxSpeed: number,
+): CarPosition => {
   const trackWidth = getTrackWidth(road);
   const elapsed = performance.now() - startTime;
   const effectiveSpeed = maxSpeed / CONFIG.PHYSICS.TIME_DILATION;
   const progressPerMs = speedToProgressPerMs(effectiveSpeed);
   const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - CONFIG.UI.FINISH_OFFSET);
+  const progress = left / trackWidth;
+  return { left, progress, trackWidth };
+};
+
+// ============ ОБНОВЛЕНИЕ ПОЗИЦИИ МАШИНЫ ============
+export const updateCarPosition = (car: HTMLElement, startTime: number, maxSpeed: number): void => {
+  const road = getRoad(car);
+  if (!road) return;
+
+  const { left } = calculateCarPosition(road, startTime, maxSpeed);
   car.style.transform = `translateX(${left}px)`;
   car.dataset.lastPosition = String(left);
 };
@@ -154,15 +172,11 @@ const animateCarMovement = (
     return;
   }
 
-  const trackWidth = getTrackWidth(road);
+  const { left, progress, trackWidth } = calculateCarPosition(road, race.startTime, race.maxSpeed);
   const elapsed = performance.now() - race.startTime;
   const elapsedSeconds = elapsed / 1000;
-  const effectiveSpeed = race.maxSpeed / CONFIG.PHYSICS.TIME_DILATION;
-  const progressPerMs = speedToProgressPerMs(effectiveSpeed);
-  const left = Math.min(elapsed * progressPerMs * trackWidth, trackWidth - CONFIG.UI.FINISH_OFFSET);
-  const progress = left / trackWidth;
 
-  car.style.transform = `translateX(${Math.min(left, trackWidth - CONFIG.UI.FINISH_OFFSET)}px)`;
+  car.style.transform = `translateX(${left}px)`;
   car.dataset.lastPosition = String(left);
 
   if (race.isRepairing) {
