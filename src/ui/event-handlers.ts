@@ -357,6 +357,14 @@ const isButtonClick = (target: HTMLElement): boolean => {
   return false;
 };
 
+const reloadWinners = (): void => {
+  state.winners.page = 1;
+  void loadAllWinners().then(() => {
+    sortWinners();
+    renderWinners();
+  });
+};
+
 const handleSortClick = (target: HTMLElement): void => {
   const sortBy = target.dataset.sort;
   if (isSortBy(sortBy)) {
@@ -367,11 +375,7 @@ const handleSortClick = (target: HTMLElement): void => {
   const sortOrder = target.dataset.sortOrder;
   if (isSortOrder(sortOrder)) {
     state.winners.sortOrder = sortOrder;
-    state.winners.page = 1;
-    void loadAllWinners().then(() => {
-      sortWinners();
-      renderWinners();
-    });
+    reloadWinners();
   }
 };
 
@@ -382,11 +386,7 @@ const handleSortByChange = (sortBy: SortConfig["sortBy"]): void => {
     state.winners.sortBy = sortBy;
     state.winners.sortOrder = "desc";
   }
-  state.winners.page = 1;
-  void loadAllWinners().then(() => {
-    sortWinners();
-    renderWinners();
-  });
+  reloadWinners();
 };
 
 const navClickHandlerInternal = async (event: MouseEvent): Promise<void> => {
