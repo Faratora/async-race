@@ -135,6 +135,13 @@ const shouldRetry = (
   return (response.status === HTTP_STATUS_TOO_MANY_REQUESTS || response.status === HTTP_STATUS_INTERNAL_SERVER_ERROR) && attempt < retries - 1;
 };
 
+// ============ УТИЛИТЫ ПАГИНАЦИИ ============
+
+const extractTotalCount = (response: Response, itemsLength: number): number => {
+  const totalHeader = response.headers.get("X-Total-Count");
+  return totalHeader === null ? itemsLength : Number(totalHeader);
+};
+
 // ============ GARAGE ============
 
 export async function fetchCars(
@@ -145,8 +152,7 @@ export async function fetchCars(
     `${CONFIG.API.BASE}/garage?_page=${page}&_limit=${limit}`,
   );
   const cars: Car[] = await processResponse<Car[]>(response);
-  const totalHeader: string | null = response.headers.get("X-Total-Count");
-  const total: number = totalHeader === null ? cars.length : Number(totalHeader);
+  const total = extractTotalCount(response, cars.length);
   return { cars, total };
 }
 
@@ -272,8 +278,7 @@ export async function fetchWinners(
     `${CONFIG.API.BASE}/winners?_page=${page}&_limit=${limit}&_sort=${sortBy}&_order=${sortOrder}`,
   );
   const winners: ApiWinner[] = await processResponse<ApiWinner[]>(response);
-  const totalHeader: string | null = response.headers.get("X-Total-Count");
-  const total: number = totalHeader === null ? winners.length : Number(totalHeader);
+  const total = extractTotalCount(response, winners.length);
   return { winners, total };
 }
 
