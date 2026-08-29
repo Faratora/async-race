@@ -150,40 +150,31 @@ export const handleCancelEditButton = (): void => {
 
 // ============ ОБЩАЯ ЛОГИКА ПАГИНАЦИИ ============
 
+interface PageSection {
+  page: number;
+  total: number;
+  setPage: (page: number) => void;
+  perPage: number;
+  reload: () => Promise<void>;
+}
+
 const changePage = (
   delta: number,
-  currentPage: number,
-  total: number,
-  perPage: number,
-  setPage: (page: number) => void,
+  section: PageSection,
   render: () => void,
 ): void => {
-  const totalPages = Math.ceil(total / perPage) || 1;
-  const newPage = currentPage + delta;
+  const totalPages = Math.ceil(section.total / section.perPage) || 1;
+  const newPage = section.page + delta;
   if (newPage < 1 || newPage > totalPages) return;
-  setPage(newPage);
-  render();
+  section.setPage(newPage);
+  void section.reload().then(render);
 };
 
 const changeGaragePage = (delta: number): void =>
-  changePage(
-    delta,
-    state.garage.page,
-    state.garage.total,
-    CARS_PER_PAGE,
-    (page) => { state.garage.page = page; },
-    () => { void loadGarageCars().then(renderGarage); },
-  );
+  changePage(delta, state.garage, () => void loadGarageCars().then(renderGarage));
 
 const changeWinnersPage = (delta: number): void =>
-  changePage(
-    delta,
-    state.winners.page,
-    state.winners.total,
-    WINNERS_PER_PAGE,
-    (page) => { state.winners.page = page; },
-    () => { void renderWinners(); },
-  );
+  changePage(delta, state.winners, () => void renderWinners());
 
 export const handlePreviousButton = (): void => changeGaragePage(-1);
 export const handleNextButton = (): void => changeGaragePage(1);
