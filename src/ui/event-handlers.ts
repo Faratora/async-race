@@ -4,11 +4,6 @@ import {
 } from "../types/index.ts";
 
 import {
-  CARS_PER_PAGE,
-  WINNERS_PER_PAGE,
-} from "../config/index.ts";
-
-import {
   createCarAction,
   updateCarAction,
   deleteCarAction,
@@ -158,6 +153,13 @@ interface PageSection {
   reload: () => Promise<void>;
 }
 
+const adjustPage = (section: PageSection): void => {
+  const totalPages = Math.ceil(section.total / section.perPage) || 1;
+  if (section.page > totalPages) {
+    section.setPage(Math.max(1, totalPages));
+  }
+};
+
 const changePage = (
   delta: number,
   section: PageSection,
@@ -217,18 +219,11 @@ const handleRemoveCar = (id: number): void => {
       state.winners.total = Math.max(0, state.winners.total - 1);
     })
     .then(async () => {
-      const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
-      if (state.winners.page > totalPages) {
-        state.winners.page = Math.max(1, totalPages);
-      }
+      adjustPage(state.winners);
       return loadGarageCars();
     })
     .then(async () => {
-      const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
-      if (state.garage.page > totalPages) {
-        state.garage.page = Math.max(1, totalPages);
-        await loadGarageCars();
-      }
+      adjustPage(state.garage);
       return renderGarage();
     })
     .catch((error) => {
