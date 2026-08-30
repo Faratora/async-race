@@ -233,11 +233,6 @@ export async function stopEngine(carId: number): Promise<{ velocity: number; dis
   return processResponse<{ velocity: number; distance: number }>(response);
 }
 
-export async function getVelocity(carId: number): Promise<number> {
-  const { velocity } = await fetchEngineState(carId);
-  return velocity;
-}
-
 export async function driveCar(carId: number): Promise<void> {
   console.log("[driveCar] called for car", carId);
   let response: Response;

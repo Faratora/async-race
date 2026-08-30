@@ -480,31 +480,7 @@ export const startDriveCar = async (carId: number, maxSpeed: number = 250): Prom
   }
 };
 
-export const updateDriveCarSpeed = (carId: number, newSpeed: number): void => {
-  const drive = state.race.drivingCars[carId];
-  if (!drive) return;
 
-  const carElement = getCarElement(carId);
-  if (!carElement) {
-    drive.maxSpeed = newSpeed;
-    return;
-  }
-
-  const currentLeft = getCurrentLeft(carElement);
-
-  const road = getRoad(carElement);
-  if (!road) {
-    drive.maxSpeed = newSpeed;
-    return;
-  }
-
-  const trackWidth = getTrackWidth(road);
-  const effectiveSpeed = newSpeed / CONFIG.PHYSICS.TIME_DILATION;
-  const progressPerMs = speedToProgressPerMs(effectiveSpeed);
-
-  drive.maxSpeed = newSpeed;
-  drive.startTime = performance.now() - (currentLeft / (progressPerMs * trackWidth));
-};
 
 export const stopDriveCarInPlace = (carId: number): void => {
   delete state.race.drivingCars[carId];
@@ -527,22 +503,6 @@ const animateCarToStart = (car: HTMLElement, duration: number): void => {
   setTimeout(() => {
     car.style.transition = "";
   }, duration);
-};
-
-export const stopDriveCar = (carId: number): void => {
-  delete state.race.drivingCars[carId];
-
-  if (Object.hasOwn(state.race.carRaces, carId)) {
-    state.race.carRaces[carId].finished = true;
-  }
-
-  const carElement = getCarElement(carId);
-  if (carElement) {
-    const currentLeft = getCurrentLeft(carElement);
-    animateCarToStart(carElement, Math.max(300, (currentLeft / 1000) * 500));
-  }
-
-  updateCarButtonStates();
 };
 
 export const resetCarToStart = (carId: number): void => {
@@ -576,10 +536,4 @@ const observers: { resize?: ResizeObserver } = {};
 export const init = (): void => {
   observers.resize = new ResizeObserver(handleResize);
   observers.resize.observe(document.body);
-};
-
-export const destroy = (): void => {
-  if (!observers.resize) return;
-  observers.resize.disconnect();
-  observers.resize = undefined;
 };

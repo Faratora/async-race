@@ -1,5 +1,5 @@
 import { AppState, CarFormData, Car, CarRace, Winner } from "../types/index.ts";
-import { CARS_PER_PAGE, WINNERS_PER_PAGE, createCarRace } from "../config/index.ts";
+import { CARS_PER_PAGE, createCarRace } from "../config/index.ts";
 import {
   fetchCars,
   fetchWinners,
@@ -10,7 +10,6 @@ import {
   generateCars,
   startEngine,
   stopEngine,
-  getVelocity,
   driveCar,
   recordWinner,
   type ApiWinner,
@@ -114,21 +113,6 @@ const toWinner = (w: ApiWinner, carId: number): Winner => ({
   bestTime: w.time,
 });
 
-export async function loadWinnersPage(): Promise<void> {
-  try {
-    const data = await fetchWinners(
-      state.winners.page,
-      WINNERS_PER_PAGE,
-      state.winners.sortBy,
-      state.winners.sortOrder
-    );
-    state.winners.winners = data.winners.map((w) => toWinner(w, w.id));
-    state.winners.total = data.total;
-  } catch (error) {
-    console.error("Failed to load winners:", error);
-  }
-}
-
 export async function loadAllWinners(): Promise<void> {
   try {
     const data = await fetchWinners(
@@ -193,37 +177,8 @@ export async function stopEngineAction(carId: number): Promise<void> {
   await stopEngine(carId);
 }
 
-export async function getVelocityAction(carId: number): Promise<number> {
-  if (velocityCache.has(carId)) {
-    const cached = velocityCache.get(carId);
-    if (cached === undefined) {
-      throw new Error(`Velocity not found for car ${carId}`);
-    }
-    return cached;
-  }
-  const result = await getVelocity(carId);
-  cacheVelocityAndSync(carId, result);
-  return result;
-}
-
 export async function driveCarAction(carId: number): Promise<void> {
   await driveCar(carId);
-}
-
-export function resetRaceState(carId: number): void {
-  const race = state.race.carRaces[carId];
-  if (race) {
-    race.finished = false;
-    race.time = undefined;
-  }
-}
-
-export function clearDriveCar(_carId: number): void {
-  delete state.race.drivingCars[_carId];
-}
-
-export function setDriveCar(carId: number, maxSpeed: number): void {
-  state.race.drivingCars[carId] = { startTime: performance.now(), maxSpeed };
 }
 
 export function stopRaceAnimation(): void {
