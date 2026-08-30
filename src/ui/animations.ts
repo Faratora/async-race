@@ -47,6 +47,11 @@ const getRoad = (car: HTMLElement): HTMLElement | undefined => {
   return road instanceof HTMLElement ? road : undefined;
 };
 
+const getCurrentLeft = (car: HTMLElement): number => {
+  const match = car.style.transform.match(/translateX\(([-\d.]+)px\)/);
+  return match ? Number(match[1]) : 0;
+};
+
 export const getTrackWidth = (road: HTMLElement): number =>
   road.offsetWidth - CONFIG.UI.TRACK_PADDING;
 
@@ -494,9 +499,7 @@ export const updateDriveCarSpeed = (carId: number, newSpeed: number): void => {
     return;
   }
 
-  const currentTransform = carElement.style.transform;
-  const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-  const currentLeft = match ? Number(match[1]) : 0;
+  const currentLeft = getCurrentLeft(carElement);
 
   const road = getRoad(carElement);
   if (!road) {
@@ -519,12 +522,9 @@ export const stopDriveCarInPlace = (carId: number): void => {
   const carElement = getCarElement(carId);
   if (carElement) {
     carElement.style.transition = "none";
-    const currentTransform = carElement.style.transform;
-    const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-    if (match) {
-      carElement.style.transform = `translateX(${match[1]}px)`;
-      carElement.dataset.lastPosition = match[1];
-    }
+    const currentLeft = getCurrentLeft(carElement);
+    carElement.style.transform = `translateX(${currentLeft}px)`;
+    carElement.dataset.lastPosition = String(currentLeft);
   }
 
   updateCarButtonStates();
@@ -539,9 +539,7 @@ export const stopDriveCar = (carId: number): void => {
 
   const carElement = getCarElement(carId);
   if (carElement) {
-    const currentTransform = carElement.style.transform;
-    const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-    const currentLeft = match ? Number(match[1]) : 0;
+    const currentLeft = getCurrentLeft(carElement);
     const duration = Math.max(300, (currentLeft / 1000) * 500);
 
     carElement.style.transition = `transform ${duration}ms ease-out`;
@@ -573,9 +571,7 @@ export const resetCarToStart = (carId: number): void => {
   if (!road) return;
 
   const trackWidth = getTrackWidth(road);
-  const currentTransform = car.style.transform;
-  const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-  const currentLeft = match ? Number(match[1]) : 0;
+  const currentLeft = getCurrentLeft(car);
   const duration = Math.max(300, (currentLeft / trackWidth) * 500);
 
   car.style.transition = `transform ${duration}ms ease-out`;
