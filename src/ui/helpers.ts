@@ -4,6 +4,9 @@ type Attributes = Record<string, string | number | boolean | undefined>;
 
 // ============ УТИЛИТЫ ============
 
+export const getTotalPages = (total: number, perPage: number): number =>
+  Math.ceil(total / perPage) || 1;
+
 export const escapeHtml = (text: string): string => {
   const map: Record<string, string> = {
     "&": "&amp;",

@@ -11,7 +11,7 @@ import {
 import { state, loadGarage, loadAllWinners } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { CONFIG } from "../config/index.ts";
-import { createInput, createButton, createPagination, createColorPalette, renderHeader, escapeHtml } from "./helpers.ts";
+import { createInput, createButton, createPagination, createColorPalette, renderHeader, escapeHtml, getTotalPages } from "./helpers.ts";
 
 import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
 import { updateCarButtonStates, computeCarStates } from "./animations.ts";
@@ -67,7 +67,7 @@ export const renderGarage = async (): Promise<void> => {
       return;
     },
     (_data: unknown, fragment: DocumentFragment) => {
-      const totalPages = Math.ceil(state.garage.total / CARS_PER_PAGE) || 1;
+      const totalPages = getTotalPages(state.garage.total, CARS_PER_PAGE);
       renderHeader(fragment, `Garage (${state.garage.total})`, state.garage.total, state.garage.page, totalPages);
       renderAddCarForm(fragment);
       renderEditForm(fragment);
@@ -214,7 +214,7 @@ export const renderWinners = async (): Promise<void> => {
   sortWinners();
   paginateWinners();
 
-  const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
+  const totalPages = getTotalPages(state.winners.total, WINNERS_PER_PAGE);
   if (state.winners.page > totalPages) {
     state.winners.page = 1;
     paginateWinners();
@@ -223,7 +223,7 @@ export const renderWinners = async (): Promise<void> => {
   await renderView(
     () => Promise.resolve(undefined),
     (_data: unknown, fragment: DocumentFragment) => {
-      const totalPages = Math.ceil(state.winners.total / WINNERS_PER_PAGE) || 1;
+      const totalPages = getTotalPages(state.winners.total, WINNERS_PER_PAGE);
       renderHeader(fragment, `Winners (${state.winners.total})`, state.winners.total, state.winners.page, totalPages);
       renderWinnersTable(fragment);
       const isPreviousDisabled = state.winners.page <= 1;

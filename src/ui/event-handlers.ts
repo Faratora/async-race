@@ -26,6 +26,7 @@ import { startDriveCar, stopDriveCarInPlace, resetCarToStart } from "./animation
 import { isCarBroken, isCarFinished } from "./animations.ts";
 import { driveCarAction } from "../state/index.ts";
 import { showGenericNotification } from "./notifications.ts";
+import { getTotalPages } from "./helpers.ts";
 
 // ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ============
 const reloadView = (
@@ -169,7 +170,7 @@ const adjustPage = (
   perPage: number,
   setPage: (page: number) => void,
 ): void => {
-  const totalPages = Math.ceil(total / perPage) || 1;
+  const totalPages = getTotalPages(total, perPage);
   if (page > totalPages) {
     setPage(Math.max(1, totalPages));
   }
@@ -183,7 +184,7 @@ const changePage = (
   setPage: (page: number) => void,
   render: () => void,
 ): void => {
-  const totalPages = Math.ceil(total / perPage) || 1;
+  const totalPages = getTotalPages(total, perPage);
   const newPage = currentPage + delta;
   if (newPage < 1 || newPage > totalPages) return;
   setPage(newPage);
