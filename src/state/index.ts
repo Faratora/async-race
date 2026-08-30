@@ -105,6 +105,23 @@ export async function generateCarsAction(count: number): Promise<void> {
 
 // ============ ПОБЕДИТЕЛИ ============
 
+type ApiWinnerLike = {
+  id: number;
+  wins: number;
+  time: number | null;
+  carName?: string;
+  carColor?: string;
+};
+
+const toWinner = (w: ApiWinnerLike, carId: number): Winner => ({
+  id: w.id,
+  carId,
+  carName: w.carName ?? `Car ${carId}`,
+  carColor: w.carColor ?? "#ff0000",
+  wins: w.wins ?? 0,
+  bestTime: w.time,
+});
+
 export async function loadWinnersPage(): Promise<void> {
   try {
     const data = await fetchWinners(
@@ -113,14 +130,7 @@ export async function loadWinnersPage(): Promise<void> {
       state.winners.sortBy,
       state.winners.sortOrder
     );
-    state.winners.winners = data.winners.map((w) => ({
-      id: w.id,
-      carId: w.id,
-      carName: w.carName ?? `Car ${w.id}`,
-      carColor: w.carColor ?? "#ff0000",
-      wins: w.wins ?? 0,
-      bestTime: w.time,
-    }));
+    state.winners.winners = data.winners.map((w) => toWinner(w, w.id));
     state.winners.total = data.total;
   } catch (error) {
     console.error("Failed to load winners:", error);
@@ -140,14 +150,7 @@ export async function loadAllWinners(): Promise<void> {
     for (const w of data.winners) {
       const carId = w.id;
       const existing = aggregated.get(carId);
-      const winner: Winner = {
-        id: w.id,
-        carId,
-        carName: w.carName ?? `Car ${carId}`,
-        carColor: w.carColor ?? "#ff0000",
-        wins: w.wins ?? 0,
-        bestTime: w.time,
-      };
+      const winner = toWinner(w, carId);
       if (existing) {
         existing.wins += winner.wins;
         if (winner.bestTime != null && (existing.bestTime == null || winner.bestTime < existing.bestTime)) {
