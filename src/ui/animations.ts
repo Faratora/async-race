@@ -530,6 +530,14 @@ export const stopDriveCarInPlace = (carId: number): void => {
   updateCarButtonStates();
 };
 
+const animateCarToStart = (car: HTMLElement, duration: number): void => {
+  car.style.transition = `transform ${duration}ms ease-out`;
+  car.style.transform = "translateX(0px)";
+  setTimeout(() => {
+    car.style.transition = "";
+  }, duration);
+};
+
 export const stopDriveCar = (carId: number): void => {
   delete state.race.drivingCars[carId];
 
@@ -540,13 +548,7 @@ export const stopDriveCar = (carId: number): void => {
   const carElement = getCarElement(carId);
   if (carElement) {
     const currentLeft = getCurrentLeft(carElement);
-    const duration = Math.max(300, (currentLeft / 1000) * 500);
-
-    carElement.style.transition = `transform ${duration}ms ease-out`;
-    carElement.style.transform = "translateX(0px)";
-    setTimeout(() => {
-      carElement.style.transition = "";
-    }, duration);
+    animateCarToStart(carElement, Math.max(300, (currentLeft / 1000) * 500));
   }
 
   updateCarButtonStates();
@@ -572,13 +574,7 @@ export const resetCarToStart = (carId: number): void => {
 
   const trackWidth = getTrackWidth(road);
   const currentLeft = getCurrentLeft(car);
-  const duration = Math.max(300, (currentLeft / trackWidth) * 500);
-
-  car.style.transition = `transform ${duration}ms ease-out`;
-  car.style.transform = "translateX(0px)";
-  setTimeout(() => {
-    car.style.transition = "";
-  }, duration);
+  animateCarToStart(car, Math.max(300, (currentLeft / trackWidth) * 500));
 
   updateCarButtonStates();
 };
