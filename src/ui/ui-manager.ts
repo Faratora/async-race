@@ -14,20 +14,10 @@ import { CONFIG } from "../config/index.ts";
 import { createInput, createButton, createPagination, createColorPalette, renderHeader, escapeHtml } from "./helpers.ts";
 
 import { startRaceHandler, resetRaceHandler } from "./race-engine.ts";
-import { updateCarButtonStates, isCarRacing, isCarBroken, isCarFinished } from "./animations.ts";
+import { updateCarButtonStates, computeCarStates } from "./animations.ts";
 import { renderWinnersTable } from "./winners-table.ts";
 
 export const getApp = (): HTMLElement | null => document.querySelector("#app");
-
-// ============ СОСТОЯНИЕ МАШИНЫ ============
-
-const getCarStates = (carId: number): { isDriving: boolean; isBroken: boolean; isFinished: boolean } => {
-  const isDriving = state.race.drivingCars[carId] !== undefined ||
-    (state.race.isRacing && isCarRacing(carId));
-  const isBroken = isCarBroken(carId);
-  const isFinished = isCarFinished(carId);
-  return { isDriving, isBroken, isFinished };
-};
 
 // ============ ЗАГРУЗКА ДАННЫХ ============
 export const loadGarageCars = async (): Promise<void> => {
@@ -183,8 +173,6 @@ export const createCarCard = (car: Car): HTMLElement => {
 };
 
 const createCarCardTop = (car: Car): HTMLElement => {
-  const carId = Number(car.id);
-  getCarStates(carId);
   const initial = escapeHtml(car.name)[0]?.toUpperCase() || "?";
 
   const carImage = element("div", { class: "car-image", style: `background-color: ${car.color}` }, initial);
@@ -200,7 +188,7 @@ const createCarCardTop = (car: Car): HTMLElement => {
 
 const createCarCardBottom = (car: Car): HTMLElement => {
   const carId = Number(car.id);
-  const { isDriving, isBroken, isFinished } = getCarStates(carId);
+  const { isDriving, isBroken, isFinished } = computeCarStates(carId);
 
   const startButton = createButton(`start-${car.id}`, "A", "btn btn-start-engine btn btn-sm", {
     dataAction: "start",

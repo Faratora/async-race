@@ -82,6 +82,14 @@ export const updateCarPosition = (car: HTMLElement, startTime: number, maxSpeed:
   car.dataset.lastPosition = String(left);
 };
 
+export const computeCarStates = (carId: number): { isDriving: boolean; isBroken: boolean; isFinished: boolean } => {
+  const isDriving = state.race.drivingCars[carId] !== undefined ||
+    (state.race.isRacing && isCarRacing(carId));
+  const isBroken = isCarBroken(carId);
+  const isFinished = isCarFinished(carId);
+  return { isDriving, isBroken, isFinished };
+};
+
 // ============ ОБНОВЛЕНИЕ СОСТОЯНИЯ КНОПОК ============
 export const updateCarButtonStates = (): void => {
   for (const car of state.garage.cars) {
@@ -95,10 +103,7 @@ export const updateCarButtonStates = (): void => {
 
     if (!startButton || !stopButton) continue;
 
-    const isDriving = state.race.drivingCars[carId] !== undefined ||
-      (state.race.isRacing && isCarRacing(carId));
-    const isBroken = isCarBroken(carId);
-    const isFinished = isCarFinished(carId);
+    const { isDriving, isBroken, isFinished } = computeCarStates(carId);
 
     startButton.disabled = isDriving || isBroken || isFinished;
     stopButton.disabled = !isDriving && !isBroken && !isFinished;
