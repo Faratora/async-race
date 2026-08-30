@@ -1,5 +1,5 @@
 import { AppState, CarFormData, Car, CarRace, Winner } from "../types/index.ts";
-import { CARS_PER_PAGE, WINNERS_PER_PAGE, createEmptyBreakdownHistory } from "../config/index.ts";
+import { CARS_PER_PAGE, WINNERS_PER_PAGE, createCarRace } from "../config/index.ts";
 import {
   fetchCars,
   fetchWinners,
@@ -260,17 +260,7 @@ export function startRaceSetup(carIds: number[], now: number): void {
   state.race.carRaces = {};
 
   for (const id of carIds) {
-    state.race.carRaces[id] = {
-      carId: id,
-      startTime: now,
-      maxSpeed: 0,
-      finished: false,
-      broken: false,
-      time: undefined,
-      breakdownHistory: createEmptyBreakdownHistory(),
-      repairStartTime: undefined,
-      isRepairing: false,
-    };
+    state.race.carRaces[id] = createCarRace(id, { startTime: now, maxSpeed: 0 });
   }
 }
 

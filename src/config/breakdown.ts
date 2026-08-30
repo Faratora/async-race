@@ -38,6 +38,21 @@ export const createEmptyBreakdownHistory = (): BreakdownHistory => ({
   types: [],
 });
 
+export const createCarRace = (
+  carId: number,
+  options: { startTime: number; maxSpeed: number; finished?: boolean; broken?: boolean; time?: number | undefined },
+): CarRace => ({
+  carId,
+  startTime: options.startTime,
+  maxSpeed: options.maxSpeed,
+  finished: options.finished ?? false,
+  broken: options.broken ?? false,
+  time: options.time,
+  breakdownHistory: createEmptyBreakdownHistory(),
+  repairStartTime: undefined,
+  isRepairing: false,
+});
+
 // ============ РАСЧЁТ ШАНСА ПОЛОМКИ ============
 export const getBreakdownChance = (
   progress: number,

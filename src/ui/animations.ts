@@ -4,7 +4,7 @@ import {
   getBreakdownChance,
   getBreakdownType,
   speedToProgressPerMs,
-  createEmptyBreakdownHistory,
+  createCarRace,
 } from "../config/index.ts";
 
 import { showWinnerNotification, type BrokenCar } from "./notifications.ts";
@@ -453,15 +453,13 @@ const handleDriveCarComplete = (carId: number, drive: DrivingCar): void => {
   }
 };
 
-const createDefaultFinishedRace = (carId: number, drive: DrivingCar, elapsed: number): CarRace => ({
-  carId,
-  startTime: drive.startTime,
-  maxSpeed: drive.maxSpeed,
-  finished: true,
-  broken: false,
-  time: elapsed,
-  breakdownHistory: createEmptyBreakdownHistory(),
-});
+const createDefaultFinishedRace = (carId: number, drive: DrivingCar, elapsed: number): CarRace =>
+  createCarRace(carId, {
+    startTime: drive.startTime,
+    maxSpeed: drive.maxSpeed,
+    finished: true,
+    time: elapsed,
+  });
 
 export const startDriveCar = async (carId: number, maxSpeed: number = 250): Promise<void> => {
   if (Object.hasOwn(state.race.carRaces, carId)) {

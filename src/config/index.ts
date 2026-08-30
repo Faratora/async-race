@@ -73,6 +73,7 @@ export {
   triggerBreakdown,
   resetBreakdown,
   createEmptyBreakdownHistory,
+  createCarRace,
 } from "./breakdown.ts";
 
 export type {
