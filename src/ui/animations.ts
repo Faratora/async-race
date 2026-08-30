@@ -258,28 +258,20 @@ const applyBreakdownVisuals = (
 
 // ============ УТИЛИТЫ УПРАВЛЕНИЯ КНОПКАМИ ============
 
-const setStopButtonEnabled = (carId: number, isEnabled: boolean): void => {
+const setCarButtonEnabled = (carId: number, kind: "start" | "stop", isEnabled: boolean): void => {
+  const selector = kind === "start" ? ".btn-start-engine" : ".btn-stop-engine";
   const button = document.querySelector<HTMLButtonElement>(
-    `.btn-stop-engine[data-id="${CSS.escape(String(carId))}"]`,
+    `${selector}[data-id="${CSS.escape(String(carId))}"]`,
   );
   if (!button) return;
   button.disabled = !isEnabled;
-  if (isEnabled) button.removeAttribute("disabled");
-};
-
-const setStartButtonEnabled = (carId: number, isEnabled: boolean): void => {
-  const button = document.querySelector<HTMLButtonElement>(
-    `.btn-start-engine[data-id="${CSS.escape(String(carId))}"]`,
-  );
-  if (!button) return;
-  button.disabled = !isEnabled;
-  if (!isEnabled) button.setAttribute("disabled", "");
+  button.toggleAttribute("disabled", !isEnabled);
 };
 
 // ============ ОБНОВЛЕНИЕ КНОПОК ПРИ ПОЛОМКЕ ============
 const updateCarButtonsOnBreakdown = (carId: number): void => {
-  setStopButtonEnabled(carId, true);
-  setStartButtonEnabled(carId, false);
+  setCarButtonEnabled(carId, "stop", true);
+  setCarButtonEnabled(carId, "start", false);
 };
 
 export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): void => {
@@ -289,7 +281,7 @@ export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): 
   race.time = (elapsed * CONFIG.PHYSICS.TIME_DILATION * CONFIG.PHYSICS.TIME_MULTIPLIER) / 1000;
 
   updateCarButtonStates();
-  setStopButtonEnabled(carId, true);
+  setCarButtonEnabled(carId, "stop", true);
 
   if (!state.race.winnerAnnounced) {
     state.race.winnerAnnounced = true;
