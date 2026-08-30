@@ -313,18 +313,23 @@ const collectBrokenCars = (): BrokenCar[] => {
   return brokenCars;
 };
 
-// ============ ОБЪЯВЛЕНИЕ ПОБЕДИТЕЛЯ ============
-const announceWinner = (
-  car: Car,
-  time: number,
-  brokenCars: BrokenCar[],
-): void => {
+// ============ ЗАПИСЬ ПОБЕДИТЕЛЯ ============
+const recordWinnerForCar = (car: Car, time: number | null | undefined): void => {
   void recordWinnerAction({
     carId: car.id,
     carName: car.name,
     carColor: car.color,
     time,
   });
+};
+
+// ============ ОБЪЯВЛЕНИЕ ПОБЕДИТЕЛЯ ============
+const announceWinner = (
+  car: Car,
+  time: number,
+  brokenCars: BrokenCar[],
+): void => {
+  recordWinnerForCar(car, time);
   showWinnerNotification(car.name, time, brokenCars);
 };
 
@@ -339,12 +344,7 @@ const recordRemainingFinishers = (
 
     const car = findCarById(carId);
     if (car) {
-      void recordWinnerAction({
-        carId: car.id,
-        carName: car.name,
-        carColor: car.color,
-        time: race.finished ? race.time ?? null : null,
-      });
+      recordWinnerForCar(car, race.finished ? race.time ?? null : null);
     }
   }
 };
