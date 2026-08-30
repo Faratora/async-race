@@ -19,9 +19,9 @@ import {
   findCarById,
 } from "../state/index.ts";
 
-import { state } from "../state/index.ts";
+import { state, loadGarage } from "../state/index.ts";
 
-import { renderGarage, renderWinners, loadGarageCars, sortWinners, switchView } from "./ui-manager.ts";
+import { renderGarage, renderWinners, sortWinners, switchView } from "./ui-manager.ts";
 import { startDriveCar, stopDriveCarInPlace, resetCarToStart } from "./animations.ts";
 import { isCarBroken, isCarFinished } from "./animations.ts";
 import { driveCarAction } from "../state/index.ts";
@@ -30,7 +30,7 @@ import { showGenericNotification } from "./notifications.ts";
 // ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ГАРАЖА ============
 const reloadGarage = (): void => {
   state.garage.page = 1;
-  void loadGarageCars().then(renderGarage);
+  void loadGarage().then(renderGarage);
 };
 
 // ============ ЗАЩИТА ОТ ГОНКИ СОСТОЯНИЙ ============
@@ -184,7 +184,7 @@ const changeGaragePage = (delta: number): void =>
     state.garage.total,
     CARS_PER_PAGE,
     (page) => { state.garage.page = page; },
-    () => { void loadGarageCars().then(renderGarage); },
+    () => { void loadGarage().then(renderGarage); },
   );
 
 const changeWinnersPage = (delta: number): void =>
@@ -244,7 +244,7 @@ const handleRemoveCar = (id: number): void => {
         WINNERS_PER_PAGE,
         (page) => { state.winners.page = page; },
       );
-      return loadGarageCars();
+      return loadGarage();
     })
     .then(async () => {
       adjustPage(

@@ -8,7 +8,7 @@ import {
   WINNERS_PER_PAGE,
 } from "../config/index.ts";
 
-import { state, loadGarage, loadWinnersPage as loadWinnersState, loadAllWinners } from "../state/index.ts";
+import { state, loadGarage, loadAllWinners } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { CONFIG } from "../config/index.ts";
 import { createInput, createButton, createPagination, createColorPalette, renderHeader, escapeHtml } from "./helpers.ts";
@@ -18,23 +18,6 @@ import { updateCarButtonStates, computeCarStates } from "./animations.ts";
 import { renderWinnersTable } from "./winners-table.ts";
 
 export const getApp = (): HTMLElement | null => document.querySelector("#app");
-
-// ============ ЗАГРУЗКА ДАННЫХ ============
-export const loadGarageCars = async (): Promise<void> => {
-  try {
-    await loadGarage();
-  } catch (error) {
-    console.error("Failed to load cars:", error);
-  }
-};
-
-export const loadWinners = async (): Promise<void> => {
-  try {
-    await loadWinnersState();
-  } catch (error) {
-    console.error("Failed to load winners:", error);
-  }
-};
 
 // ============ ПЕРЕКЛЮЧЕНИЕ ВИДОВ ============
 export const switchView = (view: ViewName): void => {
@@ -80,12 +63,7 @@ const renderView = async <T>(
 export const renderGarage = async (): Promise<void> => {
   await renderView(
     async () => {
-      try {
-        await loadGarageCars();
-      } catch {
-        state.garage.cars = [];
-        state.garage.total = 0;
-      }
+      await loadGarage();
       return;
     },
     (_data: unknown, fragment: DocumentFragment) => {
