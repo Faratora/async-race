@@ -567,12 +567,7 @@ export const resetCarToStart = (carId: number): void => {
   const car = getCarElement(carId);
   if (!car) return;
 
-  car.classList.remove("broken");
-  for (const className of car.classList) {
-    if (className.startsWith("broken-")) {
-      car.classList.remove(className);
-    }
-  }
+  resetCarVisualReset(car);
 
   const road = getRoad(car);
   if (!road) return;
