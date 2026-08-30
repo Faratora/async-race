@@ -150,12 +150,15 @@ export const handleCancelEditButton = (): void => {
 
 // ============ ОБЩАЯ ЛОГИКА ПАГИНАЦИИ ============
 
-const adjustPage = <T extends { page: number; total: number }>(
-  section: T & { perPage: number; setPage: (page: number) => void },
+const adjustPage = (
+  page: number,
+  total: number,
+  perPage: number,
+  setPage: (page: number) => void,
 ): void => {
-  const totalPages = Math.ceil(section.total / section.perPage) || 1;
-  if (section.page > totalPages) {
-    section.setPage(Math.max(1, totalPages));
+  const totalPages = Math.ceil(total / perPage) || 1;
+  if (page > totalPages) {
+    setPage(Math.max(1, totalPages));
   }
 };
 
@@ -235,11 +238,21 @@ const handleRemoveCar = (id: number): void => {
       state.winners.total = Math.max(0, state.winners.total - 1);
     })
     .then(async () => {
-      adjustPage(state.winners);
+      adjustPage(
+        state.winners.page,
+        state.winners.total,
+        WINNERS_PER_PAGE,
+        (page) => { state.winners.page = page; },
+      );
       return loadGarageCars();
     })
     .then(async () => {
-      adjustPage(state.garage);
+      adjustPage(
+        state.garage.page,
+        state.garage.total,
+        CARS_PER_PAGE,
+        (page) => { state.garage.page = page; },
+      );
       return renderGarage();
     })
     .catch((error) => {
