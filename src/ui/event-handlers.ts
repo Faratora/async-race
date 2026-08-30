@@ -237,24 +237,22 @@ const handleRemoveCar = (id: number): void => {
       state.winners.allWinners = state.winners.allWinners.filter(w => w.carId !== id);
       state.winners.total = Math.max(0, state.winners.total - 1);
     })
-    .then(async () => {
+    .then(() => {
       adjustPage(
         state.winners.page,
         state.winners.total,
         WINNERS_PER_PAGE,
         (page) => { state.winners.page = page; },
       );
-      return loadGarage();
-    })
-    .then(async () => {
       adjustPage(
         state.garage.page,
         state.garage.total,
         CARS_PER_PAGE,
         (page) => { state.garage.page = page; },
       );
-      return renderGarage();
     })
+    .then(() => loadGarage())
+    .then(() => { void renderGarage(); })
     .catch((error) => {
       console.error("Failed to remove car:", error);
     });
