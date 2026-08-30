@@ -261,7 +261,7 @@ export async function driveCar(carId: number): Promise<void> {
 
 // ============ WINNERS ============
 
-interface ApiWinner {
+export interface ApiWinner {
   id: number;
   wins: number;
   time: number | null;

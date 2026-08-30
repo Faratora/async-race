@@ -13,6 +13,7 @@ import {
   getVelocity,
   driveCar,
   recordWinner,
+  type ApiWinner,
 } from "../api/index.ts";
 
 // ============ Состояние ============
@@ -104,15 +105,7 @@ export async function generateCarsAction(count: number): Promise<void> {
 
 // ============ ПОБЕДИТЕЛИ ============
 
-type ApiWinnerLike = {
-  id: number;
-  wins: number;
-  time: number | null;
-  carName?: string;
-  carColor?: string;
-};
-
-const toWinner = (w: ApiWinnerLike, carId: number): Winner => ({
+const toWinner = (w: ApiWinner, carId: number): Winner => ({
   id: w.id,
   carId,
   carName: w.carName ?? `Car ${carId}`,
