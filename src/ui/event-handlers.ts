@@ -27,11 +27,22 @@ import { isCarBroken, isCarFinished } from "./animations.ts";
 import { driveCarAction } from "../state/index.ts";
 import { showGenericNotification } from "./notifications.ts";
 
-// ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ГАРАЖА ============
-const reloadGarage = (): void => {
-  state.garage.page = 1;
-  void loadGarage().then(renderGarage);
+// ============ ОБЩАЯ ЛОГИКА ЗАГРУЗКИ ============
+const reloadView = (
+  setPage: (page: number) => void,
+  load: () => Promise<unknown>,
+  render: () => void,
+): void => {
+  setPage(1);
+  void load().then(render);
 };
+
+const reloadGarage = (): void =>
+  reloadView(
+    (page) => { state.garage.page = page; },
+    loadGarage,
+    renderGarage,
+  );
 
 // ============ ЗАЩИТА ОТ ГОНКИ СОСТОЯНИЙ ============
 const ACTION_TIMEOUT = 5000; // 5 секунд
@@ -370,13 +381,12 @@ const isButtonClick = (target: HTMLElement): boolean => {
   return false;
 };
 
-const reloadWinners = (): void => {
-  state.winners.page = 1;
-  void loadAllWinners().then(() => {
-    sortWinners();
-    renderWinners();
-  });
-};
+const reloadWinners = (): void =>
+  reloadView(
+    (page) => { state.winners.page = page; },
+    loadAllWinners,
+    () => { sortWinners(); renderWinners(); },
+  );
 
 const handleSortClick = (target: HTMLElement): void => {
   const sortBy = target.dataset.sort;
