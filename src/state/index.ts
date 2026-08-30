@@ -182,14 +182,18 @@ export async function recordWinnerAction(data: {
 
 // ============ ГОНКА ============
 
-export async function startEngineAction(carId: number): Promise<{ velocity: number }> {
-  const result = await startEngine(carId);
-  velocityCache.set(carId, result.velocity);
+const cacheVelocityAndSync = (carId: number, velocity: number): void => {
+  velocityCache.set(carId, velocity);
   if (state.garage.cars.some((c) => c.id === carId)) {
     state.garage.cars = state.garage.cars.map((c) =>
-      c.id === carId ? { ...c, maxSpeed: result.velocity } : c,
+      c.id === carId ? { ...c, maxSpeed: velocity } : c,
     );
   }
+};
+
+export async function startEngineAction(carId: number): Promise<{ velocity: number }> {
+  const result = await startEngine(carId);
+  cacheVelocityAndSync(carId, result.velocity);
   return { velocity: result.velocity };
 }
 
@@ -206,12 +210,7 @@ export async function getVelocityAction(carId: number): Promise<number> {
     return cached;
   }
   const result = await getVelocity(carId);
-  velocityCache.set(carId, result);
-  if (state.garage.cars.some((c) => c.id === carId)) {
-    state.garage.cars = state.garage.cars.map((c) =>
-      c.id === carId ? { ...c, maxSpeed: result } : c,
-    );
-  }
+  cacheVelocityAndSync(carId, result);
   return result;
 }
 
