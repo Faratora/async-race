@@ -123,6 +123,12 @@ export const handleGenerateButton = (): void => {
   });
 };
 
+const resetEditForm = (): void => {
+  state.garage.editingCarId = undefined;
+  state.garage.editName = "";
+  state.garage.editColor = "#ff0000";
+};
+
 export const handleUpdateButton = (): void => {
   if (state.garage.editingCarId === undefined) return;
 
@@ -138,9 +144,7 @@ export const handleUpdateButton = (): void => {
   withSpamGuard("update", () => {
     void updateCarAction(carId, { name, color })
       .then(() => {
-        state.garage.editingCarId = undefined;
-        state.garage.editName = "";
-        state.garage.editColor = "#ff0000";
+        resetEditForm();
         reloadGarage();
       })
       .finally(() => clearSpamFlag("update"));
@@ -148,9 +152,7 @@ export const handleUpdateButton = (): void => {
 };
 
 export const handleCancelEditButton = (): void => {
-  state.garage.editingCarId = undefined;
-  state.garage.editName = "";
-  state.garage.editColor = "#ff0000";
+  resetEditForm();
 
   if (state.race.driveAnimationId) {
     cancelAnimationFrame(state.race.driveAnimationId);
