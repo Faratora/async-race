@@ -245,7 +245,7 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
 
 const handleRemoveCar = (id: number): void => {
   void deleteCarAction(id)
-    .then(() => deleteWinnerAction(id))
+    .then(() => deleteWinnerAction(id).catch(() => { /* winner may not exist */ }))
     .then(() => {
       state.winners.winners = state.winners.winners.filter(w => w.carId !== id);
       state.winners.allWinners = state.winners.allWinners.filter(w => w.carId !== id);
@@ -351,8 +351,11 @@ const appClickHandlerInternal = (event: MouseEvent): void => {
 };
 
 const isCarActionClick = (target: HTMLElement): boolean => {
-  const action = target.dataset.action;
-  const idString = target.dataset.id;
+  const button = target.closest("[data-action]");
+  if (!button || !(button instanceof HTMLElement)) return false;
+
+  const action = button.dataset.action;
+  const idString = button.dataset.id;
   if (action && ["update", "remove", "start", "stop"].includes(action)) {
     const id = Number(idString);
     if (!Number.isNaN(id)) {
