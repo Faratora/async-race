@@ -31,6 +31,13 @@ export interface BreakdownEvent {
   timestamp: number;
 }
 
+export const createEmptyBreakdownHistory = (): BreakdownHistory => ({
+  count: 0,
+  timestamps: [],
+  positions: [],
+  types: [],
+});
+
 // ============ РАСЧЁТ ШАНСА ПОЛОМКИ ============
 export const getBreakdownChance = (
   progress: number,
@@ -68,7 +75,7 @@ export const triggerBreakdown = (
   const breakdownType = getBreakdownType(progress, maxSpeed);
 
   if (!race.breakdownHistory) {
-    race.breakdownHistory = { count: 0, timestamps: [], positions: [], types: [] };
+    race.breakdownHistory = createEmptyBreakdownHistory();
   }
 
   if (race.breakdownHistory.count >= BREAKDOWN_CONFIG.MAX_BREAKDOWNS_PER_RACE) {

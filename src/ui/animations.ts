@@ -4,6 +4,7 @@ import {
   getBreakdownChance,
   getBreakdownType,
   speedToProgressPerMs,
+  createEmptyBreakdownHistory,
 } from "../config/index.ts";
 
 import { showWinnerNotification, type BrokenCar } from "./notifications.ts";
@@ -459,7 +460,7 @@ const createDefaultFinishedRace = (carId: number, drive: DrivingCar, elapsed: nu
   finished: true,
   broken: false,
   time: elapsed,
-  breakdownHistory: { count: 0, timestamps: [], positions: [], types: [] },
+  breakdownHistory: createEmptyBreakdownHistory(),
 });
 
 export const startDriveCar = async (carId: number, maxSpeed: number = 250): Promise<void> => {

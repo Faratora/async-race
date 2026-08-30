@@ -72,6 +72,7 @@ export {
   getBreakdownType,
   triggerBreakdown,
   resetBreakdown,
+  createEmptyBreakdownHistory,
 } from "./breakdown.ts";
 
 export type {
