@@ -251,11 +251,16 @@ export function getCarRace(id: number): CarRace | undefined {
 
 // ============ ЗАПУСК ГОНКИ (бизнес-логика) ============
 
-export function startRaceSetup(carIds: number[], now: number): void {
-  state.race.isRacing = true;
+const resetWinnerTracking = (): void => {
   state.race.winnerAnnounced = false;
+  state.race.winnerRecorded = false;
   state.race.winnerCarId = undefined;
   state.race.totalBreakdowns = 0;
+};
+
+export function startRaceSetup(carIds: number[], now: number): void {
+  state.race.isRacing = true;
+  resetWinnerTracking();
 
   state.race.carRaces = {};
 
@@ -293,8 +298,6 @@ export function isCarRaceBroken(carId: number): boolean {
 export function clearRaceState(): void {
   state.race.carRaces = {};
   state.race.drivingCars = {};
-  state.race.winnerAnnounced = false;
-  state.race.winnerRecorded = false;
+  resetWinnerTracking();
   state.race.isRacing = false;
-  state.race.totalBreakdowns = 0;
 }
