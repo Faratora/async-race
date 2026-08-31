@@ -132,7 +132,11 @@ const shouldRetry = (
   attempt: number,
   retries: number,
 ): boolean => {
-  return (response.status === HTTP_STATUS_TOO_MANY_REQUESTS || response.status === HTTP_STATUS_INTERNAL_SERVER_ERROR) && attempt < retries - 1;
+  // Не повторяем 429 (Too Many Requests) — это защитный код сервера
+  if (response.status === HTTP_STATUS_TOO_MANY_REQUESTS) {
+    return false;
+  }
+  return response.status === HTTP_STATUS_INTERNAL_SERVER_ERROR && attempt < retries - 1;
 };
 
 // ============ УТИЛИТЫ ПАГИНАЦИИ ============
@@ -243,7 +247,7 @@ export async function driveCar(carId: number): Promise<void> {
   } catch (error: unknown) {
     console.log("[driveCar] network error for car", carId, "error:", error);
     
-    return;
+    throw error;
   }
 
   console.log("[driveCar] response for car", carId, "status:", response.status, "ok:", response.ok);
@@ -255,6 +259,9 @@ export async function driveCar(carId: number): Promise<void> {
 }
 
 // ============ WINNERS ============
+
+// Блокировка для предотвращения дублирования запросов на запись победителей
+const winnerRecordLock = new Map<number, boolean>();
 
 export interface ApiWinner {
   id: number;
@@ -284,29 +291,74 @@ export async function recordWinner(data: {
   carColor: string;
   time: number | null | undefined;
 }): Promise<Winner> {
-  try {
-    const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: data.carId, wins: 1, time: data.time, carName: data.carName, carColor: data.carColor }),
-    });
-    const winner = await processResponse<Winner>(response);
-    return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time ?? null };
-  } catch {
-    const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
-      method: "GET",
-    });
-    const existing = await processResponse<{ id: number; wins: number; time: number | null; carName?: string; carColor?: string }>(response);
+  // Защита от повторной записи для того же carId
+  if (winnerRecordLock.get(data.carId)) {
+    console.warn(`[recordWinner] Already recording winner for car ${data.carId}, skipping`);
+    // Пытаемся получить существующего победителя
+    try {
+      const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
+        method: "GET",
+      });
+      const existing = await processResponse<{ id: number; wins: number; time: number | null; carName?: string; carColor?: string }>(response);
+      return { ...existing, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: existing.time ?? null };
+    } catch {
+      return { id: data.carId, carId: data.carId, carName: data.carName, carColor: data.carColor, wins: 0, bestTime: null };
+    }
+  }
+  winnerRecordLock.set(data.carId, true);
 
-    const newWins = existing.wins + 1;
-    const newBestTime = data.time != null && existing.time != null
-      ? Math.min(existing.time, data.time)
-      : (existing.time ?? data.time ?? null);
-    const winner = await processResponse<Winner>(await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: data.carId, wins: newWins, time: newBestTime, carName: data.carName, carColor: data.carColor }),
-    }));
-    return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: newBestTime };
+  try {
+    let existingWinner: { id: number; wins: number; time: number | null; carName?: string; carColor?: string } | null = null;
+    try {
+      const checkResponse: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
+        method: "GET",
+      });
+      if (checkResponse.ok) {
+        const text = await checkResponse.text();
+        if (text) {
+          existingWinner = JSON.parse(text) as { id: number; wins: number; time: number | null; carName?: string; carColor?: string };
+        }
+      } else if (checkResponse.status !== 404) {
+        await handleResponseError(checkResponse);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("404")) {
+        existingWinner = null;
+      } else {
+        throw error;
+      }
+    }
+
+    if (existingWinner) {
+      const updatedWins = existingWinner.wins + 1;
+      const updatedTime = data.time != null && (existingWinner.time == null || data.time < existingWinner.time)
+        ? data.time
+        : existingWinner.time;
+
+      const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: data.carId,
+          wins: updatedWins,
+          time: updatedTime,
+          carName: data.carName,
+          carColor: data.carColor,
+        }),
+      });
+      const winner = await processResponse<Winner>(response);
+      return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: updatedTime ?? null };
+    } else {
+      const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: data.carId, wins: 1, time: data.time, carName: data.carName, carColor: data.carColor }),
+      });
+      const winner = await processResponse<Winner>(response);
+      return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time ?? null };
+    }
+  } finally {
+    // Разблокируем после завершения
+    winnerRecordLock.delete(data.carId);
   }
 }

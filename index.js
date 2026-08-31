@@ -38,7 +38,7 @@ const middlewares = jsonServer.defaults();
 
 const PORT = process.env.PORT || 3000;
 
-const state = { velocity: {}, blocked: {} };
+const state = { velocity: {}, blocked: {}, winnerLock: {} };
 
 server.use(middlewares);
 
@@ -57,26 +57,37 @@ server.post('/winners', (req, res) => {
         return res.status(400).send('Missing "id" in request body');
     }
 
-    const existing = db.winners.find(w => w.id === id);
-    if (existing) {
-        existing.wins += 1;
-        if (time != null && (existing.time == null || time < existing.time)) {
-            existing.time = time;
-        }
-        if (carName) existing.carName = carName;
-        if (carColor) existing.carColor = carColor;
-        return res.status(200).json(existing);
+    // Блокировка для защиты от гонок состояний
+    if (state.winnerLock[id]) {
+        return res.status(429).send('Processing winner record, please wait');
     }
+    state.winnerLock[id] = true;
 
-    const newWinner = {
-        id,
-        wins: 1,
-        time: time ?? null,
-        carName: carName ?? null,
-        carColor: carColor ?? null,
-    };
-    db.winners.push(newWinner);
-    return res.status(201).json(newWinner);
+    try {
+        const existing = db.winners.find(w => w.id === id);
+        if (existing) {
+            existing.wins += 1;
+            if (time != null && (existing.time == null || time < existing.time)) {
+                existing.time = time;
+            }
+            if (carName) existing.carName = carName;
+            if (carColor) existing.carColor = carColor;
+            return res.status(200).json(existing);
+        }
+
+        const newWinner = {
+            id,
+            wins: 1,
+            time: time ?? null,
+            carName: carName ?? null,
+            carColor: carColor ?? null,
+        };
+        db.winners.push(newWinner);
+        return res.status(201).json(newWinner);
+    } finally {
+        // Разблокируем после завершения обработки
+        delete state.winnerLock[id];
+    }
 });
 
 const STATUS = {

@@ -48,6 +48,9 @@ winners: {
   },
 };
 
+// Блокировка для предотвращения дублирования записи победителей
+const winnerActionLock = new Set<number>();
+
 // ============ УТИЛИТЫ ============
 
 const withErrorLogging = async <T>(
@@ -149,10 +152,19 @@ export async function recordWinnerAction(data: {
   carColor: string;
   time: number | null | undefined;
 }): Promise<void> {
+  // Защита от повторных вызовов для одной и той же машины
+  if (winnerActionLock.has(data.carId)) {
+    console.warn(`[recordWinnerAction] Already recording winner for car ${data.carId}, skipping`);
+    return;
+  }
+  winnerActionLock.add(data.carId);
+
   try {
     await recordWinner(data);
   } catch (error) {
     console.error("Failed to record winner:", error);
+  } finally {
+    winnerActionLock.delete(data.carId);
   }
 }
 
