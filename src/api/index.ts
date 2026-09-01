@@ -1,7 +1,7 @@
-import { CONFIG } from "../config/index.ts";
+﻿import { CONFIG } from "../config/index.ts";
 import type { Car, Winner } from "../types/index.ts";
 
-// ============ КОНСТАНТЫ ============
+// ============ РљРћРќРЎРўРђРќРўР« ============
 const REQUEST_TIMEOUT = 3000;
 const RETRY_COUNT = 3;
 const RETRY_DELAY = 500;
@@ -40,7 +40,7 @@ const randomCarName = (): string => {
   return `${first} ${second}`;
 };
 
-// ============ ОБЩАЯ ЛОГИКА ОБРАБОТКИ ОТВЕТОВ ============
+// ============ РћР‘Р©РђРЇ Р›РћР“РРљРђ РћР‘Р РђР‘РћРўРљР РћРўР’Р•РўРћР’ ============
 const handleResponseError = async (response: Response): Promise<never> => {
   let errorText: string;
   try {
@@ -69,7 +69,7 @@ async function handleVoidResponse(response: Response): Promise<void> {
   await handleResponseError(response);
 }
 
-// ============ FETCH С ТАЙМАУТОМ ============
+// ============ FETCH РЎ РўРђР™РњРђРЈРўРћРњ ============
 async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
@@ -84,7 +84,7 @@ async function fetchWithTimeout(
     });
     clearTimeout(timeoutId);
 
-    // Дополнительная проверка: если response.ok === false и статус некорректен — выводим диагностическую информацию
+    // Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ РїСЂРѕРІРµСЂРєР°: РµСЃР»Рё response.ok === false Рё СЃС‚Р°С‚СѓСЃ РЅРµРєРѕСЂСЂРµРєС‚РµРЅ вЂ” РІС‹РІРѕРґРёРј РґРёР°РіРЅРѕСЃС‚РёС‡РµСЃРєСѓСЋ РёРЅС„РѕСЂРјР°С†РёСЋ
     if (!response.ok && (response.status === undefined || response.status === 0)) {
       console.error(`[fetchWithTimeout] Non-OK response with invalid status for ${url}:`, {
         status: response.status,
@@ -132,14 +132,14 @@ const shouldRetry = (
   attempt: number,
   retries: number,
 ): boolean => {
-  // Не повторяем 429 (Too Many Requests) — это защитный код сервера
+  // РќРµ РїРѕРІС‚РѕСЂСЏРµРј 429 (Too Many Requests) вЂ” СЌС‚Рѕ Р·Р°С‰РёС‚РЅС‹Р№ РєРѕРґ СЃРµСЂРІРµСЂР°
   if (response.status === HTTP_STATUS_TOO_MANY_REQUESTS) {
     return false;
   }
   return response.status === HTTP_STATUS_INTERNAL_SERVER_ERROR && attempt < retries - 1;
 };
 
-// ============ УТИЛИТЫ ПАГИНАЦИИ ============
+// ============ РЈРўРР›РРўР« РџРђР“РРќРђР¦РР ============
 
 const extractTotalCount = (response: Response, itemsLength: number): number => {
   const totalHeader = response.headers.get("X-Total-Count");
@@ -249,7 +249,7 @@ export async function driveCar(carId: number): Promise<void> {
 
 // ============ WINNERS ============
 
-// Блокировка для предотвращения дублирования запросов на запись победителей
+// Р‘Р»РѕРєРёСЂРѕРІРєР° РґР»СЏ РїСЂРµРґРѕС‚РІСЂР°С‰РµРЅРёСЏ РґСѓР±Р»РёСЂРѕРІР°РЅРёСЏ Р·Р°РїСЂРѕСЃРѕРІ РЅР° Р·Р°РїРёСЃСЊ РїРѕР±РµРґРёС‚РµР»РµР№
 const winnerRecordLock = new Map<number, boolean>();
 
 export interface ApiWinner {
@@ -274,80 +274,161 @@ export async function fetchWinners(
   return { winners, total };
 }
 
-export async function recordWinner(data: {
-  carId: number;
-  carName: string;
-  carColor: string;
-  time: number | null | undefined;
-}): Promise<Winner> {
-  // Защита от повторной записи для того же carId
-  if (winnerRecordLock.get(data.carId)) {
-    console.warn(`[recordWinner] Already recording winner for car ${data.carId}, skipping`);
-    // Пытаемся получить существующего победителя
-    try {
-      const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
-        method: "GET",
-      });
-      const existing = await processResponse<{ id: number; wins: number; time: number | null; carName?: string; carColor?: string }>(response);
-      return { ...existing, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: existing.time ?? null };
-    } catch {
-      return { id: data.carId, carId: data.carId, carName: data.carName, carColor: data.carColor, wins: 0, bestTime: null };
+interface ApiWinnerResponse {
+  id: number;
+  wins: number;
+  time: number | null;
+  carName?: string;
+  carColor?: string;
+}
+
+async function fetchExistingWinner(carId: number): Promise<ApiWinnerResponse | null> {
+  try {
+    const checkResponse: Response = await fetchWithTimeout(
+      `${CONFIG.API.BASE}/winners/${carId}`,
+      { method: "GET" },
+    );
+    if (checkResponse.ok) {
+      const text = await checkResponse.text();
+      if (text) {
+        const parsed = JSON.parse(text) satisfies ApiWinnerResponse;
+        return parsed;
+      }
+    } else if (checkResponse.status !== 404) {
+      await handleResponseError(checkResponse);
     }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("404")) {
+      return null;
+    }
+    throw error;
   }
+  return null;
+}
+
+async function updateExistingWinner(
+  data: {
+    carId: number;
+    carName: string;
+    carColor: string;
+    time: number | null | undefined;
+  },
+  existing: ApiWinnerResponse,
+): Promise<Winner> {
+  const updatedWins = existing.wins + 1;
+  const updatedTime =
+    data.time != null && (existing.time == null || data.time < existing.time)
+      ? data.time
+      : existing.time;
+
+  const response: Response = await fetchWithTimeout(
+    `${CONFIG.API.BASE}/winners/${data.carId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: data.carId,
+        wins: updatedWins,
+        time: updatedTime,
+        carName: data.carName,
+        carColor: data.carColor,
+      }),
+    },
+  );
+  const winner = await processResponse<Winner>(response);
+  return {
+    ...winner,
+    carId: data.carId,
+    carName: data.carName,
+    carColor: data.carColor,
+    bestTime: updatedTime ?? null,
+  };
+}
+
+async function createNewWinner(
+  data: {
+    carId: number;
+    carName: string;
+    carColor: string;
+    time: number | null | undefined;
+  },
+): Promise<Winner> {
+  const response: Response = await fetchWithTimeout(
+    `${CONFIG.API.BASE}/winners`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: data.carId,
+        wins: 1,
+        time: data.time,
+        carName: data.carName,
+        carColor: data.carColor,
+      }),
+    },
+  );
+  const winner = await processResponse<Winner>(response);
+  return {
+    ...winner,
+    carId: data.carId,
+    carName: data.carName,
+    carColor: data.carColor,
+    bestTime: data.time ?? null,
+  };
+}
+
+async function handleDuplicateRecord(
+  carId: number,
+  carName: string,
+  carColor: string,
+): Promise<Winner> {
+  console.warn(`[recordWinner] Already recording winner for car ${carId}, skipping`);
+  try {
+    const response: Response = await fetchWithTimeout(
+      `${CONFIG.API.BASE}/winners/${carId}`,
+      { method: "GET" },
+    );
+    const existing = await processResponse<ApiWinnerResponse>(response);
+    return {
+      ...existing,
+      carId,
+      carName,
+      carColor,
+      bestTime: existing.time ?? null,
+    };
+  } catch {
+    return {
+      id: carId,
+      carId,
+      carName,
+      carColor,
+      wins: 0,
+      bestTime: null,
+    };
+  }
+}
+
+export async function recordWinner(
+  data: {
+    carId: number;
+    carName: string;
+    carColor: string;
+    time: number | null | undefined;
+  },
+): Promise<Winner> {
+  if (winnerRecordLock.get(data.carId)) {
+    return handleDuplicateRecord(data.carId, data.carName, data.carColor);
+  }
+
   winnerRecordLock.set(data.carId, true);
 
   try {
-    let existingWinner: { id: number; wins: number; time: number | null; carName?: string; carColor?: string } | null = null;
-    try {
-      const checkResponse: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
-        method: "GET",
-      });
-      if (checkResponse.ok) {
-        const text = await checkResponse.text();
-        if (text) {
-          existingWinner = JSON.parse(text) as { id: number; wins: number; time: number | null; carName?: string; carColor?: string };
-        }
-      } else if (checkResponse.status !== 404) {
-        await handleResponseError(checkResponse);
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("404")) {
-        existingWinner = null;
-      } else {
-        throw error;
-      }
-    }
-
+    const existingWinner = await fetchExistingWinner(data.carId);
     if (existingWinner) {
-      const updatedWins = existingWinner.wins + 1;
-      const updatedTime = data.time != null && (existingWinner.time == null || data.time < existingWinner.time)
-        ? data.time
-        : existingWinner.time;
-
-      const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners/${data.carId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: data.carId,
-          wins: updatedWins,
-          time: updatedTime,
-          carName: data.carName,
-          carColor: data.carColor,
-        }),
-      });
-      const winner = await processResponse<Winner>(response);
-      return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: updatedTime ?? null };
-    } else {
-      const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/winners`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: data.carId, wins: 1, time: data.time, carName: data.carName, carColor: data.carColor }),
-      });
-      const winner = await processResponse<Winner>(response);
-      return { ...winner, carId: data.carId, carName: data.carName, carColor: data.carColor, bestTime: data.time ?? null };
+      return updateExistingWinner(data, existingWinner);
     }
+    return createNewWinner(data);
   } finally {
-    // Разблокируем после завершения
     winnerRecordLock.delete(data.carId);
   }
 }
