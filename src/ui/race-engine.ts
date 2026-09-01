@@ -4,6 +4,7 @@ import {
   setCarRaceVelocity,
   clearRaceState,
   stopRaceAnimation,
+  startRaceDriveRequests,
 } from "../state/index.ts";
 
 import { state } from "../state/index.ts";
@@ -57,8 +58,12 @@ export const startRaceHandler = async (): Promise<void> => {
 
   removeAllNotifications();
   state.race.winnerRecorded = false;
-  startRaceSetup(carIds, performance.now());
+  const raceStartTime = performance.now();
+  startRaceSetup(carIds, raceStartTime);
   updateRaceControls();
+
+  // Проверяем /engine?status=drive для каждой машины: 500 => поломка на старте
+  void startRaceDriveRequests(carIds, raceStartTime);
 
   // Запускаем гонку мгновенно — без ожидания API
   initializeRaceCars(carIds, new Map());

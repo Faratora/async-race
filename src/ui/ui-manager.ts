@@ -115,6 +115,11 @@ const renderEditForm = (container: HTMLElement | DocumentFragment): void => {
     createButton("btn-update", "Update", "btn btn-primary"),
     createButton("btn-cancel-edit", "Cancel", "btn btn-secondary"),
   );
+
+  nameInput.addEventListener("input", () => {
+    state.garage.editName = nameInput.value;
+  });
+
   container.append(form);
 };
 

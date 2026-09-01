@@ -245,7 +245,7 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
 
 const handleRemoveCar = (id: number): void => {
   void deleteCarAction(id)
-    .then(() => deleteWinnerAction(id).catch(() => { /* winner may not exist */ }))
+    .then(() => deleteWinnerAction(id))
     .then(() => {
       state.winners.winners = state.winners.winners.filter(w => w.carId !== id);
       state.winners.allWinners = state.winners.allWinners.filter(w => w.carId !== id);
@@ -267,6 +267,8 @@ const handleRemoveCar = (id: number): void => {
     })
     .then(() => loadGarage())
     .then(() => { void renderGarage(); })
+    .then(() => loadAllWinners())
+    .then(() => { sortWinners(); renderWinners(); })
     .catch((error) => {
       console.error("Failed to remove car:", error);
     });

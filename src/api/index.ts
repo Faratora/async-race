@@ -238,24 +238,13 @@ export async function stopEngine(carId: number): Promise<{ velocity: number; dis
 }
 
 export async function driveCar(carId: number): Promise<void> {
-  console.log("[driveCar] called for car", carId);
-  let response: Response;
-  try {
-    response = await fetchWithTimeout(`${CONFIG.API.BASE}/engine?id=${carId}&status=drive`, {
-      method: "PATCH",
-    });
-  } catch (error: unknown) {
-    console.log("[driveCar] network error for car", carId, "error:", error);
-    
-    throw error;
-  }
-
-  console.log("[driveCar] response for car", carId, "status:", response.status, "ok:", response.ok);
+  const response: Response = await fetchWithTimeout(`${CONFIG.API.BASE}/engine?id=${carId}&status=drive`, {
+    method: "PATCH",
+  });
   if (response.ok) return;
   if (response.status === 500) {
     throw new Error("Drive failed with 500");
   }
-  // 429 и другие ошибки — не блокируем анимацию
 }
 
 // ============ WINNERS ============

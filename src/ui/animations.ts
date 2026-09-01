@@ -1,8 +1,5 @@
 import {
   CONFIG,
-  BREAKDOWN_CONFIG,
-  getBreakdownChance,
-  getBreakdownType,
   speedToProgressPerMs,
   createCarRace,
 } from "../config/index.ts";
@@ -160,6 +157,10 @@ const handleBrokenCar = (
   _race: CarRace,
 ): void => {
   car.classList.add("broken");
+  const card = car.closest(".car-card");
+  if (card) {
+    card.classList.add("broken-card");
+  }
   updateCarButtonStates();
 };
 
@@ -169,14 +170,15 @@ const animateCarMovement = (
   car: HTMLElement,
   race: CarRace,
 ): void => {
+  if (race.broken) return;
+
   const road = getRoad(car);
   if (!road) {
     return;
   }
 
-  const { left, progress, trackWidth } = calculateCarPosition(road, race.startTime, race.maxSpeed);
+  const { left, trackWidth } = calculateCarPosition(road, race.startTime, race.maxSpeed);
   const elapsed = performance.now() - race.startTime;
-  const elapsedSeconds = elapsed / 1000;
 
   car.style.transform = `translateX(${left}px)`;
   car.dataset.lastPosition = String(left);
@@ -186,74 +188,8 @@ const animateCarMovement = (
     race.isRepairing = false;
   }
 
-  const breakdownChance = getBreakdownChance(progress, race.maxSpeed, elapsedSeconds);
-
-  // Ограничиваем общее количество поломок в гонке
-  if (state.race.totalBreakdowns >= BREAKDOWN_CONFIG.MAX_BREAKDOWNS_PER_RACE) {
-    // Лимит поломок достигнут — больше не ломаем машины
-    if (left >= trackWidth - CONFIG.UI.FINISH_OFFSET) {
-      handleCarFinish(carId, race, elapsed);
-    }
-    return;
-  }
-
-  if (Math.random() < breakdownChance) {
-    handleCarBreakdown(carId, car, race, progress, left);
-    return;
-  }
-
   if (left >= trackWidth - CONFIG.UI.FINISH_OFFSET) {
     handleCarFinish(carId, race, elapsed);
-  }
-};
-
-// ============ ОБРАБОТКА ПОЛОМКИ ============
-const handleCarBreakdown = (
-  carId: number,
-  car: HTMLElement,
-  race: CarRace,
-  progress: number,
-  left: number,
-): void => {
-  const breakdownType = getBreakdownType(progress, race.maxSpeed);
-
-  race.broken = true;
-  race.breakdownHistory.count++;
-  state.race.totalBreakdowns++;
-  race.breakdownHistory.timestamps.push(performance.now());
-  race.breakdownHistory.positions.push(progress);
-  race.breakdownHistory.types.push(breakdownType);
-
-  applyBreakdownVisuals(car, breakdownType, left, progress, carId);
-  updateCarButtonStates();
-  updateCarButtonsOnBreakdown(carId);
-};
-
-// ============ ВИЗУАЛЬНЫЕ ЭФФЕКТЫ ПОЛОМКИ ============
-const applyBreakdownVisuals = (
-  car: HTMLElement,
-  breakdownType: string,
-  left: number,
-  _progress: number,
-  _carId: number,
-): void => {
-  car.classList.add("broken", `broken-${breakdownType}`);
-
-  switch (breakdownType) {
-    case "engine_overheating": {
-      car.style.transform = `translateX(${left}px) scale(1.1)`;
-      break;
-    }
-    case "transmission_failure": {
-      car.style.transform = `translateX(${left}px) rotate(5deg)`;
-      break;
-    }
-    case "start_stall": {
-      break;
-    }
-    default: {
-      break;
-    }
   }
 };
 
@@ -267,12 +203,6 @@ const setCarButtonEnabled = (carId: number, kind: "start" | "stop", isEnabled: b
   if (!button) return;
   button.disabled = !isEnabled;
   button.toggleAttribute("disabled", !isEnabled);
-};
-
-// ============ ОБНОВЛЕНИЕ КНОПОК ПРИ ПОЛОМКЕ ============
-const updateCarButtonsOnBreakdown = (carId: number): void => {
-  setCarButtonEnabled(carId, "stop", true);
-  setCarButtonEnabled(carId, "start", false);
 };
 
 export const handleCarFinish = (carId: number, race: CarRace, elapsed: number): void => {

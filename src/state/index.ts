@@ -248,6 +248,7 @@ export function setCarRaceBroken(carId: number, now: number): void {
       positions: [0],
       types: ["start_stall"],
     };
+    state.race.totalBreakdowns++;
   }
 }
 
@@ -260,4 +261,18 @@ export function clearRaceState(): void {
   state.race.drivingCars = {};
   resetWinnerTracking();
   state.race.isRacing = false;
+}
+
+export async function startRaceDriveRequests(carIds: number[], now: number): Promise<void> {
+  await Promise.allSettled(
+    carIds.map(async (id) => {
+      try {
+        await startEngine(id);
+        await driveCar(id);
+      } catch (error) {
+        console.error(`Engine/Drive failed for car ${id}:`, error);
+        setCarRaceBroken(id, now);
+      }
+    }),
+  );
 }

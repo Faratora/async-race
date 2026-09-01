@@ -100,6 +100,10 @@ export const resetCarVisualReset = (car: HTMLElement, shouldRemoveLastPosition =
     }
   }
   car.classList.remove("broken");
+  const card = car.closest(".car-card");
+  if (card) {
+    card.classList.remove("broken-card");
+  }
   car.style.opacity = "1";
   car.style.scale = "1";
   car.style.rotate = "0deg";

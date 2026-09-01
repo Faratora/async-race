@@ -68,10 +68,6 @@ export const speedToProgressPerMs = (maxSpeedKmh: number): number => {
 export { BREAKDOWN_CONFIG } from "./breakdown.ts";
 
 export {
-  getBreakdownChance,
-  getBreakdownType,
-  triggerBreakdown,
-  resetBreakdown,
   createEmptyBreakdownHistory,
   createCarRace,
 } from "./breakdown.ts";
@@ -79,5 +75,4 @@ export {
 export type {
   BreakdownType,
   BreakdownHistory,
-  BreakdownEvent,
 } from "./breakdown.ts";
