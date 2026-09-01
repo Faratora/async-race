@@ -253,12 +253,6 @@ const handleRemoveCar = (id: number): void => {
     })
     .then(() => {
       adjustPage(
-        state.winners.page,
-        state.winners.total,
-        WINNERS_PER_PAGE,
-        (page) => { state.winners.page = page; },
-      );
-      adjustPage(
         state.garage.page,
         state.garage.total,
         CARS_PER_PAGE,
@@ -267,8 +261,6 @@ const handleRemoveCar = (id: number): void => {
     })
     .then(() => loadGarage())
     .then(() => { void renderGarage(); })
-    .then(() => loadAllWinners())
-    .then(() => { sortWinners(); renderWinners(); })
     .catch((error) => {
       console.error("Failed to remove car:", error);
     });

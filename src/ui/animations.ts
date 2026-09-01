@@ -300,7 +300,14 @@ export const animateRace = (): void => {
   let hasAllFinished = true;
 
   for (const [idString, race] of Object.entries(state.race.carRaces)) {
-    if (race.finished || race.broken) continue;
+    if (race.broken) {
+      const car = getCarElement(Number(idString));
+      if (car && !car.classList.contains("broken")) {
+        handleBrokenCar(Number(idString), car, race);
+      }
+      continue;
+    }
+    if (race.finished) continue;
     hasAllFinished = false;
     animateCarRace(Number(idString), race);
   }
