@@ -8,7 +8,7 @@ import {
   WINNERS_PER_PAGE,
 } from "../config/index.ts";
 
-import { state, loadGarage, loadAllWinners, deleteWinnerAction } from "../state/index.ts";
+import { state, loadGarage, loadAllWinners } from "../state/index.ts";
 import { element } from "./builder.ts";
 import { CONFIG } from "../config/index.ts";
 import { createInput, createButton, createPagination, createColorPalette, renderHeader, escapeHtml, getTotalPages } from "./helpers.ts";
@@ -235,20 +235,7 @@ export const renderWinners = async (): Promise<void> => {
     (_data: unknown, fragment: DocumentFragment) => {
       const totalPages = getTotalPages(state.winners.total, WINNERS_PER_PAGE);
       renderHeader(fragment, `Winners (${state.winners.total})`, state.winners.total, state.winners.page, totalPages);
-      renderWinnersTable(
-        fragment,
-        async (id) => {
-          await deleteWinnerAction(id);
-          renderWinners();
-        },
-        () => {
-          if (confirm("Удалить всех победителей?")) {
-            for (const w of state.winners.winners) {
-              void deleteWinnerAction(w.id);
-            }
-          }
-        },
-      );
+      renderWinnersTable(fragment);
       const isPreviousDisabled = state.winners.page <= 1;
       const isNextDisabled = state.winners.page >= totalPages;
       fragment.append(createPagination("btn-prev-winners", "btn-next-winners", state.winners.page, totalPages, isPreviousDisabled, isNextDisabled));
