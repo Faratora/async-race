@@ -243,27 +243,35 @@ export const handleCarAction = (action: string | undefined, id: number): void =>
   }
 };
 
-const handleRemoveCar = (id: number): void => {
-  void deleteCarAction(id)
-    .then(() => deleteWinnerAction(id))
-    .then(() => {
-      state.winners.winners = state.winners.winners.filter(w => w.carId !== id);
-      state.winners.allWinners = state.winners.allWinners.filter(w => w.carId !== id);
-      state.winners.total = Math.max(0, state.winners.total - 1);
-    })
-    .then(() => {
-      adjustPage(
-        state.garage.page,
-        state.garage.total,
-        CARS_PER_PAGE,
-        (page) => { state.garage.page = page; },
-      );
-    })
-    .then(() => loadGarage())
-    .then(() => { void renderGarage(); })
-    .catch((error) => {
-      console.error("Failed to remove car:", error);
-    });
+const handleRemoveCar = async (id: number): Promise<void> => {
+  try {
+    await deleteCarAction(id);
+  } catch (error) {
+    console.error("Failed to remove car:", error);
+    return;
+  }
+
+  // Удаляем запись о победителе, но не блокируем удаление машинки
+  try {
+    await deleteWinnerAction(id);
+  } catch {
+    // Игнорируем ошибку — машинки может не быть в таблице победителей
+  }
+
+  // Обновляем локальное состояние
+  state.winners.winners = state.winners.winners.filter(w => w.carId !== id);
+  state.winners.allWinners = state.winners.allWinners.filter(w => w.carId !== id);
+  state.winners.total = Math.max(0, state.winners.total - 1);
+
+  adjustPage(
+    state.garage.page,
+    state.garage.total,
+    CARS_PER_PAGE,
+    (page) => { state.garage.page = page; },
+  );
+
+  await loadGarage();
+  renderGarage();
 };
 
 const handleSelectCar = (id: number): void => {
