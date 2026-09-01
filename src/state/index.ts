@@ -125,9 +125,21 @@ export async function loadAllWinners(): Promise<void> {
       state.winners.sortOrder
     );
     
+    // Если гараж пустой — очищаем таблицу победителей
+    if (state.garage.cars.length === 0) {
+      state.winners.allWinners = [];
+      state.winners.total = 0;
+      return;
+    }
+
+    const existingCarIds = new Set(state.garage.cars.map((c) => c.id));
+    
     const aggregated = new Map<number, Winner>();
     for (const w of data.winners) {
       const carId = w.id;
+      // Показываем только победителей, у которых есть машинка в гараже
+      if (!existingCarIds.has(carId)) continue;
+      
       const existing = aggregated.get(carId);
       const winner = toWinner(w, carId);
       if (existing) {

@@ -272,6 +272,12 @@ const handleRemoveCar = async (id: number): Promise<void> => {
 
   await loadGarage();
   renderGarage();
+
+  // Перерисовываем победителей, если они открыты
+  if (state.winners.allWinners.length > 0 || state.garage.cars.length === 0) {
+    sortWinners();
+    renderWinners();
+  }
 };
 
 const handleSelectCar = (id: number): void => {
