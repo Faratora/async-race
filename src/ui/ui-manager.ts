@@ -216,6 +216,11 @@ export const renderCarCards = (container: HTMLElement | DocumentFragment): void 
 
 export const renderWinners = async (): Promise<void> => {
   await loadAllWinners();
+  
+  // Фильтруем только валидных победителей (с временем) перед сортировкой
+  state.winners.allWinners = state.winners.allWinners.filter(w => w.bestTime != null);
+  state.winners.total = state.winners.allWinners.length;
+  
   sortWinners();
   paginateWinners();
 

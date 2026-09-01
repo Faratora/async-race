@@ -269,13 +269,13 @@ const recordRemainingFinishers = (
   winnerCarId: number | undefined,
 ): void => {
   for (const [idString, race] of Object.entries(state.race.carRaces)) {
-    if (!race.finished && !race.broken) continue;
+    if (!race.finished || race.broken) continue;
     const carId = Number(idString);
     if (winnerCarId !== undefined && carId === winnerCarId) continue;
 
     const car = findCarById(carId);
     if (car) {
-      recordWinnerForCar(car, race.finished ? race.time ?? null : null);
+      recordWinnerForCar(car, race.time ?? null);
     }
   }
 };
