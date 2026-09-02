@@ -1,0 +1,552 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /* border: 1px solid red; */
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  background-color: #1a1a2e;
+  color: #e0e0e0;
+  min-height: 100vh;
+  
+  
+}
+
+.navbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.navbar .container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.navbar-brand {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+}
+
+.container {
+  max-width: 930px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-link {
+  padding: 10px 20px;
+  border: none;
+  background-color: #0f3460;
+  color: #e0e0e0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: #1a4a7a;
+}
+
+.nav-link.active {
+  background-color: #4a4a5a;
+  color: #fff;
+}
+
+#app {
+  padding: 24px 16px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.view-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.view-info {
+  font-size: 13px;
+  color: #888;
+}
+
+.add-car-form,
+.edit-car-form,
+.race-controls,
+.pagination-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.form-control {
+  padding: 8px 12px;
+  border: 1px solid #2a2a4a;
+  background-color: #0f1a30;
+  color: #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-control-color {
+  width: 45px;
+  height: 36px;
+  padding: 5px;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn-primary {
+  background-color: #1a73e8;
+  color: #fff;
+}
+
+.btn-generate {
+  background-color: #e94560;
+  color: #fff;
+}
+
+.btn-secondary {
+  background-color: #5a5a6a;
+  color: #fff;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  color: #1a1a2e;
+}
+
+.btn-outline-info {
+  background-color: transparent;
+  color: #1a73e8;
+  border: 1px solid #1a73e8;
+}
+
+.btn-outline-info:hover {
+  background-color: #1a73e8;
+  color: #fff;
+}
+
+.btn-outline-danger {
+  background-color: transparent;
+  color: #e94560;
+  border: 1px solid #e94560;
+}
+
+.btn-outline-danger:hover {
+  background-color: #e94560;
+  color: #fff;
+}
+
+.btn-start-engine {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.btn-stop-engine {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.car-card {
+  background-color: #16213e;
+  border-radius: 8px;
+  padding: 10px;
+  border: 2px solid transparent;
+}
+
+.car-card.selected {
+  border: 2px solid #1a73e8;
+}
+
+.car-card-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.car-image {
+  flex-shrink: 0;
+  width: 25px;
+  height: 25px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+}
+
+.car-info {
+  min-width: 0;
+}
+
+.car-name {
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.car-name:hover {
+  color: #1a73e8;
+}
+
+.car-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.car-start-stop {
+  display: flex;
+  gap: 4px;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 5;
+}
+
+.car-card-bottom {
+  background-color: #0f3460;
+  border-radius: 4px;
+  height: 40px;
+  margin-top: 4px;
+  position: relative;
+  overflow: visible;
+  width: 100%;
+}
+
+.car-road {
+  background-color: #1a1a2e;
+  border-radius: 4px;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: default;
+}
+
+.car-road-line {
+  background: repeating-linear-gradient(
+    90deg,
+    #e94560 0 8px,
+    transparent 8px 16px
+  );
+  height: 3px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.car-road-finish {
+  background: repeating-linear-gradient(
+    0deg,
+    #fff 0 4px,
+    #000 4px 8px
+  );
+  width: 4px;
+  position: absolute;
+  bottom: 3px;
+  right: 75px;
+  height: 30px;
+}
+
+.car-flag {
+  background-color: #e94560;
+  width: 47px;
+  height: 77px;
+  position: absolute;
+  top: -50px;
+  right: 75px;
+  -webkit-mask: url('/img/flag.svg') 50% / contain no-repeat;
+  mask: url('/img/flag.svg') 50% / contain no-repeat;
+}
+
+.car {
+  will-change: transform;
+  z-index: 2;
+  pointer-events: none;
+  background-color: #e94560;
+  width: 70px;
+  height: 36px;
+  transition: none;
+  position: absolute;
+  bottom: 2px;
+  left: 75px;
+  -webkit-mask: url('/img/car.svg') 50% / contain no-repeat;
+  mask: url('/img/car.svg') 50% / contain no-repeat;
+}
+
+@media (max-width: 500px) {
+  .navbar {
+    padding: 8px 12px;
+  }
+
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  #app {
+    padding: 16px 12px;
+  }
+
+  .view-title {
+    font-size: 18px;
+  }
+
+  .car-card-top {
+    flex-wrap: wrap;
+  }
+
+  .car-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .btn-sm {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .car-card-bottom {
+    height: 60px;
+  }
+
+  .car {
+    width: 50px;
+    height: 26px;
+    left: 40px;
+  }
+
+  .car-road {
+    overflow: visible;
+  }
+
+  .car-road-finish {
+    right: 40px;
+  }
+
+  .car-flag {
+    right: 40px;
+  }
+
+  .car-image {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  .car-name {
+    font-size: 13px;
+  }
+
+  .car-start-stop {
+    top: 2px;
+    left: 2px;
+  }
+}
+
+.car {
+  will-change: transform;
+  z-index: 2;
+  pointer-events: none;
+  background-color: #e94560;
+  width: 70px;
+  height: 36px;
+  transition: none;
+  position: absolute;
+  bottom: 2px;
+  left: 75px;
+  -webkit-mask: url('/img/car.svg') 50% / contain no-repeat;
+  mask: url('/img/car.svg') 50% / contain no-repeat;
+}
+
+.car.smooth-transition {
+  transition: transform 0.3s ease-out;
+}
+
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: 80px 80px 1fr 80px 180px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.table-header {
+  font-weight: 600;
+  color: #fff;
+  background-color: #4a90d9;
+  border-radius: 8px 8px 0 0;
+  font-size: 15px;
+}
+
+.table-row {
+  background-color: #000;
+  color: #e0e0e0;
+  font-size: 15px;
+}
+
+.table-header-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.table-header-sortable:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.car.broken {
+  animation: carBlink 1.2s ease-in-out infinite !important;
+  position: relative;
+}
+
+.car.broken::after {
+  content: "💥";
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  font-size: 20px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+@keyframes carBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes cardOutline {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 45, 45, 0.6);
+    border-color: rgba(255, 45, 45, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 45, 45, 0);
+    border-color: rgba(255, 45, 45, 0.9);
+  }
+}
+
+@keyframes smokeBounce {
+  0% { transform: translateY(0) rotate(-8deg); }
+  100% { transform: translateY(-6px) rotate(8deg); }
+}
+
+.table-row:last-child {
+  border-bottom: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.winner-car-icon {
+  width: 40px;
+  height: 20px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  font-size: 10px;
+  font-weight: 600;
+  -webkit-mask: url('/img/car.svg') 50% / contain no-repeat;
+  mask: url('/img/car.svg') 50% / contain no-repeat;
+}
+
+
+
+.breakdown-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #ff4444;
+  color: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 1000;
+}
+
+.winner-message {
+  background-color: #28a745;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  text-align: center;
+  position: fixed;
+  top: 112px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  min-width: 300px;
+}
